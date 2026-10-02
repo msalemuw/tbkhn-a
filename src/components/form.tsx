@@ -1,0 +1,152 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { router } from 'expo-router';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { colors, fonts } from '@/constants/theme';
+
+export const danger = '#c4452d';
+
+/** Back arrow row; with a title it is the small bold header from the design (s5). */
+export function BackHeader({ title }: { title?: string }) {
+  return (
+    <View style={styles.header}>
+      <Pressable hitSlop={12} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
+        <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+      </Pressable>
+      {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
+    </View>
+  );
+}
+
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+  busy,
+  style,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+  style?: ViewStyle;
+}) {
+  const off = disabled || busy;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: off, busy }}
+      onPress={off ? undefined : onPress}
+      style={[styles.primary, off && styles.primaryOff, style]}>
+      {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.primaryText}>{label}</Text>}
+    </Pressable>
+  );
+}
+
+/** The design's field2: a rounded box with a small uppercase label. */
+export function Field({
+  label,
+  required,
+  borderColor,
+  children,
+  style,
+}: {
+  label?: string;
+  required?: boolean;
+  borderColor?: string;
+  children: ReactNode;
+  style?: ViewStyle;
+}) {
+  return (
+    <View style={[styles.field, borderColor ? { borderColor } : null, style]}>
+      {label ? (
+        <Text style={styles.label}>
+          {label}
+          {required ? <Text style={{ color: colors.coral }}> *</Text> : null}
+        </Text>
+      ) : null}
+      {children}
+    </View>
+  );
+}
+
+export function SelectField({
+  label,
+  value,
+  required,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  required?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}: ${value}`}>
+      <Field label={label} required={required}>
+        <View style={styles.selectRow}>
+          <Text style={[styles.value, value === 'None' && { color: colors.muted }]}>{value}</Text>
+          <MaterialIcons name="expand-more" size={22} color={colors.muted} />
+        </View>
+      </Field>
+    </Pressable>
+  );
+}
+
+export type SheetItem = { label: string; selected: boolean; onPress: () => void };
+
+/** Bottom sheet list used by every picker in the design (governorate, area, club...). */
+export function PickerSheet({ title, items, onClose }: { title: string; items: SheetItem[] | null; onClose: () => void }) {
+  return (
+    <Modal visible={items !== null} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.scrim} onPress={onClose} />
+      <SafeAreaView edges={['bottom']} style={styles.sheet}>
+        <View style={styles.grab} />
+        <Text style={styles.sheetTitle}>{title}</Text>
+        <ScrollView>
+          {(items ?? []).map((it) => (
+            <Pressable
+              key={it.label}
+              style={styles.sheetRow}
+              onPress={() => {
+                it.onPress();
+                onClose();
+              }}>
+              <Text style={[styles.sheetLabel, it.selected && { color: colors.teal }]}>{it.label}</Text>
+              {it.selected ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+export const formStyles = StyleSheet.create({
+  title: { fontFamily: fonts.serif, fontSize: 34, lineHeight: 36, color: colors.ink },
+  sub: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted, lineHeight: 21, marginTop: 8 },
+  hint: { fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 18, marginTop: 7, paddingHorizontal: 4 },
+  link: { fontFamily: fonts.extraBold, color: colors.teal },
+  input: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, paddingVertical: 4 },
+  small: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center' },
+});
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 6 },
+  headerTitle: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
+  primary: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+  primaryOff: { opacity: 0.45 },
+  primaryText: { fontFamily: fonts.extraBold, fontSize: 15.5, color: colors.white },
+  field: { borderWidth: 1.5, borderColor: colors.line, borderRadius: 14, backgroundColor: colors.white, paddingHorizontal: 14, paddingVertical: 9 },
+  label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 2 },
+  value: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
+  selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 2 },
+  scrim: { flex: 1, backgroundColor: 'rgba(22,32,30,.35)' },
+  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '70%' },
+  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 10 },
+  sheetTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginBottom: 6 },
+  sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
+  sheetLabel: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
+});

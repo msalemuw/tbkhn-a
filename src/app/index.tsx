@@ -1,16 +1,29 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { Redirect, router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
+import { logFunnel } from '@/lib/funnel';
+import { useSession } from '@/lib/session';
 import { type Lang, welcomeCopy } from '@/lib/welcome-copy';
 
 // Flow 1/2, screen s1: Welcome.
 export default function Welcome() {
+  const { loading, session, needsProfile } = useSession();
   const [lang, setLang] = useState<Lang>('en');
   const t = welcomeCopy[lang];
   const align = t.dir === 'rtl' ? 'right' : 'left';
+  const showWelcome = !loading && !session;
+
+  useEffect(() => {
+    if (showWelcome) logFunnel('welcome_viewed', { lang });
+    // Once per visit, not on every language switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showWelcome]);
+
+  if (loading) return <View style={styles.screen} />;
+  if (session) return <Redirect href={needsProfile ? '/sign-up/profile' : '/home'} />;
 
   return (
     <SafeAreaView style={styles.screen}>

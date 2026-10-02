@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { colors } from '@/constants/theme';
+import { SessionProvider } from '@/lib/session';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,12 +29,16 @@ export default function RootLayout() {
   if (!loaded && !error) return null;
 
   return (
-    <>
+    <SessionProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="sign-up/index" />
+        <Stack.Screen name="log-in" />
+        <Stack.Screen name="verify" />
+        <Stack.Screen name="sign-up/profile" options={{ gestureEnabled: false }} />
       </Stack>
-    </>
+    </SessionProvider>
   );
 }
