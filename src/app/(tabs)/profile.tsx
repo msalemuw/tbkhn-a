@@ -22,6 +22,7 @@ export default function Profile() {
       ) : null}
       <ScreenPlaceholder title="Your profile" note="Posts, What’s cooking today and reviews, like a cook’s profile." />
       <View style={styles.actions}>
+        {session ? <PrimaryButton label="My cook profile" onPress={() => router.push({ pathname: '/cook/[id]', params: { id: session.user.id } })} style={{ marginBottom: 10 }} /> : null}
         {session ? <PrimaryButton label="Orders" onPress={() => router.push('/orders')} style={{ marginBottom: 10 }} /> : null}
         {session ? (
           <PrimaryButton

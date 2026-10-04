@@ -88,7 +88,9 @@ export default function DishScreen() {
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           <BackHeader title={mine ? 'Your dish' : 'Your order'} />
           <View style={styles.cookRow}>
-            <Text style={styles.cook}>{cook}</Text>
+            <Pressable onPress={() => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } })} accessibilityRole="link" accessibilityLabel={`${cook}'s profile`}>
+              <Text style={styles.cook}>{cook}</Text>
+            </Pressable>
             <MaterialIcons name="verified" size={16} color={colors.teal} />
             {session && !mine ? (
               <Pressable
