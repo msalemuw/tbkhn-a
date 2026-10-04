@@ -1,6 +1,6 @@
-import { PhoneEntry } from '@/components/phone-entry';
+import { AuthChoice } from '@/components/auth-choice';
 
 // Flow 1, screen s61.
 export default function SignUp() {
-  return <PhoneEntry mode="signup" />;
+  return <AuthChoice mode="signup" />;
 }

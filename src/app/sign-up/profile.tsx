@@ -50,7 +50,8 @@ function usernameState(u: string, taken: boolean | null): UsernameState {
 
 export default function ProfileStep() {
   const { session, refreshProfile } = useSession();
-  const [name, setName] = useState('');
+  // Google and Apple share the member's name, so it starts filled in.
+  const [name, setName] = useState(() => String(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? ''));
   const [username, setUsername] = useState('');
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -157,12 +158,18 @@ export default function ProfileStep() {
             <Field label="FULL NAME" required>
               <TextInput value={name} onChangeText={setName} placeholder="example: Nour Sami" placeholderTextColor={colors.faint} maxLength={60} autoComplete="name" textContentType="name" style={formStyles.input} />
             </Field>
-            <Field label="MOBILE NUMBER" required>
-              <View style={styles.row}>
-                <Text style={[formStyles.input, { flex: 1 }]}>{formatPhone(phoneDigits)}</Text>
-                <MaterialIcons name="verified" size={18} color={colors.teal} />
-              </View>
-            </Field>
+            {phoneDigits ? (
+              <Field label="MOBILE NUMBER" required>
+                <View style={styles.row}>
+                  <Text style={[formStyles.input, { flex: 1 }]}>{formatPhone(phoneDigits)}</Text>
+                  <MaterialIcons name="verified" size={18} color={colors.teal} />
+                </View>
+              </Field>
+            ) : session?.user.email ? (
+              <Field label="EMAIL">
+                <Text style={formStyles.input}>{session.user.email}</Text>
+              </Field>
+            ) : null}
             <View>
               <Field label="USERNAME" required borderColor={username ? (un.ok ? colors.teal : un.icon === 'error' ? danger : undefined) : undefined}>
                 <View style={styles.row}>

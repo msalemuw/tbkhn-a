@@ -21,7 +21,7 @@ Cook posts "what's cooking today" → auto-story for followers/community (ends a
 - Admin/backend (not in the app): community approvals, announcements, segmentation analytics.
 
 ## 5. Key features (as built in the prototype)
-- Sign-up/login: phone + 6-digit SMS/WhatsApp code, or Google/email — **phone verification mandatory for all new members**. No passwords. Phone, email, username each unique (server-enforced).
+- Sign-up/login at launch: Google or Apple (same button signs up and logs in). Phone verification (WhatsApp code) is on hold, see section 13 (2026-10-04); it is added later, and members verified by phone are the ones whose likes count in the Masters. No passwords. Phone, email, username each unique (server-enforced).
 - Home feed of followed communities; stories; Instagram-style bottom bar (Home · Menu/Reels-slot · Post · Messages · Search · Profile).
 - Cook profile: rank badge ("#1 in Mohandeseen"), rating, bio, Follow, stats, tabs Posts · What's cooking today · Reviews.
 - Menu: today's dishes, filter by community / cuisine / search, sorted by distance.
@@ -68,6 +68,8 @@ Add dated one-liners here as decisions are made, so every tool inherits them.
 - 2026-10-02 — Created this context file.
 - 2026-10-02 — Delivery: NO drivers for now. Pickup only; delivery-address screens in the prototype are outdated/not launched.
 - 2026-10-02 — Competition ("the Masters"): will run inside this app. Likely winner = signature-dish post with the most likes. Rules, prize, schedule, eligibility, per-community vs national: [TBD, define in strategy session]. Any older Masters description in other files is outdated.
+- 2026-10-04 — Sign-up code: WhatsApp only, sent directly through Meta's WhatsApp Cloud API (~$0.013 per code). No Twilio, no SMS fallback (SMS ~$0.40 per code). Members without WhatsApp use "Contact us".
+- 2026-10-04 — Phone verification is ON HOLD (founder). Launch sign-in = Google + Apple; "Continue with phone" (WhatsApp code) stays built but hidden until a real WhatsApp number is set up. Masters anti-cheat (many fake numbers boosting one friend) is solved later: only likes from accounts with real activity or a verified phone count toward rankings. Supersedes "phone verification mandatory" in section 5.
 
 ---
 ### How to keep all tools in sync

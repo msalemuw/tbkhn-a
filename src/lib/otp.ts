@@ -2,40 +2,33 @@ import { logFunnel } from '@/lib/funnel';
 import { toE164 } from '@/lib/phone';
 import { supabase } from '@/lib/supabase';
 
-export type Channel = 'whatsapp' | 'sms';
 export type AuthMode = 'signup' | 'login';
 
-type SendResult = { ok: true; channel: Channel } | { ok: false; message: string };
+type SendResult = { ok: true } | { ok: false; message: string };
 
-async function sendOnce(digits: string, mode: AuthMode, channel: Channel) {
+/**
+ * Sends the 6-digit code by WhatsApp. Supabase Auth hands it to the send-whatsapp-code hook,
+ * which sends it through Meta directly. There is no SMS fallback (section 13, 2026-10-04).
+ */
+export async function sendCode(digits: string, mode: AuthMode): Promise<SendResult> {
   const started = Date.now();
   const { error } = await supabase.auth.signInWithOtp({
     phone: toE164(digits),
-    options: { channel, shouldCreateUser: mode === 'signup' },
+    options: { channel: 'whatsapp', shouldCreateUser: mode === 'signup' },
   });
   logFunnel(
     'code_sent',
-    { channel, provider_status: error ? (error.code ?? error.status ?? 'error') : 'sent', mode },
+    { channel: 'whatsapp', provider_status: error ? (error.code ?? error.status ?? 'error') : 'sent', mode },
     { latencyMs: Date.now() - started, errorCode: error?.code },
   );
-  return error;
-}
-
-/** WhatsApp first; if that fails, SMS (section 13). `only` forces one channel, e.g. "Send by SMS instead". */
-export async function sendCode(digits: string, mode: AuthMode, only?: Channel): Promise<SendResult> {
-  const order: Channel[] = only ? [only] : ['whatsapp', 'sms'];
-  let last: Awaited<ReturnType<typeof sendOnce>> = null;
-  for (const channel of order) {
-    last = await sendOnce(digits, mode, channel);
-    if (!last) return { ok: true, channel };
-    // Too many requests is not a channel problem; trying SMS would hit the same limit.
-    if (last.status === 429) break;
-  }
-  const message =
-    last?.status === 429
-      ? 'Too many codes requested. Please wait a minute and try again.'
-      : 'We couldn’t send the code. Check your connection and try again.';
-  return { ok: false, message };
+  if (!error) return { ok: true };
+  return {
+    ok: false,
+    message:
+      error.status === 429
+        ? 'Too many codes requested. Please wait a minute and try again.'
+        : 'We couldn’t send the code by WhatsApp. Check the number and your connection, then try again.',
+  };
 }
 
 export type VerifyResult = { ok: true; userId: string } | { ok: false; message: string };
