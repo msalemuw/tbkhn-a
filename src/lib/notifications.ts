@@ -54,6 +54,6 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
     case 'cooking_today':
       return { title: `${who} is cooking today`, sub: dish, icon: 'soup-kitchen' };
     default:
-      return { title: 'Update from TBKHN A', icon: 'notifications' };
+      return { title: 'Update from tabkheen A', icon: 'notifications' };
   }
 }

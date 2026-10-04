@@ -8,7 +8,7 @@ export const welcomeCopy = {
     cta: 'Join or create your community, to reserve a plate. No fees, no rider.',
     login: 'Log in',
     browse: 'See what’s cooking near you as a guest',
-    newq: 'New to TBKHN A?',
+    newq: 'New to tabkheen A?',
     signup: 'Sign up',
   },
   ar: {
@@ -19,7 +19,7 @@ export const welcomeCopy = {
     cta: 'انضم لمجتمعك أو اعمل مجتمعك، واحجز طبقك. من غير مصاريف توصيل ولا مندوب.',
     login: 'تسجيل الدخول',
     browse: 'شوف مين بيطبخ جنبك كزائر',
-    newq: 'جديد على TBKHN A؟',
+    newq: 'جديد على tabkheen A؟',
     signup: 'سجّل الآن',
   },
 } as const;

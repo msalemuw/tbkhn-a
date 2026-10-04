@@ -25,7 +25,7 @@ const copy = {
     title: 'Welcome back',
     sub: 'Enter your mobile number and we’ll send you a code to log in.',
     help: 'Can’t log in?',
-    switchQ: 'New to TBKHN A?',
+    switchQ: 'New to tabkheen A?',
     switchLink: 'Sign up',
     switchTo: '/sign-up',
     conflict: 'No account found with this number.',

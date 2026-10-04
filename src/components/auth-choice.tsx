@@ -24,7 +24,7 @@ const copy = {
   login: {
     title: 'Welcome back',
     sub: 'Log in with the account you joined with.',
-    switchQ: 'New to TBKHN A?',
+    switchQ: 'New to tabkheen A?',
     switchLink: 'Sign up',
     switchTo: '/sign-up',
   },
