@@ -12,7 +12,7 @@ import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
 // Flow 1, screen s5: Create your account (profile and communities), plus the section 13 additions:
-// InstaPay handle (cooks get paid peer to peer) and the optional "How did you hear about TBKHN A?" referral question.
+// InstaPay handle (cooks get paid peer to peer) and the optional "How did you hear about tabkheen A?" referral question.
 
 type Community = { id: string; name: string; kind: string; governorate: string };
 type Optional = 'club' | 'sahel' | 'school' | 'work';
@@ -252,12 +252,12 @@ export default function ProfileStep() {
           </Field>
           <Text style={[formStyles.hint, { color: colors.muted }]}>Needed when you cook, so neighbors can pay you directly. Add it later if you like.</Text>
 
-          <Text style={styles.section}>HOW DID YOU HEAR ABOUT TBKHN A? (OPTIONAL)</Text>
+          <Text style={styles.section}>HOW DID YOU HEAR ABOUT TABKHEEN A? (OPTIONAL)</Text>
           <View style={styles.group}>
             <SelectField
               label="I HEARD FROM"
               value={HEARD.find((h) => h.value === heard)?.label ?? 'None'}
-              onPress={() => openPicker('How did you hear about TBKHN A?', [...HEARD, { label: 'None', value: null }], heard, (v) => setHeard(v as Heard | null))}
+              onPress={() => openPicker('How did you hear about tabkheen A?', [...HEARD, { label: 'None', value: null }], heard, (v) => setHeard(v as Heard | null))}
             />
             {heard === 'friend' || heard === 'family' ? (
               <Field label="WHO INVITED YOU? (OPTIONAL)">
