@@ -33,7 +33,7 @@ export type Order = {
   review: { id: string }[];
 };
 
-const ORDER_SELECT =
+export const ORDER_SELECT =
   '*, buyer:profiles!buyer_id(id, username, display_name, avatar_path), cook:profiles!cook_id(id, username, display_name, avatar_path),' +
   ' post:posts(dish_name, price_egp, ready_at, media_path, pickup_point:pickup_points(label, lat, lng), community:communities(name)),' +
   ' review:reviews(id)';
