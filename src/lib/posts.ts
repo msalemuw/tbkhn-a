@@ -47,6 +47,19 @@ export async function fetchTodaysDishes(): Promise<Dish[]> {
   return (data ?? []) as unknown as Dish[];
 }
 
+/** What one cook is still serving today (their profile's "What's cooking today" tab). */
+export async function fetchDishesBy(cookId: string): Promise<Dish[]> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(DISH_SELECT)
+    .eq('kind', 'cooking_today')
+    .eq('author_id', cookId)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as Dish[];
+}
+
 export async function fetchDish(id: string): Promise<Dish | null> {
   const { data, error } = await supabase.from('posts').select(DISH_SELECT).eq('id', id).maybeSingle();
   if (error) throw error;

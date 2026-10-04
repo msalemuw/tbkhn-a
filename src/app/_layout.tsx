@@ -43,6 +43,7 @@ export default function RootLayout() {
         <Stack.Screen name="dish/[id]" />
         <Stack.Screen name="order/[id]" />
         <Stack.Screen name="orders" />
+        <Stack.Screen name="cook/[id]" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="chat/[id]" />
       </Stack>
