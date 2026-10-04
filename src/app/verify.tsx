@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackHeader, danger, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
-import { type AuthMode, type Channel, sendCode, verifyCode } from '@/lib/otp';
+import { type AuthMode, sendCode, verifyCode } from '@/lib/otp';
 import { formatPhone } from '@/lib/phone';
 import { supabase } from '@/lib/supabase';
 
@@ -16,10 +16,9 @@ const CODE_LENGTH = 6;
 const RESEND_AFTER_S = 60; // Supabase allows one code per number per minute by default.
 
 export default function Verify() {
-  const params = useLocalSearchParams<{ phone: string; mode: AuthMode; channel: Channel }>();
+  const params = useLocalSearchParams<{ phone: string; mode: AuthMode }>();
   const digits = params.phone ?? '';
   const mode: AuthMode = params.mode === 'login' ? 'login' : 'signup';
-  const [channel, setChannel] = useState<Channel>(params.channel === 'sms' ? 'sms' : 'whatsapp');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,14 +49,13 @@ export default function Verify() {
     router.replace(done ? '/home' : '/sign-up/profile');
   }
 
-  async function resend(only?: Channel) {
+  async function resend() {
     setError(null);
-    const res = await sendCode(digits, mode, only);
+    const res = await sendCode(digits, mode);
     if (!res.ok) {
       setError(res.message);
       return;
     }
-    setChannel(res.channel);
     setSentAt(Date.now());
     setCode('');
   }
@@ -75,7 +73,7 @@ export default function Verify() {
           <View style={{ marginTop: 22 }}>
             <Text style={formStyles.title}>Enter the code</Text>
             <Text style={formStyles.sub}>
-              We sent a 6-digit code by {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'} to{' '}
+              We sent a 6-digit code by WhatsApp to{' '}
               <Text style={{ fontFamily: fonts.extraBold, color: colors.ink }}>{formatPhone(digits)}</Text>
             </Text>
           </View>
@@ -98,7 +96,7 @@ export default function Verify() {
             }}
             keyboardType="number-pad"
             textContentType="oneTimeCode"
-            autoComplete={Platform.OS === 'android' ? 'sms-otp' : 'one-time-code'}
+            autoComplete="one-time-code"
             autoFocus
             maxLength={CODE_LENGTH}
             style={styles.hidden}
@@ -110,16 +108,9 @@ export default function Verify() {
             {wait > 0 ? (
               <Text style={formStyles.small}>Resend code in 0:{String(wait).padStart(2, '0')}</Text>
             ) : (
-              <>
-                <Text style={formStyles.link} onPress={() => resend(channel)}>
-                  Resend code
-                </Text>
-                {channel === 'whatsapp' ? (
-                  <Text style={formStyles.link} onPress={() => resend('sms')}>
-                    Send by SMS instead
-                  </Text>
-                ) : null}
-              </>
+              <Text style={formStyles.link} onPress={resend}>
+                Resend code
+              </Text>
             )}
             <Text style={formStyles.small}>
               Didn’t get it?{' '}

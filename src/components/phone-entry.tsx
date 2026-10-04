@@ -78,7 +78,7 @@ export function PhoneEntry({ mode }: { mode: AuthMode }) {
       setError({ msg: res.message });
       return;
     }
-    router.push({ pathname: '/verify', params: { phone: digits, mode, channel: res.channel } });
+    router.push({ pathname: '/verify', params: { phone: digits, mode } });
   }
 
   function onHelp() {

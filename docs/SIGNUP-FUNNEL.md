@@ -6,7 +6,7 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
 1. `welcome_viewed`
 2. `signup_method_chosen` — `method`: phone | google | email
 3. `phone_entered` — `valid`: bool, `attempts`
-4. `code_sent` — `channel`: whatsapp | sms, `provider_status`
+4. `code_sent` — `channel`: whatsapp (no SMS since 2026-10-04), `provider_status`
 5. `code_entered` — `attempts`, `result`: ok | wrong | expired
 6. `profile_started` / `profile_field_error` — `field` (username_taken, invalid_format …)
 7. `communities_selected`
@@ -19,7 +19,7 @@ Google/email sign-ups always pass 3–5: **phone verification is mandatory for e
 
 ## Stuck detection (admin dashboard + alerts)
 - **Drop-off per step** by day, area/community and method.
-- **Technical suspect:** step conversion falls >X% vs 7-day baseline, or `error_code` / `provider_status` spikes (SMS/WhatsApp delivery failure, Google error), or p95 `latency_ms` jumps.
+- **Technical suspect:** step conversion falls >X% vs 7-day baseline, or `error_code` / `provider_status` spikes (WhatsApp delivery failure, Google error), or p95 `latency_ms` jumps.
 - **User-stuck:** no next event within 2 min of `code_sent`, 3 wrong codes, 3 `profile_field_error`s on one field, resend tapped twice.
 - **Help requests:** each "Contact us" tap logs `help_opened` with the step it came from; the support form attaches `session_id` and last step so staff see the context without asking.
 

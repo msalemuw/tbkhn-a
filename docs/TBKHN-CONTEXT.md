@@ -68,6 +68,7 @@ Add dated one-liners here as decisions are made, so every tool inherits them.
 - 2026-10-02 — Created this context file.
 - 2026-10-02 — Delivery: NO drivers for now. Pickup only; delivery-address screens in the prototype are outdated/not launched.
 - 2026-10-02 — Competition ("the Masters"): will run inside this app. Likely winner = signature-dish post with the most likes. Rules, prize, schedule, eligibility, per-community vs national: [TBD, define in strategy session]. Any older Masters description in other files is outdated.
+- 2026-10-04 — Sign-up code: WhatsApp only, sent directly through Meta's WhatsApp Cloud API (~$0.013 per code). No Twilio, no SMS fallback (SMS ~$0.40 per code). Members without WhatsApp use "Contact us".
 
 ---
 ### How to keep all tools in sync
