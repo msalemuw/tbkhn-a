@@ -1,4 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { type Href, router } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,8 +9,9 @@ import { colors, fonts } from '@/constants/theme';
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
 // Post sheet: "What do you want to share?" The first cooking-today post makes a member an eCook.
-const OPTIONS: { title: string; note: string; icon: IconName }[] = [
-  { title: 'What you’re cooking today', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen' },
+// Story and signature post come in a later step.
+const OPTIONS: { title: string; note: string; icon: IconName; href?: Href }[] = [
+  { title: 'What you’re cooking today', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen', href: '/compose/today' },
   { title: 'Story', note: 'Just a moment · no price, no orders · stays 24 hours', icon: 'history-toggle-off' },
   { title: 'Post', note: 'Signature dish on your profile · not for ordering', icon: 'grid-view' },
 ];
@@ -20,7 +22,7 @@ export default function Post() {
       <Text style={styles.title}>What do you want to share?</Text>
       <View style={styles.list}>
         {OPTIONS.map((o) => (
-          <Pressable key={o.title} style={styles.row}>
+          <Pressable key={o.title} style={[styles.row, !o.href && { opacity: 0.5 }]} disabled={!o.href} onPress={() => o.href && router.push(o.href)}>
             <View style={styles.icon}>
               <MaterialIcons name={o.icon} size={22} color={colors.teal} />
             </View>

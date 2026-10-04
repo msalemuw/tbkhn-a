@@ -32,6 +32,22 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TBKHN A uses your location to show how far each pickup point is and to set your own pickup point.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "TBKHN A uses your photos so you can add pictures of your dishes and your profile.",
+          "cameraPermission": "TBKHN A uses the camera so you can take pictures of your dishes.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
