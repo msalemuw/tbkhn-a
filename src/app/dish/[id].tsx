@@ -90,6 +90,16 @@ export default function DishScreen() {
           <View style={styles.cookRow}>
             <Text style={styles.cook}>{cook}</Text>
             <MaterialIcons name="verified" size={16} color={colors.teal} />
+            {session && !mine ? (
+              <Pressable
+                style={styles.msg}
+                onPress={() => router.push({ pathname: '/chat/[id]', params: { id: dish.author_id } })}
+                accessibilityRole="button"
+                accessibilityLabel={`Message ${cook}`}>
+                <MaterialIcons name="chat-bubble-outline" size={16} color={colors.navy} />
+                <Text style={styles.msgText}>Message</Text>
+              </Pressable>
+            ) : null}
           </View>
           <Text style={styles.sub}>Cooking today{dish.community ? ` · ${dish.community.name}` : ''}</Text>
 
@@ -200,6 +210,8 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: 20, paddingBottom: 30 },
   cookRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 16 },
   cook: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.ink },
+  msg: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  msgText: { fontFamily: fonts.bold, fontSize: 13, color: colors.navy },
   sub: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, marginTop: 2 },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, marginTop: 16, backgroundColor: colors.cream },
   caption: { fontFamily: fonts.medium, fontSize: 14.5, color: colors.ink, lineHeight: 21, marginTop: 12 },

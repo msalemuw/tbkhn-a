@@ -165,6 +165,10 @@ export default function OrderScreen() {
           {isCook && o.status === 'ready' ? <PrimaryButton label="Picked up" busy={busy === 'picked_up'} onPress={() => move('picked_up')} /> : null}
           {!isCook && o.status === 'pending' ? <SecondaryButton label="Cancel order" busy={busy === 'cancelled'} onPress={confirmCancel} /> : null}
           {!isCook && (o.status === 'declined' || o.status === 'cancelled') ? <PrimaryButton label="See today’s menu" onPress={() => router.replace('/menu')} /> : null}
+          <SecondaryButton
+            label={`Message ${isCook ? buyer : cookFirst}`}
+            onPress={() => router.push({ pathname: '/chat/[id]', params: { id: isCook ? o.buyer_id : o.cook_id } })}
+          />
         </View>
 
         {!isCook && o.status === 'picked_up' ? (o.review.length ? <Text style={[styles.muted, styles.thanks]}>Thanks for your review!</Text> : <ReviewBox order={o} cook={cookFirst} onDone={load} />) : null}
