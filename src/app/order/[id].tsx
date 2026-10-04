@@ -4,7 +4,7 @@ import { type ComponentProps, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackHeader, danger, formStyles, PrimaryButton } from '@/components/form';
+import { BackHeader, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { fmtClock } from '@/lib/format';
 import { fetchCookInstapay, fetchOrder, type Order, type OrderStatus, setOrderStatus, setPayment, submitReview } from '@/lib/orders';
@@ -152,7 +152,7 @@ export default function OrderScreen() {
           </View>
         ) : null}
 
-        {error ? <Text style={[formStyles.hint, { color: danger }]}>{error}</Text> : null}
+        {error ? <Text style={formStyles.error}>{error}</Text> : null}
 
         <View style={{ gap: 10, marginTop: 18 }}>
           {isCook && o.status === 'pending' ? (
@@ -174,10 +174,10 @@ export default function OrderScreen() {
 }
 
 function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string }): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
-  const wait = { icon: 'hourglass-top' as IconName, bg: colors.cream, fg: colors.amber };
-  const good = { icon: 'check' as IconName, bg: colors.tealSoft, fg: colors.teal };
-  const ready = { icon: 'restaurant' as IconName, bg: colors.tealSoft, fg: colors.teal };
-  const off = { icon: 'close' as IconName, bg: colors.coralSoft, fg: colors.coral };
+  const wait = { icon: 'hourglass-top' as IconName, bg: colors.yellow, fg: colors.navy };
+  const good = { icon: 'check' as IconName, bg: colors.teal, fg: colors.navy };
+  const ready = { icon: 'restaurant' as IconName, bg: colors.teal, fg: colors.navy };
+  const off = { icon: 'close' as IconName, bg: colors.navy, fg: colors.white };
   if (isCook) {
     switch (status) {
       case 'pending': return { ...wait, title: `New order from ${n.buyer}`, sub: 'Accept it if you can cook it in time. They can cancel for free until you do.' };
@@ -223,12 +223,12 @@ function ReviewBox({ order, cook, onDone }: { order: Order; cook: string; onDone
       <View style={styles.stars}>
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable key={n} onPress={() => setRating(n)} hitSlop={6} accessibilityLabel={`${n} stars`}>
-            <MaterialIcons name={n <= rating ? 'star' : 'star-border'} size={34} color={n <= rating ? colors.amber : colors.muted} />
+            <MaterialIcons name={n <= rating ? 'star' : 'star-border'} size={34} color={n <= rating ? colors.yellow : colors.muted} />
           </Pressable>
         ))}
       </View>
-      <TextInput value={body} onChangeText={setBody} maxLength={500} multiline placeholder="Write a comment for your neighbors…" placeholderTextColor="#9aa39f" style={styles.reviewInput} />
-      {error ? <Text style={[formStyles.hint, { color: danger }]}>{error}</Text> : null}
+      <TextInput value={body} onChangeText={setBody} maxLength={500} multiline placeholder="Write a comment for your neighbors…" placeholderTextColor={colors.faint} style={styles.reviewInput} />
+      {error ? <Text style={formStyles.error}>{error}</Text> : null}
       <PrimaryButton label="Submit review" busy={busy} disabled={!rating} onPress={send} style={{ marginTop: 12 }} />
       <Text style={[formStyles.small, { marginTop: 12 }]} onPress={() => router.back()}>
         <Text style={formStyles.link}>Later</Text>
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14, marginTop: 16 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 6 },
   body: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink, lineHeight: 20 },
-  handle: { fontFamily: fonts.extraBold, color: colors.teal },
+  handle: { fontFamily: fonts.extraBold, color: colors.ink },
   muted: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, lineHeight: 18 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
   thanks: { textAlign: 'center', marginTop: 20 },

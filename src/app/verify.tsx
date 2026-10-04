@@ -104,7 +104,7 @@ export default function Verify() {
             style={styles.hidden}
           />
 
-          {error ? <Text style={[formStyles.hint, { color: danger, textAlign: 'center' }]}>{error}</Text> : null}
+          {error ? <Text style={[formStyles.error, { textAlign: 'center' }]}>{error}</Text> : null}
 
           <View style={{ marginTop: 18, alignItems: 'center', gap: 10 }}>
             {wait > 0 ? (
@@ -150,5 +150,5 @@ const styles = StyleSheet.create({
   boxText: { fontFamily: fonts.extraBold, fontSize: 24, color: colors.ink },
   hidden: { position: 'absolute', opacity: 0, height: 1, width: 1 },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.tealSoft, borderRadius: 14, padding: 14 },
-  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: '#33403b' },
+  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: colors.ink },
 });

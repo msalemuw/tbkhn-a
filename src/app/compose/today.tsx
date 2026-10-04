@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
+import { Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { Chip } from '@/components/chip';
 import { colors, fonts } from '@/constants/theme';
 import { fmtClock } from '@/lib/format';
@@ -183,21 +183,21 @@ export default function ComposeToday() {
 
           <View style={styles.group}>
             <Field label="CAPTION">
-              <TextInput value={caption} onChangeText={setCaption} multiline maxLength={500} placeholder="example: Molokhia and rice today, enough for 6 plates." placeholderTextColor="#b5bcb9" style={[formStyles.input, { minHeight: 44 }]} />
+              <TextInput value={caption} onChangeText={setCaption} multiline maxLength={500} placeholder="example: Molokhia and rice today, enough for 6 plates." placeholderTextColor={colors.faint} style={[formStyles.input, { minHeight: 44 }]} />
             </Field>
             <Field label="DISH NAME" required>
-              <TextInput value={dish} onChangeText={setDish} maxLength={80} placeholder="example: Molokhia & Rice" placeholderTextColor="#b5bcb9" style={formStyles.input} />
+              <TextInput value={dish} onChangeText={setDish} maxLength={80} placeholder="example: Molokhia & Rice" placeholderTextColor={colors.faint} style={formStyles.input} />
             </Field>
             <View style={styles.row2}>
               <Field label="PRICE PER PLATE" required style={{ flex: 1 }}>
                 <View style={styles.inline}>
                   <Text style={[formStyles.input, { color: colors.muted }]}>EGP </Text>
-                  <TextInput value={price} onChangeText={(v) => setPrice(v.replace(/[^\d.]/g, '').slice(0, 7))} keyboardType="decimal-pad" placeholder="85" placeholderTextColor="#b5bcb9" style={[formStyles.input, { flex: 1 }]} />
+                  <TextInput value={price} onChangeText={(v) => setPrice(v.replace(/[^\d.]/g, '').slice(0, 7))} keyboardType="decimal-pad" placeholder="85" placeholderTextColor={colors.faint} style={[formStyles.input, { flex: 1 }]} />
                 </View>
               </Field>
               <Field label="PORTIONS" required style={{ flex: 1 }}>
                 <View style={styles.inline}>
-                  <TextInput value={portions} onChangeText={(v) => setPortions(v.replace(/\D/g, '').slice(0, 3))} keyboardType="number-pad" placeholder="6" placeholderTextColor="#b5bcb9" style={[formStyles.input, { flex: 1 }]} />
+                  <TextInput value={portions} onChangeText={(v) => setPortions(v.replace(/\D/g, '').slice(0, 3))} keyboardType="number-pad" placeholder="6" placeholderTextColor={colors.faint} style={[formStyles.input, { flex: 1 }]} />
                   <Text style={[formStyles.input, { color: colors.muted }]}>plates</Text>
                 </View>
               </Field>
@@ -231,7 +231,7 @@ export default function ComposeToday() {
             ) : null}
             <Field label={points.length ? 'OR ADD A NEW ONE' : 'ADD YOUR PICKUP POINT'}>
               <View style={styles.inline}>
-                <TextInput value={newPointLabel} onChangeText={setNewPointLabel} maxLength={80} placeholder="example: Building 12 gate" placeholderTextColor="#b5bcb9" style={[formStyles.input, { flex: 1 }]} />
+                <TextInput value={newPointLabel} onChangeText={setNewPointLabel} maxLength={80} placeholder="example: Building 12 gate" placeholderTextColor={colors.faint} style={[formStyles.input, { flex: 1 }]} />
                 <Text style={[formStyles.link, !newPointLabel.trim() && { opacity: 0.4 }]} onPress={saveNewPoint}>
                   {addingPoint ? 'Saving…' : 'Use my location'}
                 </Text>
@@ -265,7 +265,7 @@ export default function ComposeToday() {
                 onPress={() => setSheet({ title: 'Ready by', items: slots.map((t) => ({ label: fmtClock(t), selected: t === readyAt, onPress: () => setReadyAt(t) })) })}
               />
             ) : (
-              <Text style={[formStyles.hint, { color: danger }]}>It’s too late to post for today. Try again tomorrow.</Text>
+              <Text style={formStyles.error}>It’s too late to post for today. Try again tomorrow.</Text>
             )}
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Auto-notify followers</Text>
@@ -278,7 +278,7 @@ export default function ComposeToday() {
             <Text style={styles.noteText}>A “taking orders” story is created for you automatically and links to this post, so pickup and portions stay in one place. It ends at midnight.</Text>
           </View>
 
-          {error ? <Text style={[formStyles.hint, { color: danger }]}>{error}</Text> : null}
+          {error ? <Text style={formStyles.error}>{error}</Text> : null}
           <PrimaryButton label="Share post & story" onPress={onPost} busy={busy} disabled={!slots.length} style={{ marginTop: 18 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -292,13 +292,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', padding: 22 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 10 },
   topTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
-  topPost: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.teal },
+  topPost: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, backgroundColor: colors.cream },
   photoEmpty: { flexDirection: 'row', gap: 12, aspectRatio: 2.2, borderRadius: 18, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center' },
   photoBtn: { alignItems: 'center', gap: 6, backgroundColor: colors.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
   photoBtnText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
-  retake: { position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(22,32,30,.6)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  retake: { position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(40,48,58,.6)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   retakeText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   group: { gap: 12, marginTop: 14 },
   row2: { flexDirection: 'row', gap: 12 },
@@ -309,5 +309,5 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
   switchLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.tealSoft, borderRadius: 14, padding: 14, marginTop: 20 },
-  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: '#33403b' },
+  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: colors.ink },
 });

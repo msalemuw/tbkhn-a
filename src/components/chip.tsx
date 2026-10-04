@@ -19,5 +19,5 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1.5, borderColor: colors.line, backgroundColor: colors.white, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
   on: { backgroundColor: colors.teal, borderColor: colors.teal },
   text: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
-  textOn: { color: colors.white },
+  textOn: { color: colors.navy },
 });

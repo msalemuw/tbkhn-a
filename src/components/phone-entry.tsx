@@ -46,8 +46,7 @@ export function PhoneEntry({ mode }: { mode: AuthMode }) {
   }, [mode]);
 
   const valid = isValidPhone(digits);
-  const hintColor = error ? danger : colors.muted;
-
+  
   async function onSend() {
     attempts.current += 1;
     logFunnel('phone_entered', { valid, attempts: attempts.current, mode });
@@ -113,7 +112,7 @@ export function PhoneEntry({ mode }: { mode: AuthMode }) {
                       setError(null);
                     }}
                     placeholder="example: 1234567890"
-                    placeholderTextColor="#b5bcb9"
+                    placeholderTextColor={colors.faint}
                     keyboardType="number-pad"
                     textContentType="telephoneNumber"
                     autoComplete="tel"
@@ -125,7 +124,7 @@ export function PhoneEntry({ mode }: { mode: AuthMode }) {
                 <Text style={styles.count}>{digits.length}/10</Text>
               </View>
             </Field>
-            <Text style={[formStyles.hint, { color: hintColor }]}>
+            <Text style={error ? formStyles.error : [formStyles.hint, { color: colors.muted }]}>
               {error?.msg ?? defaultHint}{' '}
               {error?.link ? (
                 <Text style={formStyles.link} onPress={() => router.replace(t.switchTo)}>

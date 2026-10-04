@@ -14,12 +14,12 @@ import { useSession } from '@/lib/session';
 type Tab = 'buyer' | 'cook';
 
 const BADGE: Record<OrderStatus, { label: string; bg: string; fg: string }> = {
-  pending: { label: 'WAITING', bg: colors.cream, fg: colors.amber },
-  accepted: { label: 'COOKING', bg: colors.tealSoft, fg: colors.teal },
-  ready: { label: 'READY', bg: colors.teal, fg: colors.white },
-  picked_up: { label: 'PICKED UP', bg: colors.line, fg: colors.muted },
-  declined: { label: 'DECLINED', bg: colors.coralSoft, fg: colors.coral },
-  cancelled: { label: 'CANCELLED', bg: colors.coralSoft, fg: colors.coral },
+  pending: { label: 'WAITING', bg: colors.yellow, fg: colors.navy },
+  accepted: { label: 'COOKING', bg: colors.lightBlue, fg: colors.navy },
+  ready: { label: 'READY', bg: colors.teal, fg: colors.navy },
+  picked_up: { label: 'PICKED UP', bg: colors.lightBlue, fg: colors.muted },
+  declined: { label: 'DECLINED', bg: colors.navy, fg: colors.white },
+  cancelled: { label: 'CANCELLED', bg: colors.navy, fg: colors.white },
 };
 
 function line(o: Order, tab: Tab): string {

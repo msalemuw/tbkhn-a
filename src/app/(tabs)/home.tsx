@@ -10,7 +10,7 @@ import { Logo } from '@/components/logo';
 import { colors, fonts } from '@/constants/theme';
 
 // Screen s6: Home feed of the communities you follow. Navy header with the logo, as in the design.
-const NAVY = '#28303a';
+const NAVY = colors.navy;
 
 export default function Home() {
   // Light status bar text over the navy header, back to dark when another tab shows.

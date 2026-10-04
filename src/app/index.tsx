@@ -11,7 +11,7 @@ import { useSession } from '@/lib/session';
 import { type Lang, welcomeCopy } from '@/lib/welcome-copy';
 
 // Flow 1/2, screen s1: Welcome, on the brand navy.
-const NAVY = '#28303a';
+const NAVY = colors.navy;
 export default function Welcome() {
   const { loading, session, needsProfile } = useSession();
   const [lang, setLang] = useState<Lang>('en');
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   cta: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 22, color: colors.white },
   actions: { gap: 12, paddingBottom: 16 },
   primary: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-  primaryText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.white },
+  primaryText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.navy },
   secondary: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,.25)', backgroundColor: 'rgba(255,255,255,.1)' },
   secondaryText: { fontFamily: fonts.bold, fontSize: 15, color: colors.white },
   newq: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,.88)', textAlign: 'center' },

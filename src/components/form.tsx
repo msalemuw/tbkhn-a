@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
 
-export const danger = '#c4452d';
+// Errors: navy text on yellow, since the palette has no red.
+export const danger = colors.yellow;
 
 /** Back arrow row; with a title it is the small bold header from the design (s5). */
 export function BackHeader({ title }: { title?: string }) {
@@ -40,7 +41,7 @@ export function PrimaryButton({
       accessibilityState={{ disabled: off, busy }}
       onPress={off ? undefined : onPress}
       style={[styles.primary, off && styles.primaryOff, style]}>
-      {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.primaryText}>{label}</Text>}
+      {busy ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.primaryText}>{label}</Text>}
     </Pressable>
   );
 }
@@ -64,7 +65,7 @@ export function Field({
       {label ? (
         <Text style={styles.label}>
           {label}
-          {required ? <Text style={{ color: colors.coral }}> *</Text> : null}
+          {required ? <Text style={{ color: colors.muted }}> *</Text> : null}
         </Text>
       ) : null}
       {children}
@@ -114,7 +115,7 @@ export function PickerSheet({ title, items, onClose }: { title: string; items: S
                 it.onPress();
                 onClose();
               }}>
-              <Text style={[styles.sheetLabel, it.selected && { color: colors.teal }]}>{it.label}</Text>
+              <Text style={[styles.sheetLabel, it.selected && { fontFamily: fonts.extraBold }]}>{it.label}</Text>
               {it.selected ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
             </Pressable>
           ))}
@@ -128,7 +129,8 @@ export const formStyles = StyleSheet.create({
   title: { fontFamily: fonts.serif, fontSize: 34, lineHeight: 36, color: colors.ink },
   sub: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted, lineHeight: 21, marginTop: 8 },
   hint: { fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 18, marginTop: 7, paddingHorizontal: 4 },
-  link: { fontFamily: fonts.extraBold, color: colors.teal },
+  error: { fontFamily: fonts.bold, fontSize: 12.5, lineHeight: 18, marginTop: 8, color: colors.navy, backgroundColor: colors.yellow, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, overflow: 'hidden' },
+  link: { fontFamily: fonts.extraBold, color: colors.ink, textDecorationLine: 'underline' },
   input: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, paddingVertical: 4 },
   small: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center' },
 });
@@ -138,12 +140,12 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   primary: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
   primaryOff: { opacity: 0.45 },
-  primaryText: { fontFamily: fonts.extraBold, fontSize: 15.5, color: colors.white },
+  primaryText: { fontFamily: fonts.extraBold, fontSize: 15.5, color: colors.navy },
   field: { borderWidth: 1.5, borderColor: colors.line, borderRadius: 14, backgroundColor: colors.white, paddingHorizontal: 14, paddingVertical: 9 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 2 },
   value: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
   selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 2 },
-  scrim: { flex: 1, backgroundColor: 'rgba(22,32,30,.35)' },
+  scrim: { flex: 1, backgroundColor: 'rgba(40,48,58,.35)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '70%' },
   grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 10 },
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginBottom: 6 },

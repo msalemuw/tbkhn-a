@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BackHeader, danger, formStyles, PickerSheet, PrimaryButton, type SheetItem } from '@/components/form';
+import { BackHeader, formStyles, PickerSheet, PrimaryButton, type SheetItem } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { distanceMeters, fmtClock, fmtDist, fmtReady } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
@@ -164,12 +164,12 @@ export default function DishScreen() {
               onChangeText={setNote}
               maxLength={200}
               placeholder={`Note for ${first} (optional), e.g. less spicy`}
-              placeholderTextColor="#9aa39f"
+              placeholderTextColor={colors.faint}
               style={styles.noteInput}
             />
           ) : null}
 
-          {error ? <Text style={[formStyles.hint, { color: danger }]}>{error}</Text> : null}
+          {error ? <Text style={formStyles.error}>{error}</Text> : null}
 
           {mine ? (
             <PrimaryButton label="See orders for you" onPress={() => router.push({ pathname: '/orders', params: { tab: 'cook' } })} style={{ marginTop: 20 }} />
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   dishRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14 },
   dishName: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink },
   muted: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 2 },
-  price: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.teal, marginTop: 4 },
+  price: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.ink, marginTop: 4 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   qty: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink, minWidth: 18, textAlign: 'center' },
   box: { backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14 },
@@ -217,5 +217,5 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 10 },
   total: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.tealSoft, borderRadius: 14, padding: 14, marginTop: 14 },
-  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: '#33403b' },
+  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: colors.ink },
 });

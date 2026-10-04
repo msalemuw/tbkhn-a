@@ -85,7 +85,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
           {header}
           {filters ? (
             <>
-              <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor="#9aa39f" style={styles.search} accessibilityLabel="Search dishes or cooks" />
+              <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={colors.faint} style={styles.search} accessibilityLabel="Search dishes or cooks" />
               {session ? (
                 <>
                   <Text style={styles.label}>COMMUNITY</Text>

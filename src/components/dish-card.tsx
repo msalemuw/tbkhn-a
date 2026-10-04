@@ -29,7 +29,7 @@ export function DishCard({ dish, here, onPress }: { dish: Dish; here: LatLng | n
         </Text>
         <Text style={styles.dish} numberOfLines={2}>{dish.dish_name}</Text>
         <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
-        <Text style={[styles.muted, soldOut && { color: colors.coral }]}>
+        <Text style={[styles.muted, soldOut && { color: colors.ink, fontFamily: fonts.extraBold }]}>
           {fmtReady(Date.parse(dish.ready_at))} · {soldOut ? 'Sold out' : `${dish.portions_left} left`}
         </Text>
         <View style={styles.where}>
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   noPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.tealSoft },
   cook: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
   dish: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink },
-  price: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.teal },
+  price: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.ink },
   muted: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted },
   where: { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1 },
 });

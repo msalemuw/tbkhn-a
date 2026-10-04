@@ -38,14 +38,14 @@ type UsernameState = { msg: string; color: string; icon?: 'error' | 'check-circl
 
 function usernameState(u: string, taken: boolean | null): UsernameState {
   if (!u) return { msg: 'Choose a username: 3–20 letters, numbers, . or _', color: colors.muted, ok: false, suggestions: [] };
-  if (u.length < 3) return { msg: 'At least 3 characters', color: danger, icon: 'error', ok: false, suggestions: [] };
+  if (u.length < 3) return { msg: 'At least 3 characters', color: colors.ink, icon: 'error', ok: false, suggestions: [] };
   if (taken === null) return { msg: 'Checking…', color: colors.muted, ok: false, suggestions: [] };
   if (taken) {
     const yy = new Date().getFullYear() % 100;
     const suggestions = [`${u}1`, `${u}_`, `${u}.${yy}`].filter((x) => x.length <= 20);
-    return { msg: `@${u} is already taken. Try one of these:`, color: danger, icon: 'error', ok: false, suggestions };
+    return { msg: `@${u} is already taken. Try one of these:`, color: colors.ink, icon: 'error', ok: false, suggestions };
   }
-  return { msg: `@${u} is available`, color: colors.teal, icon: 'check-circle', ok: true, suggestions: [] };
+  return { msg: `@${u} is available`, color: colors.ink, icon: 'check-circle', ok: true, suggestions: [] };
 }
 
 export default function ProfileStep() {
@@ -150,12 +150,12 @@ export default function ProfileStep() {
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           <BackHeader title="Create your account" />
           <Text style={styles.required}>
-            <Text style={{ color: colors.coral }}>*</Text> Required
+            <Text style={{ color: colors.muted }}>*</Text> Required
           </Text>
 
           <View style={styles.group}>
             <Field label="FULL NAME" required>
-              <TextInput value={name} onChangeText={setName} placeholder="example: Nour Sami" placeholderTextColor="#b5bcb9" maxLength={60} autoComplete="name" textContentType="name" style={formStyles.input} />
+              <TextInput value={name} onChangeText={setName} placeholder="example: Nour Sami" placeholderTextColor={colors.faint} maxLength={60} autoComplete="name" textContentType="name" style={formStyles.input} />
             </Field>
             <Field label="MOBILE NUMBER" required>
               <View style={styles.row}>
@@ -174,13 +174,13 @@ export default function ProfileStep() {
                       setTaken(null);
                     }}
                     placeholder="example: nour.s"
-                    placeholderTextColor="#b5bcb9"
+                    placeholderTextColor={colors.faint}
                     autoCapitalize="none"
                     autoCorrect={false}
                     style={[formStyles.input, { flex: 1 }]}
                     accessibilityLabel="Username"
                   />
-                  {un.icon ? <MaterialIcons name={un.icon} size={18} color={un.color} /> : null}
+                  {un.icon ? <MaterialIcons name={un.icon} size={18} color={un.ok ? colors.teal : un.color} /> : null}
                 </View>
               </Field>
               <Text style={[formStyles.hint, { color: un.color }]}>{un.msg}</Text>
@@ -197,7 +197,7 @@ export default function ProfileStep() {
           </View>
 
           <Text style={styles.section}>
-            YOUR COMMUNITIES <Text style={{ color: colors.coral }}>*</Text>
+            YOUR COMMUNITIES <Text style={{ color: colors.muted }}>*</Text>
           </Text>
           <Text style={styles.sectionSub}>Tell us where you belong: this decides who sees your posts and whose posts you see.</Text>
           <View style={styles.group}>
@@ -241,7 +241,7 @@ export default function ProfileStep() {
 
           <Text style={styles.section}>GETTING PAID</Text>
           <Field label="INSTAPAY HANDLE (OPTIONAL)">
-            <TextInput value={instapay} onChangeText={setInstapay} placeholder="example: nour@instapay" placeholderTextColor="#b5bcb9" autoCapitalize="none" autoCorrect={false} maxLength={60} style={formStyles.input} />
+            <TextInput value={instapay} onChangeText={setInstapay} placeholder="example: nour@instapay" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={60} style={formStyles.input} />
           </Field>
           <Text style={[formStyles.hint, { color: colors.muted }]}>Needed when you cook, so neighbors can pay you directly. Add it later if you like.</Text>
 
@@ -254,12 +254,12 @@ export default function ProfileStep() {
             />
             {heard === 'friend' || heard === 'family' ? (
               <Field label="WHO INVITED YOU? (OPTIONAL)">
-                <TextInput value={inviter} onChangeText={setInviter} placeholder="Their name or @username" placeholderTextColor="#b5bcb9" maxLength={60} style={formStyles.input} />
+                <TextInput value={inviter} onChangeText={setInviter} placeholder="Their name or @username" placeholderTextColor={colors.faint} maxLength={60} style={formStyles.input} />
               </Field>
             ) : null}
           </View>
 
-          {error ? <Text style={[formStyles.hint, { color: danger }]}>{error}</Text> : null}
+          {error ? <Text style={formStyles.error}>{error}</Text> : null}
           <PrimaryButton label="Continue" onPress={onContinue} busy={busy} disabled={!canSubmit} style={{ marginTop: 22 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -275,9 +275,9 @@ const styles = StyleSheet.create({
   group: { gap: 12, marginTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  chip: { fontFamily: fonts.bold, fontSize: 13, color: colors.teal, backgroundColor: colors.tealSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, overflow: 'hidden' },
+  chip: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, backgroundColor: colors.lightBlue, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, overflow: 'hidden' },
   section: { fontFamily: fonts.extraBold, fontSize: 12, letterSpacing: 0.6, color: colors.ink, marginTop: 28 },
   sectionSub: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted, lineHeight: 19, marginTop: 4 },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.tealSoft, borderRadius: 14, padding: 14, marginTop: 14 },
-  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: '#33403b' },
+  noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: colors.ink },
 });

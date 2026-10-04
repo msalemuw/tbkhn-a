@@ -1,17 +1,25 @@
-// Colors from the TBKHN A design file (:root tokens), kept from TBKHTY Social's palette.
+// The TBKHN A palette (founder, 2026-10-04): only these five colors, plus see-through tints of navy and white.
+// Text is navy (or white on navy). Teal and yellow are fills, icons and highlights, never small text on white.
+const navy = '#28303a';
+const yellow = '#ffc107';
+const white = '#ffffff';
+const lightBlue = '#cae7f1';
+const teal = '#00c2a8';
+
 export const colors = {
-  paper: '#faf8f4',
-  cream: '#efe9df',
-  ink: '#16201e',
-  muted: '#7c8783',
-  line: '#eae5dd',
-  teal: '#0c8a7f',
-  tealSoft: '#e7f3f0',
-  tealBright: '#1bb3a4',
-  coral: '#d2603f',
-  coralSoft: '#fbe9e2',
-  amber: '#c08319',
-  white: '#ffffff',
+  navy,
+  yellow,
+  white,
+  lightBlue,
+  teal,
+  // Roles, all taken from the palette above.
+  paper: white,
+  cream: lightBlue,
+  ink: navy,
+  muted: 'rgba(40,48,58,0.68)',
+  faint: 'rgba(40,48,58,0.4)',
+  line: lightBlue,
+  tealSoft: lightBlue,
 } as const;
 
 export const fonts = {
