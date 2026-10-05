@@ -36,6 +36,8 @@ export default function AdminHome() {
     { label: 'Community requests', count: data?.pending_communities, icon: 'groups', href: '/admin/communities' },
     { label: 'Reports', count: data?.open_reports, icon: 'flag', href: '/admin/reports' },
     { label: 'Members', icon: 'person-search', href: '/admin/members' },
+    { label: 'Orders', icon: 'receipt-long', href: '/admin/orders' },
+    { label: 'Referrals', icon: 'leaderboard', href: '/admin/referrals' },
     { label: 'Send announcement', icon: 'campaign', href: '/admin/announce' },
     { label: 'Action log', icon: 'history', href: '/admin/log' },
   ];
