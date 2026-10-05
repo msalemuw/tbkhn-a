@@ -17,9 +17,9 @@ npx expo start
 
 ## Admin panel
 
-Staff use the same app: **Profile > Admin** appears only for staff accounts. Roles: **owner** (everything, including adding staff), **moderator** (community requests, reports, removing posts, suspending members, announcements) and **support** (look up members and read the queues).
+Staff use the same app: **Profile > Admin** appears only for staff accounts. Roles: **owner** (everything, including adding staff), **moderator** (community requests, reports, removing posts, suspending members, announcements) and **support** (look up members, orders and referrals, and read the queues). **Orders** shows each order's steps with who did them and why; **Referrals** counts finished sign-ups by their "How did you hear" answer, per week and per community.
 
-1. Run `supabase/migrations/0004_admin.sql` in the SQL Editor, after the earlier migrations.
+1. Run `supabase/migrations/0004_admin.sql`, then `0005_admin_orders_referrals.sql`, in the SQL Editor, after the earlier migrations.
 2. Sign in to the app once with your own account, then make yourself the first owner in the SQL Editor (put your sign-in email in place of the example):
 
    ```sql

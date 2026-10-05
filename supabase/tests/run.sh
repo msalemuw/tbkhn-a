@@ -16,3 +16,5 @@ $P -d tbkhn_test -f tests/schema_test.sql | tail -1
 $P -d tbkhn_test -f tests/orders_test.sql | tail -1
 $P -d tbkhn_test -f tests/chat_test.sql | tail -1
 $P -d tbkhn_test -f tests/admin_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0005_admin_orders_referrals.sql
+$P -d tbkhn_test -f tests/admin_orders_test.sql | tail -1

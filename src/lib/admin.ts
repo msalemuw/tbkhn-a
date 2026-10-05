@@ -61,6 +61,34 @@ export type Member = {
 
 export type AdminCommunity = { id: string; name: string; kind: string; governorate: string; area: string | null; members: number };
 
+export type OrderState = 'open' | 'done' | 'cancelled';
+
+export type AdminOrder = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  status: 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled';
+  payment_status: 'none' | 'sent' | 'received';
+  plates: number;
+  price_egp: number | null;
+  pickup_at: string | null;
+  note: string | null;
+  cancel_reason: string | null;
+  dish_name: string | null;
+  community_name: string | null;
+  buyer_id: string;
+  buyer_username: string | null;
+  buyer_name: string | null;
+  cook_id: string;
+  cook_username: string | null;
+  cook_name: string | null;
+};
+
+export type OrderEvent = { event: string; actor_username: string | null; actor_name: string | null; note: string | null; created_at: string };
+
+export type ReferralRow = { week_start: string; heard_from: string | null; signups: number };
+export type InviterRow = { inviter_name: string; signups: number; last_at: string };
+
 export type AdminAction = {
   id: number;
   created_at: string;
@@ -97,7 +125,37 @@ export const setStaffRole = (userId: string, role: StaffRole | null) => call('ad
 export const fetchCommunities = () => call<AdminCommunity[]>('admin_communities');
 export const postAnnouncement = (title: string, body: string, communityIds: string[] | null) =>
   call('admin_post_announcement', { p_title: title, p_body: body, p_community_ids: communityIds });
+export const findOrders = (query: string, state: OrderState | null) => call<AdminOrder[]>('admin_find_orders', { p_query: query, p_state: state });
+export const fetchOrderTimeline = (id: string) => call<OrderEvent[]>('admin_order_timeline', { p_id: id });
+export const fetchReferralTally = (communityId: string | null) => call<ReferralRow[]>('admin_referral_tally', { p_community_id: communityId });
+export const fetchInviterNames = (communityId: string | null) => call<InviterRow[]>('admin_inviter_names', { p_community_id: communityId });
 export const fetchRecentActions = () => call<AdminAction[]>('admin_recent_actions', { p_limit: 200 });
+
+/** Short code staff and members can read out for an order: the first 8 characters of its id. */
+export const orderCode = (id: string) => id.slice(0, 8).toUpperCase();
+
+/** Plain words for each step of an order. */
+export const ORDER_EVENT_LABEL: Record<string, string> = {
+  requested: 'Ordered',
+  accepted: 'Accepted by cook',
+  declined: 'Declined by cook',
+  ready: 'Ready for pickup',
+  picked_up: 'Picked up',
+  cancelled: 'Cancelled by buyer',
+  payment_sent: 'Buyer marked InstaPay sent',
+  payment_received: 'Cook marked InstaPay received',
+};
+
+/** The answers to "How did you hear about tabkheen A?" (sign-up profile screen). */
+export const HEARD_LABEL: Record<string, string> = {
+  friend: 'A friend',
+  family: 'Family',
+  community: 'My community',
+  social_media: 'Social media',
+  ad: 'An ad',
+  search: 'Search',
+  other: 'Other',
+};
 
 /** Plain words for the action log. */
 export const ACTION_LABEL: Record<string, string> = {
