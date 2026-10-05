@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useFetchedStaffRole } from '@/components/admin-ui';
 import { PrimaryButton } from '@/components/form';
 import { ScreenPlaceholder } from '@/components/screen-placeholder';
 import { colors, fonts } from '@/constants/theme';
@@ -10,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 
 export default function Profile() {
   const { session, profile } = useSession();
+  // Staff get an Admin entry; everyone else never sees it.
+  const staffRole = useFetchedStaffRole();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }} edges={['top']}>
@@ -24,6 +27,7 @@ export default function Profile() {
       <View style={styles.actions}>
         {session ? <PrimaryButton label="My cook profile" onPress={() => router.push({ pathname: '/cook/[id]', params: { id: session.user.id } })} style={{ marginBottom: 10 }} /> : null}
         {session ? <PrimaryButton label="Orders" onPress={() => router.push('/orders')} style={{ marginBottom: 10 }} /> : null}
+        {staffRole ? <PrimaryButton label="Admin" onPress={() => router.push('/admin')} style={{ marginBottom: 10 }} /> : null}
         {session ? (
           <PrimaryButton
             label="Log out"
