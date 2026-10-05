@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "tabkheen A",
-    "slug": "tbkhn-a",
+    "slug": "tabkheena",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -59,6 +59,7 @@
       "eas": {
         "projectId": "41a8e2cb-318d-4d98-a257-d146f0398c98"
       }
-    }
+    },
+    "owner": "tabkheen.a-team"
   }
 }
