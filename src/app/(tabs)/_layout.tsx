@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 
 import { colors, fonts } from '@/constants/theme';
+import { useSession } from '@/lib/session';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
@@ -16,6 +17,9 @@ const TABS: { name: string; title: string; icon: IconName }[] = [
 ];
 
 export default function TabLayout() {
+  const { loading, session } = useSession();
+  // Members only: anyone not signed in goes back to the welcome screen.
+  if (!loading && !session) return <Redirect href="/" />;
   return (
     <Tabs
       screenOptions={{
