@@ -136,10 +136,6 @@ export function PhoneEntry({ mode }: { mode: AuthMode }) {
 
           <PrimaryButton label="Send code" onPress={onSend} busy={busy} disabled={digits.length < 10} style={{ marginTop: 22 }} />
 
-          <Text style={[formStyles.small, { marginTop: 22 }]} onPress={() => router.replace('/home')}>
-            <Text style={formStyles.link}>Browse without an account</Text>
-          </Text>
-
           <View style={{ flex: 1 }} />
           <Text style={[formStyles.small, { marginTop: 28 }]}>
             {t.help}{' '}

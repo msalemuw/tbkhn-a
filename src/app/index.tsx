@@ -70,9 +70,6 @@ export default function Welcome() {
         <Pressable style={styles.primary} onPress={() => router.push('/log-in')}>
           <Text style={styles.primaryText}>{t.login}</Text>
         </Pressable>
-        <Pressable style={styles.secondary} onPress={() => router.replace('/home')}>
-          <Text style={styles.secondaryText}>{t.browse}</Text>
-        </Pressable>
         <Text style={styles.newq}>
           {t.newq}{' '}
           <Text style={styles.link} onPress={() => router.push('/sign-up')}>
@@ -104,8 +101,6 @@ const styles = StyleSheet.create({
   actions: { gap: 12, paddingBottom: 16 },
   primary: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
   primaryText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.navy },
-  secondary: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,.25)', backgroundColor: 'rgba(255,255,255,.1)' },
-  secondaryText: { fontFamily: fonts.bold, fontSize: 15, color: colors.white },
   newq: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,.88)', textAlign: 'center' },
   link: { fontFamily: fonts.extraBold, color: colors.white },
 });

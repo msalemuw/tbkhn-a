@@ -82,10 +82,6 @@ export function AuthChoice({ mode }: { mode: AuthMode }) {
 
         {error ? <Text style={[formStyles.error, { textAlign: 'center', marginTop: 14 }]}>{error}</Text> : null}
 
-        <Text style={[formStyles.small, { marginTop: 22 }]} onPress={() => router.replace('/home')}>
-          <Text style={formStyles.link}>Browse without an account</Text>
-        </Text>
-
         <View style={{ flex: 1 }} />
         <Text style={[formStyles.small, { marginTop: 28 }]}>
           Trouble signing in?{' '}
