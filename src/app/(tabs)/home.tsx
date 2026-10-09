@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CommentsSheet } from '@/components/comments-sheet';
 import { Logo } from '@/components/logo';
 import { PostCard } from '@/components/post-card';
+import { type Badge, fetchBadges } from '@/lib/rankings';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts } from '@/constants/theme';
@@ -38,6 +39,7 @@ export default function Home() {
   const [watching, setWatching] = useState<Watching | null>(null);
   const [watchOpen, setWatchOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
@@ -53,6 +55,8 @@ export default function Home() {
         loadSeen(),
       ]);
       setPosts(feed);
+      // Rank badges are a nicety: the feed shows without them if they fail to load.
+      fetchBadges(feed.map((p) => p.author_id)).then(setBadges, () => {});
       setStories(groups);
       setSeen(seenIds);
       setMine(communities);
@@ -156,6 +160,7 @@ export default function Home() {
         renderItem={({ item }) => (
           <PostCard
             post={item}
+            badges={badges.get(item.author_id)}
             here={here}
             onLike={() => onLike(item)}
             onComments={() => setCommentsFor(item.id)}

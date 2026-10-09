@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { PickerSheet, type SheetItem } from '@/components/form';
+import { RankBadge } from '@/components/rank-badge';
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import {
@@ -18,6 +19,7 @@ import {
   setMembership,
 } from '@/lib/cooks';
 import { fetchMyCommunities, personName } from '@/lib/posts';
+import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
@@ -50,6 +52,7 @@ export default function Search() {
   const [found, setFound] = useState<Found | null>(null);
   const [failed, setFailed] = useState(false);
   const [followed, setFollowed] = useState<Set<string>>(new Set());
+  const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [joined, setJoined] = useState<Set<string>>(new Set());
   const [kindSheet, setKindSheet] = useState(false);
   const [request, setRequest] = useState<{ kind: string; noun: string } | null>(null);
@@ -72,6 +75,7 @@ export default function Search() {
             setFailed(false);
             setFollowed((prev) => new Set([...prev, ...f]));
             setFound({ q: text, people, communities });
+            fetchBadges(people.map((p) => p.id)).then((b) => live && setBadges(b), () => {});
           })
           .catch(() => live && setFailed(true));
       },
@@ -193,6 +197,7 @@ export default function Search() {
                   <MaterialIcons name="verified" size={15} color={colors.teal} />
                 </View>
                 <Text style={styles.sub} numberOfLines={1}>{[p.username ? `@${p.username}` : null, p.area].filter(Boolean).join(' · ')}</Text>
+                {badges.get(p.id)?.[0] ? <RankBadge badge={badges.get(p.id)![0]} /> : null}
               </View>
               <Pill label={followed.has(p.id) ? 'Following' : 'Follow'} on={!followed.has(p.id)} onPress={() => toggleFollow(p.id)} />
             </Pressable>
@@ -203,7 +208,7 @@ export default function Search() {
         <View style={styles.pad}>
           {found?.communities.length === 0 && !loading ? <Text style={styles.emptyLeft}>No community found. You can request it below.</Text> : null}
           {found?.communities.map((c) => (
-            <View key={c.id} style={styles.row}>
+            <Pressable key={c.id} style={styles.row} onPress={() => router.push({ pathname: '/community/[id]', params: { id: c.id } })} accessibilityRole="button">
               <View style={styles.commIcon}>
                 <MaterialIcons name={KIND_ICON[c.kind] ?? 'groups'} size={22} color={colors.teal} />
               </View>
@@ -212,7 +217,7 @@ export default function Search() {
                 <Text style={styles.sub} numberOfLines={1}>{[KIND_LABEL[c.kind] ?? 'Community', c.area && c.area !== c.name ? c.area : c.governorate].filter(Boolean).join(' · ')}</Text>
               </View>
               <Pill label={joined.has(c.id) ? 'Joined' : 'Join'} on={!joined.has(c.id)} onPress={() => toggleJoin(c.id)} />
-            </View>
+            </Pressable>
           ))}
         </View>
 

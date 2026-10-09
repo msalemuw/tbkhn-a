@@ -5,14 +5,17 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
+import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts } from '@/constants/theme';
 import type { FeedPost } from '@/lib/feed';
 import { distanceMeters, fmtAgo, fmtDist, type LatLng } from '@/lib/format';
 import { mediaUrl, personName } from '@/lib/posts';
+import type { Badge } from '@/lib/rankings';
 
 /** One signature-dish post in the Home feed (design s6): cook line, photo, caption, likes, comments, share. */
 export function PostCard({
   post,
+  badges,
   here,
   onLike,
   onComments,
@@ -20,6 +23,7 @@ export function PostCard({
   onMore,
 }: {
   post: FeedPost;
+  badges?: Badge[];
   here: LatLng | null;
   onLike: () => void;
   onComments: () => void;
@@ -43,6 +47,7 @@ export function PostCard({
             <Text style={styles.name} numberOfLines={1}>{personName(post.author)}</Text>
             <MaterialIcons name="verified" size={16} color={colors.teal} />
           </View>
+          {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
           <Text style={styles.meta} numberOfLines={1}>
             {post.rating != null ? `★ ${post.rating.toFixed(1)} · ` : ''}
             {meta}
