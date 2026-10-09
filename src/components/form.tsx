@@ -10,10 +10,10 @@ import { colors, fonts } from '@/constants/theme';
 export const danger = colors.yellow;
 
 /** Back arrow row; with a title it is the small bold header from the design (s5). */
-export function BackHeader({ title }: { title?: string }) {
+export function BackHeader({ title, onBack }: { title?: string; onBack?: () => void }) {
   return (
     <View style={styles.header}>
-      <Pressable hitSlop={12} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
+      <Pressable hitSlop={12} onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))}>
         <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
       </Pressable>
       {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
