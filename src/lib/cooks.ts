@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 export type CookProfile = Person & {
   bio: string | null;
   area: string | null;
-  governorate: string | null;
 };
 
 export type Review = {
@@ -19,12 +18,12 @@ export type Review = {
 
 export type Signature = { id: string; caption: string | null; media_path: string | null; created_at: string };
 
-export type CookStats = { followers: number; reviews: number; rating: number | null };
+export type CookStats = { followers: number; following: number; communities: number; reviews: number; rating: number | null };
 
 export async function fetchCookProfile(id: string): Promise<CookProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_path, bio, area, governorate')
+    .select('id, username, display_name, avatar_path, bio, area')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -32,15 +31,21 @@ export async function fetchCookProfile(id: string): Promise<CookProfile | null> 
 }
 
 export async function fetchCookStats(id: string): Promise<CookStats> {
-  const [followers, reviews] = await Promise.all([
-    supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('followee_id', id),
+  const count = (q: PromiseLike<{ count: number | null; error: unknown }>) =>
+    q.then(({ count: n, error }) => {
+      if (error) throw error;
+      return n ?? 0;
+    });
+  const [followers, following, communities, reviews] = await Promise.all([
+    count(supabase.from('follows').select('follower_id', { count: 'exact', head: true }).eq('followee_id', id)),
+    count(supabase.from('follows').select('followee_id', { count: 'exact', head: true }).eq('follower_id', id)),
+    count(supabase.from('community_members').select('community_id', { count: 'exact', head: true }).eq('user_id', id)),
     supabase.from('reviews').select('rating').eq('cook_id', id),
   ]);
-  if (followers.error) throw followers.error;
   if (reviews.error) throw reviews.error;
   const ratings = (reviews.data ?? []).map((r) => r.rating as number);
   const rating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-  return { followers: followers.count ?? 0, reviews: ratings.length, rating };
+  return { followers, following, communities, reviews: ratings.length, rating };
 }
 
 export async function fetchReviews(cookId: string): Promise<Review[]> {
@@ -80,6 +85,58 @@ export async function setFollowing(me: string, cookId: string, follow: boolean):
   const q = follow
     ? supabase.from('follows').insert({ follower_id: me, followee_id: cookId })
     : supabase.from('follows').delete().eq('follower_id', me).eq('followee_id', cookId);
+  const { error } = await q;
+  if (error) throw error;
+}
+
+export type FoundCook = Person & { area: string | null };
+
+/** People search: by name or @handle. With no text, cooks who posted a signature dish most recently. */
+export async function searchCooks(text: string, me: string | null): Promise<FoundCook[]> {
+  const q = text.trim().replace(/^@/, '').replace(/[%,()*]/g, ' ').trim();
+  const cols = 'id, username, display_name, avatar_path, area';
+  let query = supabase.from('profiles').select(cols).limit(20);
+  if (q) {
+    query = query.or(`display_name.ilike.%${q}%,username.ilike.%${q}%`);
+  } else {
+    const { data: recent, error } = await supabase
+      .from('posts')
+      .select('author_id')
+      .eq('kind', 'signature')
+      .order('created_at', { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    const ids = [...new Set((recent ?? []).map((r) => r.author_id as string))].slice(0, 20);
+    if (!ids.length) return [];
+    query = query.in('id', ids);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).filter((p) => p.id !== me);
+}
+
+export async function fetchFollowedAmong(me: string, ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set();
+  const { data, error } = await supabase.from('follows').select('followee_id').eq('follower_id', me).in('followee_id', ids);
+  if (error) throw error;
+  return new Set((data ?? []).map((r) => r.followee_id as string));
+}
+
+export type FoundCommunity = { id: string; name: string; kind: string; governorate: string; area: string | null };
+
+export async function searchCommunities(text: string): Promise<FoundCommunity[]> {
+  const q = text.trim().replace(/[%,()*]/g, ' ').trim();
+  let query = supabase.from('communities').select('id, name, kind, governorate, area').eq('status', 'approved').order('name').limit(30);
+  if (q) query = query.ilike('name', `%${q}%`);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function setMembership(me: string, communityId: string, join: boolean): Promise<void> {
+  const q = join
+    ? supabase.from('community_members').upsert({ community_id: communityId, user_id: me }, { ignoreDuplicates: true })
+    : supabase.from('community_members').delete().eq('community_id', communityId).eq('user_id', me);
   const { error } = await q;
   if (error) throw error;
 }
