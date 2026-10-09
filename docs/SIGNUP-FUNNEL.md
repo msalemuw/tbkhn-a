@@ -10,6 +10,7 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
 5. `code_entered` — `attempts`, `result`: ok | wrong | expired
 6. `profile_started` / `profile_field_error` — `field` (username_taken, invalid_format …)
 7. `communities_selected`
+   - `community_requested`: a member asked for a community that was not in the list (props: kind, country)
 8. `signup_completed`
 
 Google/Apple sign-ups skip steps 3–5 (phone entry and code) at launch: **phone verification is on hold** (section 13, 2026-10-04). When it comes back it applies to new members who choose "Continue with phone", and later to verified-only Masters likes.
