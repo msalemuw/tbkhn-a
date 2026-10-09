@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BuildInfo } from '@/components/build-info';
 import { Logo } from '@/components/logo';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
@@ -77,6 +78,9 @@ export default function Welcome() {
           <MaterialIcons name="play-circle-filled" size={28} color={colors.white} />
           <Text style={styles.howText}>{t.how}</Text>
         </Pressable>
+        <View style={{ marginTop: -12, marginBottom: 8 }}>
+          <BuildInfo onDark />
+        </View>
       </SafeAreaView>
     </View>
   );
