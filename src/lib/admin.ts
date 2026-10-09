@@ -86,7 +86,7 @@ export type AdminOrder = {
 
 export type OrderEvent = { event: string; actor_username: string | null; actor_name: string | null; note: string | null; created_at: string };
 
-export type ReferralRow = { week_start: string; heard_from: string | null; signups: number };
+export type ReferralRow = { week_start: string; heard_from: string | null; heard_detail: string | null; signups: number };
 export type InviterRow = { inviter_name: string; signups: number; last_at: string };
 
 export type AdminAction = {
@@ -144,17 +144,6 @@ export const ORDER_EVENT_LABEL: Record<string, string> = {
   cancelled: 'Cancelled by buyer',
   payment_sent: 'Buyer marked InstaPay sent',
   payment_received: 'Cook marked InstaPay received',
-};
-
-/** The answers to "How did you hear about tabkheen A?" (sign-up profile screen). */
-export const HEARD_LABEL: Record<string, string> = {
-  friend: 'A friend',
-  family: 'Family',
-  community: 'My community',
-  social_media: 'Social media',
-  ad: 'An ad',
-  search: 'Search',
-  other: 'Other',
 };
 
 /** Plain words for the action log. */
