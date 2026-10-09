@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { DishCard } from '@/components/dish-card';
+import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts } from '@/constants/theme';
 import {
   type CookProfile,
@@ -23,6 +24,7 @@ import {
 } from '@/lib/cooks';
 import { useMyLocation } from '@/lib/location';
 import { type Dish, mediaUrl, personName } from '@/lib/posts';
+import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 
 type Tab = 'posts' | 'today' | 'reviews';
@@ -48,6 +50,7 @@ export function CookProfileView({ id, onBack, actions, footer }: { id: string; o
   const [dishes, setDishes] = useState<Dish[] | null>(null);
   const [posts, setPosts] = useState<Signature[] | null>(null);
   const [reviews, setReviews] = useState<Review[] | null>(null);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [following, setFollowingState] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -60,6 +63,7 @@ export function CookProfileView({ id, onBack, actions, footer }: { id: string; o
     fetchCookDishes(id).then(setDishes, () => setDishes([]));
     fetchSignatures(id).then(setPosts, () => setPosts([]));
     fetchReviews(id).then(setReviews, () => setReviews([]));
+    fetchBadges([id]).then((m) => setBadges(m.get(id) ?? []), () => {});
   }, [id]);
 
   useEffect(load, [load]);
@@ -118,6 +122,7 @@ export function CookProfileView({ id, onBack, actions, footer }: { id: string; o
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
               <MaterialIcons name="verified" size={19} color={colors.teal} />
             </View>
+            {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={b.kind} badge={b} />)}</View> : null}
             {cook.area ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}
             {stats?.rating != null ? (
               <Text style={styles.rating}>
@@ -249,6 +254,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 22, paddingTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { fontFamily: fonts.extraBold, fontSize: 21, color: colors.ink, flexShrink: 1 },
+  badges: { gap: 5, marginTop: 4 },
   area: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 2 },
   rating: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink, marginTop: 3 },
   muted: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted },
