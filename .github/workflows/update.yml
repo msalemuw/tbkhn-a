@@ -1,0 +1,21 @@
+# Sends every change merged to main to the installed iPhone app over the internet (Expo EAS Update).
+name: Update the app
+on:
+  push:
+    branches: [main]
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: eas update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
