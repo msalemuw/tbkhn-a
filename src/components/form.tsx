@@ -1,13 +1,28 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
 
 // Errors: navy text on yellow, since the palette has no red.
 export const danger = colors.yellow;
+
+/** Height of the on-screen keyboard (0 when hidden). Sheets lift by this much; unlike KeyboardAvoidingView it cannot get stuck inside a Modal. */
+export function useKeyboardHeight() {
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return height;
+}
 
 /** Back arrow row; with a title it is the small bold header from the design (s5). */
 export function BackHeader({ title, onBack }: { title?: string; onBack?: () => void }) {
@@ -118,6 +133,7 @@ export function PickerSheet({
   const [q, setQ] = useState('');
   const [expanded, setExpanded] = useState(false);
   const { height: screenH } = useWindowDimensions();
+  const keyboard = useKeyboardHeight();
   const open = items !== null;
   // Close the form's keyboard first, or the sheet would sit above it with the form showing underneath.
   useEffect(() => {
@@ -151,8 +167,8 @@ export function PickerSheet({
     <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
       <View style={styles.modalRoot}>
         <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={close} />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <SafeAreaView edges={['bottom']} style={[styles.sheet, searchable && { height: sheetHeight }]}>
+        <View style={{ paddingBottom: keyboard }}>
+          <SafeAreaView edges={keyboard ? [] : ['bottom']} style={[styles.sheet, searchable && { height: Math.min(sheetHeight, screenH - keyboard - 60) }]}>
             <View style={styles.grabArea} onTouchStart={(e) => setTouchY(e.nativeEvent.pageY)} onTouchEnd={(e) => onSwipeEnd(e.nativeEvent.pageY)}>
               <View style={styles.grab} />
             </View>
@@ -198,7 +214,7 @@ export function PickerSheet({
             </Pressable>
           ) : null}
           </SafeAreaView>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   );
