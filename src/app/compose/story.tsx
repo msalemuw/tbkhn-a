@@ -55,7 +55,7 @@ export default function ComposeStory() {
 
   const community = communities.find((c) => c.id === communityId);
   const items: SheetItem[] = [
-    { label: 'Nearby (everyone)', selected: communityId === null, onPress: () => setCommunityId(null) },
+    { label: 'Everyone', selected: communityId === null, onPress: () => setCommunityId(null) },
     ...communities.map((c) => ({ label: c.name, selected: c.id === communityId, onPress: () => setCommunityId(c.id) })),
   ];
 
@@ -96,7 +96,7 @@ export default function ComposeStory() {
             <Field label="CAPTION">
               <TextInput value={caption} onChangeText={setCaption} placeholder="Say something about it" placeholderTextColor={colors.faint} multiline maxLength={500} style={[formStyles.input, { minHeight: 60 }]} accessibilityLabel="Caption" />
             </Field>
-            <SelectField label="SHARE WITH" value={community?.name ?? 'Nearby (everyone)'} onPress={() => setSheet(items)} />
+            <SelectField label="SHARE WITH" value={community?.name ?? 'Everyone'} onPress={() => setSheet(items)} />
           </View>
           <Text style={[formStyles.hint, { color: colors.muted }]}>Just a moment: no price, no orders. It stays up for 24 hours and shows in the stories row.</Text>
           {error ? <Text style={[formStyles.error, { backgroundColor: danger }]}>{error}</Text> : null}

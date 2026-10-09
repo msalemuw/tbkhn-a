@@ -8,7 +8,7 @@ import type { MyCommunity } from '@/lib/posts';
 
 export type Watching = { communities: string[]; nearby: boolean; following: boolean };
 
-/** "Watching" sheet from the design: choose which communities, nearby posts and followed cooks fill the feed. */
+/** "Watching" sheet from the design: choose which communities, posts shared with everyone and followed cooks fill the feed. */
 export function WatchingSheet({
   visible,
   mine,
@@ -37,7 +37,7 @@ export function WatchingSheet({
           {mine.map((c) => (
             <Row key={c.id} icon={c.kind === 'club' ? 'flag' : 'groups'} label={c.name} on={value.communities.includes(c.id)} onPress={() => toggle(c.id)} />
           ))}
-          <Row icon="place" label="Nearby" on={value.nearby} onPress={() => onChange({ ...value, nearby: !value.nearby })} />
+          <Row icon="public" label="Everyone" on={value.nearby} onPress={() => onChange({ ...value, nearby: !value.nearby })} />
           <Row icon="person" label="Following" on={value.following} onPress={() => onChange({ ...value, following: !value.following })} />
           <PrimaryButton label="Apply" onPress={onClose} style={{ marginTop: 16, marginBottom: 12 }} />
         </SafeAreaView>
