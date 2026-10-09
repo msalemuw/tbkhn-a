@@ -31,7 +31,7 @@ type Tab = 'posts' | 'today' | 'reviews';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'posts', label: 'Posts' },
-  { key: 'today', label: 'Cooking today' },
+  { key: 'today', label: "What's cooking today" },
   { key: 'reviews', label: 'Reviews' },
 ];
 
