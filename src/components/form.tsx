@@ -126,7 +126,7 @@ export function PickerSheet({
     <Modal visible={items !== null} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.scrim} onPress={close} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <SafeAreaView edges={['bottom']} style={styles.sheet}>
+        <SafeAreaView edges={['bottom']} style={[styles.sheet, searchable && styles.sheetTall]}>
           <View style={styles.grab} />
           <Text style={styles.sheetTitle}>{title}</Text>
           {searchable ? (
@@ -157,18 +157,18 @@ export function PickerSheet({
               </Pressable>
             ))}
             {!shown.length ? <Text style={styles.none}>No matches</Text> : null}
-            {footer ? (
-              <Pressable
-                style={styles.sheetRow}
-                onPress={() => {
-                  footer.onPress();
-                  close();
-                }}>
-                <Text style={[styles.sheetLabel, { color: colors.ink }]}>{footer.label}</Text>
-                <MaterialIcons name="add-circle-outline" size={22} color={colors.teal} />
-              </Pressable>
-            ) : null}
           </ScrollView>
+          {footer ? (
+            <Pressable
+              style={[styles.sheetRow, styles.footerRow]}
+              onPress={() => {
+                footer.onPress();
+                close();
+              }}>
+              <Text style={[styles.sheetLabel, { color: colors.ink }]}>{footer.label}</Text>
+              <MaterialIcons name="add-circle-outline" size={22} color={colors.teal} />
+            </Pressable>
+          ) : null}
         </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>
@@ -197,6 +197,9 @@ const styles = StyleSheet.create({
   selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 2 },
   scrim: { flex: 1, backgroundColor: 'rgba(40,48,58,.35)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '75%' },
+  // A searchable list keeps one tall size so the footer row stays visible even when the search finds nothing.
+  sheetTall: { height: '75%' },
+  footerRow: { borderTopWidth: 1, borderTopColor: colors.line },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, marginBottom: 4 },
   searchInput: { flex: 1, fontFamily: fonts.semiBold, fontSize: 16, color: colors.ink, paddingVertical: 10 },
   none: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, paddingVertical: 14 },
