@@ -44,6 +44,8 @@ export default function RootLayout() {
         <Stack.Screen name="sign-up/profile" options={{ gestureEnabled: false }} />
         <Stack.Screen name="compose/today" options={{ presentation: 'modal' }} />
         <Stack.Screen name="compose/signature" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="compose/story" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="story/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="dish/[id]" />
         <Stack.Screen name="order/[id]" />
         <Stack.Screen name="orders" />
