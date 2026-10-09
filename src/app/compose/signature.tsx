@@ -55,7 +55,7 @@ export default function ComposeSignature() {
 
   const community = communities.find((c) => c.id === communityId);
   const items: SheetItem[] = [
-    { label: 'Everyone', selected: communityId === null, onPress: () => setCommunityId(null) },
+    { label: 'Public', selected: communityId === null, onPress: () => setCommunityId(null) },
     ...communities.map((c) => ({ label: c.name, selected: c.id === communityId, onPress: () => setCommunityId(c.id) })),
   ];
 
@@ -96,7 +96,7 @@ export default function ComposeSignature() {
             <Field label="CAPTION">
               <TextInput value={caption} onChangeText={setCaption} placeholder="Tell neighbors about this dish" placeholderTextColor={colors.faint} multiline maxLength={500} style={[formStyles.input, { minHeight: 60 }]} accessibilityLabel="Caption" />
             </Field>
-            <SelectField label="SHARE WITH" value={community?.name ?? 'Everyone'} onPress={() => setSheet(items)} />
+            <SelectField label="SHARE WITH" value={community?.name ?? 'Public'} onPress={() => setSheet(items)} />
           </View>
           <Text style={[formStyles.hint, { color: colors.muted }]}>It stays on your profile and shows in the Home feed. People can like and comment, but not order it.</Text>
           {error ? <Text style={[formStyles.error, { backgroundColor: danger }]}>{error}</Text> : null}
