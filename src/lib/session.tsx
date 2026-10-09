@@ -9,6 +9,7 @@ export type MyProfile = {
   username: string | null;
   display_name: string | null;
   avatar_path: string | null;
+  bio: string | null;
   governorate: string | null;
   area: string | null;
   instapay_handle: string | null;
