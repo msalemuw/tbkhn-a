@@ -1,3 +1,5 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Image } from 'expo-image';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
@@ -10,13 +12,14 @@ import { logFunnel } from '@/lib/funnel';
 import { useSession } from '@/lib/session';
 import { type Lang, welcomeCopy } from '@/lib/welcome-copy';
 
-// Flow 1/2, screen s1: Welcome, on the brand navy.
-const NAVY = colors.navy;
+// Flow 1/2, screen s1: Welcome. The food artwork carries its own dark navy, used on this screen only.
+const ART = require('@/assets/images/welcome-art.jpg');
+const ART_NAVY = '#0f2330';
+
 export default function Welcome() {
   const { loading, session, needsProfile } = useSession();
   const [lang, setLang] = useState<Lang>('en');
   const t = welcomeCopy[lang];
-  const align = t.dir === 'rtl' ? 'right' : 'left';
   const showWelcome = !loading && !session;
 
   useEffect(() => {
@@ -36,71 +39,65 @@ export default function Welcome() {
   if (session) return <Redirect href={needsProfile ? '/sign-up/profile' : '/home'} />;
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.langRow}>
-        {(['en', 'ar'] as const).map((l) => (
-          <Pressable key={l} onPress={() => setLang(l)} style={[styles.langBtn, lang === l && styles.langOn]}>
-            <Text style={[styles.langText, lang === l && styles.langTextOn]}>{l === 'en' ? 'EN' : 'ع'}</Text>
-          </Pressable>
-        ))}
-      </View>
+    <View style={styles.screen}>
+      <Image source={ART} style={StyleSheet.absoluteFill} contentFit="cover" accessible={false} />
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.langRow}>
+          {(['en', 'ar'] as const).map((l) => (
+            <Pressable
+              key={l}
+              onPress={() => setLang(l)}
+              accessibilityRole="button"
+              accessibilityLabel={l === 'en' ? 'English' : 'العربية'}
+              style={[styles.langBtn, lang === l && styles.langOn]}
+            >
+              <Text style={[styles.langText, lang === l && styles.langTextOn]}>{l === 'en' ? 'EN' : 'ع'}</Text>
+            </Pressable>
+          ))}
+        </View>
 
-      <View style={styles.body}>
-        {/* Design s1: lockup | Arabic name in English; the Arabic name leads in Arabic. Never on a box. */}
-        {lang === 'en' ? (
-          <View style={styles.logoRow}>
-            <Logo on="dark" height={34} />
-            <View style={styles.logoDivider} />
-            <Text style={styles.arNameSmall}>طابخين إيه</Text>
-          </View>
-        ) : (
-          <View style={[styles.logoRow, styles.logoRowAr]}>
-            <Text style={styles.arName}>طابخين إيه</Text>
-            <View style={styles.logoDivider} />
-            <Logo on="dark" height={22} />
-          </View>
-        )}
-        <Text style={[styles.title, { textAlign: align }]}>{t.t1}</Text>
-        <Text style={[styles.title, styles.titleAccent, { textAlign: align }]}>{t.t2}</Text>
-        <Text style={[styles.sub, { textAlign: align }]}>{t.sub}</Text>
-        <Text style={[styles.cta, { textAlign: align }]}>{t.cta}</Text>
-      </View>
-
-      <View style={styles.actions}>
-        <Pressable style={styles.primary} onPress={() => router.push('/log-in')}>
-          <Text style={styles.primaryText}>{t.login}</Text>
-        </Pressable>
-        <Text style={styles.newq}>
-          {t.newq}{' '}
-          <Text style={styles.link} onPress={() => router.push('/sign-up')}>
-            {t.signup}
+        <View style={styles.hero}>
+          <Logo on="dark" height={50} />
+          <Text style={styles.tagline}>
+            {t.tagA}
+            <Text style={styles.taglineAccent}>{t.tagB}</Text>
           </Text>
-        </Text>
-      </View>
-    </SafeAreaView>
+        </View>
+
+        <View style={styles.actions}>
+          <Pressable style={styles.primary} onPress={() => router.push('/sign-up')}>
+            <Text style={styles.primaryText}>{t.create}</Text>
+          </Pressable>
+          <Pressable style={styles.secondary} onPress={() => router.push('/log-in')}>
+            <Text style={styles.secondaryText}>{t.login}</Text>
+          </Pressable>
+        </View>
+
+        <Pressable style={styles.how} onPress={() => router.push({ pathname: '/how-it-works', params: { lang } })}>
+          <MaterialIcons name="play-circle-filled" size={28} color={colors.white} />
+          <Text style={styles.howText}>{t.how}</Text>
+        </Pressable>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: NAVY, paddingHorizontal: 24 },
-  langRow: { flexDirection: 'row', alignSelf: 'flex-end', marginTop: 8, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,.5)', padding: 2 },
-  langBtn: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 },
+  screen: { flex: 1, backgroundColor: ART_NAVY },
+  safe: { flex: 1, paddingHorizontal: 24 },
+  langRow: { flexDirection: 'row', alignSelf: 'center', marginTop: 12, borderRadius: 999, backgroundColor: 'rgba(255,255,255,.14)', padding: 3 },
+  langBtn: { minWidth: 56, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999 },
   langOn: { backgroundColor: colors.white },
-  langText: { fontFamily: fonts.bold, color: colors.white, fontSize: 13 },
+  langText: { fontFamily: fonts.bold, color: colors.white, fontSize: 15 },
   langTextOn: { color: colors.ink },
-  body: { flex: 1, justifyContent: 'flex-end', gap: 12, paddingBottom: 24 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 6 },
-  logoRowAr: { alignSelf: 'flex-end' },
-  arName: { fontFamily: fonts.extraBold, fontSize: 40, color: colors.white },
-  arNameSmall: { fontFamily: fonts.bold, fontSize: 28, color: 'rgba(255,255,255,.92)' },
-  logoDivider: { width: 1.5, height: 30, backgroundColor: 'rgba(255,255,255,.35)' },
-  title: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 35, color: colors.white },
-  titleAccent: { color: colors.white, marginTop: -12 },
-  sub: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 22, color: 'rgba(255,255,255,.88)' },
-  cta: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 22, color: colors.white },
-  actions: { gap: 12, paddingBottom: 16 },
-  primary: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-  primaryText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.navy },
-  newq: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,.88)', textAlign: 'center' },
-  link: { fontFamily: fonts.extraBold, color: colors.white },
+  hero: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 36 },
+  tagline: { fontFamily: fonts.bold, fontSize: 20, color: colors.white, textAlign: 'center' },
+  taglineAccent: { color: colors.yellow },
+  actions: { gap: 16, paddingHorizontal: 12 },
+  primary: { backgroundColor: colors.teal, borderRadius: 999, paddingVertical: 18, alignItems: 'center' },
+  primaryText: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.navy },
+  secondary: { borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.45)', paddingVertical: 16, alignItems: 'center' },
+  secondaryText: { fontFamily: fonts.bold, fontSize: 18, color: colors.white },
+  how: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 56, marginBottom: 24, marginHorizontal: 20, borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.35)', paddingVertical: 14 },
+  howText: { fontFamily: fonts.bold, fontSize: 17, color: colors.white },
 });

@@ -1,24 +1,21 @@
-// Welcome screen copy, verbatim from the design file (English and Egyptian Arabic).
+// Welcome screen copy: final design (English) and Egyptian Arabic.
+// The Arabic tagline is a draft until the founder confirms it.
 export const welcomeCopy = {
   en: {
     dir: 'ltr',
-    t1: 'Cooking daily is a hassle. Delivery is slow and pricey.',
-    t2: 'Your community’s dishes are steps away, any time.',
-    sub: 'Hygienic, diverse dishes from people you know and trust in your community: your club, office or neighbour.',
-    cta: 'Join or create your community, to reserve a plate. No fees, no rider.',
+    tagA: 'Good food brings us ',
+    tagB: 'closer',
+    create: 'Create account',
     login: 'Log in',
-    newq: 'New to tabkheen A?',
-    signup: 'Sign up',
+    how: 'How the app works',
   },
   ar: {
     dir: 'rtl',
-    t1: 'الطبخ كل يوم تعب، والدليفري بطيء وغالي.',
-    t2: 'أطباق مجتمعك على بُعد خطوات، في أي وقت.',
-    sub: 'أطباق نضيفة ومتنوعة من ناس تعرفهم وتثق فيهم في مجتمعك: النادي أو الشغل أو الجيران.',
-    cta: 'انضم لمجتمعك أو اعمل مجتمعك، واحجز طبقك. من غير مصاريف توصيل ولا مندوب.',
+    tagA: 'الأكل الحلو بيقرّبنا ',
+    tagB: 'أكتر',
+    create: 'إنشاء حساب',
     login: 'تسجيل الدخول',
-    newq: 'جديد على tabkheen A؟',
-    signup: 'سجّل الآن',
+    how: 'إزاي التطبيق بيشتغل',
   },
 } as const;
 
