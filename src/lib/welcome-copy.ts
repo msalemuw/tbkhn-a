@@ -11,8 +11,8 @@ export const welcomeCopy = {
   },
   ar: {
     dir: 'rtl',
-    tagA: 'الأكل الحلو ',
-    tagB: 'بيقرّبنا',
+    tagA: 'الأكل الحلو بيقرّبنا ',
+    tagB: 'أكتر',
     create: 'إنشاء حساب',
     login: 'تسجيل الدخول',
     how: 'إزاي التطبيق بيشتغل',
