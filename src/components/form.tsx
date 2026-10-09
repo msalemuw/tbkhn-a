@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { type ReactNode, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
@@ -98,29 +98,79 @@ export function SelectField({
 
 export type SheetItem = { label: string; selected: boolean; onPress: () => void };
 
-/** Bottom sheet list used by every picker in the design (governorate, area, club...). */
-export function PickerSheet({ title, items, onClose }: { title: string; items: SheetItem[] | null; onClose: () => void }) {
+/**
+ * Bottom sheet list used by every picker in the design (governorate, area, club...).
+ * `searchable` adds a type-to-filter box; `footer` adds a last row such as "Can't find it? Request it".
+ */
+export function PickerSheet({
+  title,
+  items,
+  onClose,
+  searchable,
+  footer,
+}: {
+  title: string;
+  items: SheetItem[] | null;
+  onClose: () => void;
+  searchable?: boolean;
+  footer?: { label: string; onPress: () => void };
+}) {
+  const [q, setQ] = useState('');
+  const close = () => {
+    setQ('');
+    onClose();
+  };
+  const needle = q.trim().toLowerCase();
+  const shown = (items ?? []).filter((it) => !needle || it.label.toLowerCase().includes(needle));
   return (
-    <Modal visible={items !== null} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} onPress={onClose} />
-      <SafeAreaView edges={['bottom']} style={styles.sheet}>
-        <View style={styles.grab} />
-        <Text style={styles.sheetTitle}>{title}</Text>
-        <ScrollView>
-          {(items ?? []).map((it) => (
-            <Pressable
-              key={it.label}
-              style={styles.sheetRow}
-              onPress={() => {
-                it.onPress();
-                onClose();
-              }}>
-              <Text style={[styles.sheetLabel, it.selected && { fontFamily: fonts.extraBold }]}>{it.label}</Text>
-              {it.selected ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
-            </Pressable>
-          ))}
-        </ScrollView>
-      </SafeAreaView>
+    <Modal visible={items !== null} transparent animationType="slide" onRequestClose={close}>
+      <Pressable style={styles.scrim} onPress={close} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <SafeAreaView edges={['bottom']} style={styles.sheet}>
+          <View style={styles.grab} />
+          <Text style={styles.sheetTitle}>{title}</Text>
+          {searchable ? (
+            <View style={styles.search}>
+              <MaterialIcons name="search" size={20} color={colors.muted} />
+              <TextInput
+                value={q}
+                onChangeText={setQ}
+                placeholder="Search"
+                placeholderTextColor={colors.faint}
+                autoCorrect={false}
+                style={styles.searchInput}
+                accessibilityLabel={`Search ${title}`}
+              />
+            </View>
+          ) : null}
+          <ScrollView keyboardShouldPersistTaps="handled">
+            {shown.map((it) => (
+              <Pressable
+                key={it.label}
+                style={styles.sheetRow}
+                onPress={() => {
+                  it.onPress();
+                  close();
+                }}>
+                <Text style={[styles.sheetLabel, it.selected && { fontFamily: fonts.extraBold }]}>{it.label}</Text>
+                {it.selected ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
+              </Pressable>
+            ))}
+            {!shown.length ? <Text style={styles.none}>No matches</Text> : null}
+            {footer ? (
+              <Pressable
+                style={styles.sheetRow}
+                onPress={() => {
+                  footer.onPress();
+                  close();
+                }}>
+                <Text style={[styles.sheetLabel, { color: colors.ink }]}>{footer.label}</Text>
+                <MaterialIcons name="add-circle-outline" size={22} color={colors.teal} />
+              </Pressable>
+            ) : null}
+          </ScrollView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -146,7 +196,10 @@ const styles = StyleSheet.create({
   value: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
   selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 2 },
   scrim: { flex: 1, backgroundColor: 'rgba(40,48,58,.35)' },
-  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '70%' },
+  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '75%' },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, marginBottom: 4 },
+  searchInput: { flex: 1, fontFamily: fonts.semiBold, fontSize: 16, color: colors.ink, paddingVertical: 10 },
+  none: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, paddingVertical: 14 },
   grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 10 },
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginBottom: 6 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },

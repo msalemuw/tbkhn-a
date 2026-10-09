@@ -14,6 +14,7 @@ export type FunnelStep =
   | 'profile_started'
   | 'profile_field_error'
   | 'communities_selected'
+  | 'community_requested'
   | 'signup_completed'
   | 'identifier_conflict'
   | 'help_opened';

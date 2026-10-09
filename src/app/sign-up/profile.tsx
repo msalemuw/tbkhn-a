@@ -5,22 +5,24 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BackHeader, danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
+import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
 import { formatPhone } from '@/lib/phone';
+import { type Country, fetchCountries, fetchRegions, type Region } from '@/lib/regions';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
 // Flow 1, screen s5: Create your account (profile and communities), plus the section 13 additions:
 // InstaPay handle (cooks get paid peer to peer) and the optional "How did you hear about tabkheen A?" referral question.
 
-type Community = { id: string; name: string; kind: string; governorate: string };
+type Community = { id: string; name: string; kind: string; governorate: string; country_code?: string; pending?: boolean };
 type Optional = 'club' | 'sahel' | 'school' | 'work';
-const OPTIONAL: { kind: Optional; label: string }[] = [
-  { kind: 'club', label: 'CLUB' },
-  { kind: 'sahel', label: 'SAHEL' },
-  { kind: 'school', label: 'SCHOOL' },
-  { kind: 'work', label: 'WORK' },
+const OPTIONAL: { kind: Optional; label: string; noun: string }[] = [
+  { kind: 'club', label: 'CLUB', noun: 'club' },
+  { kind: 'sahel', label: 'SAHEL', noun: 'Sahel community' },
+  { kind: 'school', label: 'SCHOOL', noun: 'school' },
+  { kind: 'work', label: 'WORK', noun: 'workplace' },
 ];
 
 const HEARD = [
@@ -55,13 +57,20 @@ export default function ProfileStep() {
   const [username, setUsername] = useState('');
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [country, setCountry] = useState('EG');
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [requested, setRequested] = useState<Community[]>([]);
+  const [request, setRequest] = useState<{ kind: string; noun: string } | null>(null);
+  const [requestBusy, setRequestBusy] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const [gov, setGov] = useState<string | null>(null);
   const [areaId, setAreaId] = useState<string | null>(null);
   const [optional, setOptional] = useState<Partial<Record<Optional, string>>>({});
   const [instapay, setInstapay] = useState('');
   const [heard, setHeard] = useState<Heard | null>(null);
   const [inviter, setInviter] = useState('');
-  const [sheet, setSheet] = useState<{ title: string; items: SheetItem[] } | null>(null);
+  const [sheet, setSheet] = useState<{ title: string; items: SheetItem[]; searchable?: boolean; footer?: { label: string; onPress: () => void } } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,11 +80,21 @@ export default function ProfileStep() {
     logFunnel('profile_started', {}, { userRef: session?.user.id });
     supabase
       .from('communities')
-      .select('id, name, kind, governorate')
+      .select('*')
       .eq('status', 'approved')
       .order('name')
-      .then(({ data }) => setCommunities(data ?? []));
+      .then(({ data }) => setCommunities((data as Community[] | null) ?? []));
+    // If the countries table is not there yet, the form falls back to Egypt only.
+    fetchCountries().then(setCountries, () => {});
   }, [session?.user.id]);
+
+  useEffect(() => {
+    let live = true;
+    fetchRegions(country).then((r) => live && setRegions(r), () => live && setRegions([]));
+    return () => {
+      live = false;
+    };
+  }, [country]);
 
   // Live, advisory username check; the unique index decides on save.
   useEffect(() => {
@@ -94,17 +113,55 @@ export default function ProfileStep() {
   }, [username, session?.user.id]);
 
   const un = usernameState(username, username.length < 3 ? false : taken);
+  const inCountry = (c: Community) => (c.country_code ?? 'EG') === country;
+  const all = useMemo(() => [...communities, ...requested], [communities, requested]);
+  // Regions come from the database; with none listed (or no countries table yet) fall back to what the areas say.
   const governorates = useMemo(
-    () => [...new Set(communities.filter((c) => c.kind === 'area').map((c) => c.governorate))].sort(),
-    [communities],
+    () => (regions.length ? regions.map((r) => r.name) : [...new Set(communities.filter((c) => c.kind === 'area' && inCountry(c)).map((c) => c.governorate))].sort()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [regions, communities, country],
   );
-  const areas = communities.filter((c) => c.kind === 'area' && c.governorate === gov);
-  const byId = (id?: string | null) => communities.find((c) => c.id === id);
+  const typedRegion = countries.length > 0 && regions.length === 0;
+  const areas = all.filter((c) => c.kind === 'area' && c.governorate === gov && inCountry(c));
+  const byId = (id?: string | null) => all.find((c) => c.id === id);
+  const label = (c: Community) => (c.pending ? `${c.name} (pending approval)` : c.name);
 
-  const canSubmit = name.trim().length > 0 && un.ok && Boolean(gov && areaId);
+  const canSubmit = name.trim().length > 0 && un.ok && Boolean(gov?.trim() && areaId);
 
-  function openPicker(title: string, options: { label: string; value: string | null }[], current: string | null, set: (v: string | null) => void) {
-    setSheet({ title, items: options.map((o) => ({ label: o.label, selected: o.value === current, onPress: () => set(o.value) })) });
+  function openPicker(
+    title: string,
+    options: { label: string; value: string | null }[],
+    current: string | null,
+    set: (v: string | null) => void,
+    extra?: { searchable?: boolean; footer?: { label: string; onPress: () => void } },
+  ) {
+    setSheet({ title, items: options.map((o) => ({ label: o.label, selected: o.value === current, onPress: () => set(o.value) })), ...extra });
+  }
+
+  function openRequest(kind: string, noun: string) {
+    if (!gov?.trim()) return setError(`Choose your ${typedRegion ? 'region' : 'governorate'} first, then request your ${noun}.`);
+    setError(null);
+    setRequestError(null);
+    setRequest({ kind, noun });
+  }
+
+  async function sendRequest(communityName: string) {
+    if (!session || !request || !gov) return;
+    setRequestBusy(true);
+    setRequestError(null);
+    const area = request.kind === 'area' ? communityName : (byId(areaId)?.name ?? null);
+    const row: Record<string, unknown> = { name: communityName, kind: request.kind, governorate: gov.trim(), area, requested_by: session.user.id, status: 'pending' };
+    if (countries.length) row.country_code = country;
+    const { data, error: reqError } = await supabase.from('communities').insert(row).select('id, name, kind, governorate').single();
+    setRequestBusy(false);
+    if (reqError?.code === '23505') return setRequestError('That community already exists or is waiting for approval. Check the list again.');
+    if (reqError || !data) return setRequestError('We couldn’t send your request. Check your connection and try again.');
+    const made: Community = { ...(data as Community), country_code: country, pending: true };
+    setRequested((r) => [...r, made]);
+    if (request.kind === 'area') setAreaId(made.id);
+    else setOptional((o) => ({ ...o, [request.kind as Optional]: made.id }));
+    logFunnel('community_requested', { kind: request.kind, country }, { userRef: session.user.id });
+    setRequest(null);
   }
 
   async function onContinue() {
@@ -117,7 +174,8 @@ export default function ProfileStep() {
       .update({
         display_name: name.trim(),
         username,
-        governorate: gov,
+        country_code: countries.length ? country : undefined,
+        governorate: gov?.trim(),
         area: area.name,
         instapay_handle: instapay.trim() || null,
         heard_from: heard,
@@ -134,11 +192,12 @@ export default function ProfileStep() {
       }
       return;
     }
-    const joined = [areaId, ...Object.values(optional)].filter((id): id is string => Boolean(id));
+    // Requested communities are still pending: the database adds the member when an admin approves.
+    const joined = [areaId, ...Object.values(optional)].filter((id): id is string => Boolean(id) && !byId(id)?.pending);
     await supabase
       .from('community_members')
       .upsert(joined.map((community_id) => ({ community_id, user_id: session.user.id })), { ignoreDuplicates: true });
-    logFunnel('communities_selected', { count: joined.length, kinds: joined.map((id) => byId(id)?.kind) }, { userRef: session.user.id });
+    logFunnel('communities_selected', { count: joined.length, kinds: joined.map((id) => byId(id)?.kind), pending: requested.length }, { userRef: session.user.id });
     logFunnel('signup_completed', { heard_from: heard }, { userRef: session.user.id });
     await refreshProfile();
     setBusy(false);
@@ -208,34 +267,85 @@ export default function ProfileStep() {
           </Text>
           <Text style={styles.sectionSub}>Tell us where you belong: this decides who sees your posts and whose posts you see.</Text>
           <View style={styles.group}>
-            <SelectField
-              label="GOVERNORATE"
-              required
-              value={gov ?? 'Choose'}
-              onPress={() =>
-                openPicker('Governorate', governorates.map((g) => ({ label: g, value: g })), gov, (v) => {
-                  if (v !== gov) setAreaId(null);
-                  setGov(v);
-                })
-              }
-            />
+            {countries.length > 1 ? (
+              <SelectField
+                label="COUNTRY"
+                required
+                value={countries.find((c) => c.code === country)?.name ?? 'Egypt'}
+                onPress={() =>
+                  openPicker(
+                    'Country',
+                    countries.map((c) => ({ label: c.name, value: c.code })),
+                    country,
+                    (v) => {
+                      if (!v || v === country) return;
+                      setCountry(v);
+                      setGov(null);
+                      setAreaId(null);
+                      setOptional({});
+                    },
+                    { searchable: true },
+                  )
+                }
+              />
+            ) : null}
+            {typedRegion ? (
+              <Field label="REGION OR CITY" required>
+                <TextInput
+                  value={gov ?? ''}
+                  onChangeText={(v) => {
+                    setGov(v);
+                    setAreaId(null);
+                  }}
+                  maxLength={60}
+                  placeholder="example: Dubai"
+                  placeholderTextColor={colors.faint}
+                  style={formStyles.input}
+                />
+              </Field>
+            ) : (
+              <SelectField
+                label="GOVERNORATE"
+                required
+                value={gov ?? 'Choose'}
+                onPress={() =>
+                  openPicker(
+                    'Governorate',
+                    governorates.map((g) => ({ label: g, value: g })),
+                    gov,
+                    (v) => {
+                      if (v !== gov) setAreaId(null);
+                      setGov(v);
+                    },
+                    { searchable: true },
+                  )
+                }
+              />
+            )}
             <SelectField
               label="AREA"
               required
-              value={byId(areaId)?.name ?? (gov ? 'Choose' : 'Choose a governorate first')}
-              onPress={() => gov && openPicker('Area', areas.map((a) => ({ label: a.name, value: a.id })), areaId, setAreaId)}
+              value={byId(areaId) ? label(byId(areaId)!) : gov?.trim() ? 'Choose' : `Choose a ${typedRegion ? 'region' : 'governorate'} first`}
+              onPress={() =>
+                gov?.trim() &&
+                openPicker('Area', areas.map((a) => ({ label: label(a), value: a.id })), areaId, setAreaId, {
+                  searchable: true,
+                  footer: { label: 'Can’t find your area? Request it', onPress: () => openRequest('area', 'area') },
+                })
+              }
             />
-            {OPTIONAL.map(({ kind, label }) => (
+            {OPTIONAL.map(({ kind, label: heading, noun }) => (
               <SelectField
                 key={kind}
-                label={label}
-                value={byId(optional[kind])?.name ?? 'None'}
+                label={heading}
+                value={byId(optional[kind]) ? label(byId(optional[kind])!) : 'None'}
                 onPress={() =>
                   openPicker(
-                    label[0] + label.slice(1).toLowerCase(),
-                    [...communities.filter((c) => c.kind === kind).map((c) => ({ label: c.name, value: c.id })), { label: 'None', value: null }],
+                    heading[0] + heading.slice(1).toLowerCase(),
+                    [...all.filter((c) => c.kind === kind && inCountry(c)).map((c) => ({ label: label(c), value: c.id })), { label: 'None', value: null }],
                     optional[kind] ?? null,
                     (v) => setOptional((o) => ({ ...o, [kind]: v ?? undefined })),
+                    { searchable: true, footer: { label: `Can’t find your ${noun}? Request it`, onPress: () => openRequest(kind, noun) } },
                   )
                 }
               />
@@ -270,7 +380,23 @@ export default function ProfileStep() {
           <PrimaryButton label="Continue" onPress={onContinue} busy={busy} disabled={!canSubmit} style={{ marginTop: 22 }} />
         </ScrollView>
       </KeyboardAvoidingView>
-      <PickerSheet title={sheet?.title ?? ''} items={sheet?.items ?? null} onClose={() => setSheet(null)} />
+      <PickerSheet title={sheet?.title ?? ''} items={sheet?.items ?? null} onClose={() => setSheet(null)} searchable={sheet?.searchable} footer={sheet?.footer} />
+      <RequestCommunitySheet
+        key={request ? 'open' : 'closed'}
+        visible={request !== null}
+        existing={request ? all.filter((c) => c.kind === request.kind && c.governorate.toLowerCase() === (gov ?? '').trim().toLowerCase() && inCountry(c)) : []}
+        onUseExisting={(id) => {
+          if (request?.kind === 'area') setAreaId(id);
+          else if (request) setOptional((o) => ({ ...o, [request.kind as Optional]: id }));
+          setRequest(null);
+        }}
+        kindLabel={request?.noun ?? ''}
+        where={[gov?.trim(), countries.find((c) => c.code === country)?.name].filter(Boolean).join(', ')}
+        busy={requestBusy}
+        error={requestError}
+        onSubmit={sendRequest}
+        onClose={() => setRequest(null)}
+      />
     </SafeAreaView>
   );
 }
