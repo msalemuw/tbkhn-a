@@ -135,7 +135,7 @@ export default function Home() {
       : loading
         ? ''
         : posts.length
-          ? 'Nothing here for what you’re watching. Change “Watching” to see more.'
+          ? 'No posts match your feed filter. Change “Feed filter” to see more.'
           : 'No posts yet. Share your signature dish from the Post tab, or follow cooks near you.';
 
   return (
@@ -171,9 +171,9 @@ export default function Home() {
               <Text style={styles.locText} numberOfLines={1}>{place?.label || 'Location'}</Text>
               <MaterialIcons name="expand-more" size={20} color={colors.muted} />
             </Pressable>
-            <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Choose what you are watching">
+            <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
               <MaterialIcons name="tune" size={18} color={colors.white} />
-              <Text style={styles.watchText}>Watching: {all ? 'All' : 'Custom'}</Text>
+              <Text style={styles.watchText}>Feed filter: {all ? 'Everyone' : 'Custom'}</Text>
               <MaterialIcons name="expand-more" size={18} color={colors.white} />
             </Pressable>
           </View>

@@ -31,7 +31,8 @@ export function WatchingSheet({
         <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.grab} />
-          <Text style={styles.title}>Watching</Text>
+          <Text style={styles.title}>Feed filter</Text>
+          <Text style={styles.sub}>Choose whose posts show on your Home feed.</Text>
           <Text style={styles.label}>COMMUNITIES</Text>
           {mine.map((c) => (
             <Row key={c.id} icon={c.kind === 'club' ? 'flag' : 'groups'} label={c.name} on={value.communities.includes(c.id)} onPress={() => toggle(c.id)} />
@@ -61,6 +62,7 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22 },
   grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 12 },
   title: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
+  sub: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginBottom: 6 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
