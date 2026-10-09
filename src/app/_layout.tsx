@@ -52,6 +52,7 @@ export default function RootLayout() {
         <Stack.Screen name="location" options={{ presentation: 'modal' }} />
         <Stack.Screen name="cook/[id]" />
         <Stack.Screen name="community/[id]" />
+        <Stack.Screen name="community-cooks/[id]" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="chat/[id]" />

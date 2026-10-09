@@ -1,41 +1,51 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
-import { BackHeader } from '@/components/form';
+import { DishCard } from '@/components/dish-card';
 import { colors, fonts } from '@/constants/theme';
+import { type CommunityOverview, fetchCommunityOverview, fetchCommunityPeople, KIND_LABEL } from '@/lib/community';
 import { setMembership } from '@/lib/cooks';
-import { fetchCommunityPeople } from '@/lib/community';
+import { useMyLocation } from '@/lib/location';
 import { fetchMyCommunities, type Person, personName } from '@/lib/posts';
 import { fetchTop, type TopCook } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
-import { supabase } from '@/lib/supabase';
 
-type Info = { id: string; name: string; kind: string; governorate: string; area: string | null; members: number };
 type Top = { service: TopCook[]; likes: TopCook[]; people: Map<string, Person> };
 
-const KIND_LABEL: Record<string, string> = { area: 'Area', compound: 'Compound', club: 'Club', sahel: 'Sahel', school: 'School', work: 'Workplace', other: 'Community' };
+const KIND_ICON: Record<string, React.ComponentProps<typeof MaterialIcons>['name']> = {
+  area: 'location-city',
+  compound: 'apartment',
+  club: 'flag',
+  sahel: 'beach-access',
+  school: 'school',
+  work: 'work',
+  other: 'groups',
+};
 
-// Community page: who is in it and its top 3 cooks, ranked automatically two ways.
+// Community page (design s19): cover, icon tile, name, Members / Cooks / Cooking today, Join and share,
+// top cooks, what is cooking today. The design has one top list; we have two automatic rankings, so two lists.
 export default function CommunityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const me = session?.user.id ?? null;
-  const [info, setInfo] = useState<Info | null | undefined>(undefined);
+  const here = useMyLocation();
+  const [data, setData] = useState<CommunityOverview | null | undefined>(undefined);
   const [top, setTop] = useState<Top | null>(null);
   const [joined, setJoined] = useState(false);
+  const [members, setMembers] = useState(0);
 
   useEffect(() => {
-    (async () => {
-      const [c, members] = await Promise.all([
-        supabase.from('communities').select('id, name, kind, governorate, area').eq('id', id).eq('status', 'approved').maybeSingle(),
-        supabase.from('community_members').select('user_id', { count: 'exact', head: true }).eq('community_id', id),
-      ]);
-      setInfo(c.data ? { ...c.data, members: members.count ?? 0 } : null);
-    })().catch(() => setInfo(null));
+    fetchCommunityOverview(id).then(
+      (d) => {
+        setData(d);
+        setMembers(d?.members ?? 0);
+      },
+      () => setData(null),
+    );
     (async () => {
       const t = await fetchTop(id);
       const people = await fetchCommunityPeople([...t.service, ...t.likes].map((r) => r.cook_id));
@@ -51,75 +61,137 @@ export default function CommunityScreen() {
     if (!me) return router.push('/sign-up');
     const next = !joined;
     setJoined(next);
-    setInfo((i) => (i ? { ...i, members: Math.max(0, i.members + (next ? 1 : -1)) } : i));
+    setMembers((n) => Math.max(0, n + (next ? 1 : -1)));
     await setMembership(me, id, next).catch(() => {
       setJoined(!next);
-      setInfo((i) => (i ? { ...i, members: Math.max(0, i.members + (next ? -1 : 1)) } : i));
+      setMembers((n) => Math.max(0, n + (next ? -1 : 1)));
     });
   }
 
-  if (info === undefined) {
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/home'));
+
+  if (data === undefined) {
     return (
       <SafeAreaView style={[styles.screen, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator color={colors.teal} />
       </SafeAreaView>
     );
   }
-  if (!info) {
+  if (!data) {
     return (
       <SafeAreaView style={styles.screen}>
-        <View style={styles.pad}>
-          <BackHeader />
-          <Text style={[styles.sub, { marginTop: 30 }]}>We couldn’t find this community.</Text>
-        </View>
+        <Pressable onPress={back} hitSlop={10} style={{ padding: 18 }} accessibilityRole="button" accessibilityLabel="Back">
+          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+        </Pressable>
+        <Text style={[styles.sub, { marginTop: 10, textAlign: 'center' }]}>We couldn’t find this community.</Text>
       </SafeAreaView>
     );
   }
 
+  const { info } = data;
+  const sub = [KIND_LABEL[info.kind] ?? 'Community', info.area && info.area !== info.name ? info.area : info.governorate].filter(Boolean).join(' · ');
+
   return (
-    <SafeAreaView style={styles.screen}>
+    <View style={styles.screen}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.pad}>
-          <BackHeader />
+        <View style={styles.cover}>
+          <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={120} color="rgba(255,255,255,0.08)" style={styles.coverIcon} />
+          <SafeAreaView edges={['top']}>
+            <Pressable onPress={back} hitSlop={10} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back">
+              <MaterialIcons name="arrow-back" size={24} color={colors.white} />
+            </Pressable>
+          </SafeAreaView>
+        </View>
+        <View style={styles.tile}>
+          <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={34} color={colors.teal} />
+        </View>
+        <View style={{ alignItems: 'center', marginTop: 10, paddingHorizontal: 22 }}>
           <Text style={styles.name}>{info.name}</Text>
-          <Text style={styles.sub}>
-            {[KIND_LABEL[info.kind] ?? 'Community', info.area && info.area !== info.name ? info.area : info.governorate, `${info.members} ${info.members === 1 ? 'member' : 'members'}`].filter(Boolean).join(' · ')}
-          </Text>
-          <Pressable style={[styles.join, { backgroundColor: joined ? colors.white : colors.teal, borderColor: joined ? colors.line : colors.teal }]} onPress={onJoin} accessibilityRole="button">
-            <Text style={styles.joinText}>{joined ? 'Joined' : 'Join'}</Text>
+          <Text style={styles.sub}>{sub}</Text>
+        </View>
+
+        <View style={styles.stats}>
+          <Stat n={members} label="Members" />
+          <Stat n={data.cookIds.length} label="Cooks" />
+          <Stat n={data.today.length} label="Cooking today" />
+        </View>
+
+        <View style={styles.btns}>
+          <Pressable style={[styles.btn, { flex: 1, backgroundColor: joined ? colors.white : colors.teal, borderColor: joined ? colors.line : colors.teal }]} onPress={onJoin} accessibilityRole="button">
+            <MaterialIcons name={joined ? 'check' : 'add'} size={17} color={colors.ink} />
+            <Text style={styles.btnText}>{joined ? 'Joined' : 'Join'}</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.btn, { backgroundColor: colors.lightBlue, borderColor: colors.lightBlue, paddingHorizontal: 16 }]}
+            onPress={() => Share.share({ message: `${info.name} on tabkheen A` }).catch(() => {})}
+            accessibilityRole="button"
+            accessibilityLabel="Share community">
+            <MaterialIcons name="ios-share" size={20} color={colors.ink} />
           </Pressable>
         </View>
 
-        <Section title="Top cooks" note="Average rating × orders picked up" rows={top?.service} people={top?.people} loading={!top} kind="service" />
-        <Section title="Most liked" note="Likes on signature dishes" rows={top?.likes} people={top?.people} loading={!top} kind="likes" />
+        <TopList title={`TOP COOKS IN ${info.name.toUpperCase()}`} rows={top?.service} people={top?.people} loading={!top} kind="service" />
+        <TopList title={`MOST LIKED IN ${info.name.toUpperCase()}`} rows={top?.likes} people={top?.people} loading={!top} kind="likes" />
+        {data.cookIds.length ? (
+          <Pressable style={styles.seeAll} onPress={() => router.push({ pathname: '/community-cooks/[id]', params: { id } })} accessibilityRole="button">
+            <Text style={styles.seeAllText}>See all {data.cookIds.length} cooks</Text>
+            <MaterialIcons name="chevron-right" size={20} color={colors.ink} />
+          </Pressable>
+        ) : null}
+
+        <View style={[styles.pad, styles.todayHead]}>
+          <Text style={styles.section}>COOKING TODAY</Text>
+          <Text style={styles.gone}>Gone at midnight</Text>
+        </View>
+        <View style={[styles.pad, { gap: 12, marginTop: 9 }]}>
+          {data.today.length ? (
+            data.today.map((d) => <DishCard key={d.id} dish={d} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
+          ) : (
+            <Text style={styles.empty}>No one in {info.name} is cooking today yet.</Text>
+          )}
+        </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-function Section({ title, note, rows, people, loading, kind }: { title: string; note: string; rows?: TopCook[]; people?: Map<string, Person>; loading: boolean; kind: 'service' | 'likes' }) {
+function Stat({ n, label }: { n: number; label: string }) {
   return (
-    <View style={[styles.pad, { marginTop: 22 }]}>
-      <Text style={styles.head}>{title}</Text>
-      <Text style={styles.note}>{note}</Text>
+    <View style={{ alignItems: 'center' }}>
+      <Text style={styles.statN}>{n}</Text>
+      <Text style={styles.statL}>{label}</Text>
+    </View>
+  );
+}
+
+function TopList({ title, rows, people, loading, kind }: { title: string; rows?: TopCook[]; people?: Map<string, Person>; loading: boolean; kind: 'service' | 'likes' }) {
+  return (
+    <View style={[styles.pad, { marginTop: 20 }]}>
+      <Text style={styles.section}>{title}</Text>
       {loading ? <ActivityIndicator color={colors.teal} style={{ marginTop: 14 }} /> : null}
       {!loading && !rows?.length ? <Text style={styles.empty}>No ranking yet. It fills in as cooks here get orders, reviews and likes.</Text> : null}
-      {rows?.map((r) => {
+      {rows?.map((r, i) => {
         const person = people?.get(r.cook_id) ?? { id: r.cook_id, username: null, display_name: null, avatar_path: null };
+        const handle = person.username ? `@${person.username}` : '';
         return (
-          <Pressable key={r.cook_id} style={styles.row} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: r.cook_id } })} accessibilityRole="button">
-            <View style={[styles.medal, r.rank === 1 && { backgroundColor: colors.yellow }]}>
-              <Text style={styles.medalText}>{r.rank}</Text>
-            </View>
-            <Avatar person={person} size={44} />
+          <Pressable key={r.cook_id} style={[styles.row, i === rows.length - 1 && { borderBottomWidth: 0 }]} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: r.cook_id } })} accessibilityRole="button">
+            <Avatar person={person} size={46} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.nameRow}>
                 <Text style={styles.rowName} numberOfLines={1}>{personName(person)}</Text>
                 <MaterialIcons name="verified" size={15} color={colors.teal} />
               </View>
               <Text style={styles.rowSub} numberOfLines={1}>
-                {kind === 'service' ? `★ ${r.rating?.toFixed(1) ?? '–'} · ${r.orders} ${r.orders === 1 ? 'order' : 'orders'}` : `${r.likes} ${r.likes === 1 ? 'like' : 'likes'}`}
+                {kind === 'service' ? (
+                  <>{handle ? `${handle} · ` : ''}<Text style={{ color: colors.yellow }}>★</Text>{r.rating?.toFixed(1) ?? '–'}</>
+                ) : (
+                  `${handle ? `${handle} · ` : ''}${r.likes} ${r.likes === 1 ? 'like' : 'likes'}`
+                )}
               </Text>
+            </View>
+            <View style={styles.trust}>
+              <MaterialIcons name={kind === 'likes' ? 'favorite' : r.rank === 1 ? 'workspace-premium' : 'military-tech'} size={13} color={colors.ink} />
+              <Text style={styles.trustText}>#{r.rank}</Text>
             </View>
           </Pressable>
         );
@@ -131,17 +203,28 @@ function Section({ title, note, rows, people, loading, kind }: { title: string; 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   pad: { paddingHorizontal: 22 },
-  name: { fontFamily: fonts.extraBold, fontSize: 24, color: colors.ink, marginTop: 8 },
-  sub: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 3 },
-  join: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 12, paddingHorizontal: 22, paddingVertical: 10, marginTop: 14 },
-  joinText: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.ink },
-  head: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink },
-  note: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 1 },
+  cover: { height: 170, backgroundColor: colors.navy, overflow: 'hidden' },
+  coverIcon: { position: 'absolute', right: 24, bottom: 18 },
+  backBtn: { padding: 18, alignSelf: 'flex-start' },
+  tile: { width: 76, height: 76, borderRadius: 22, backgroundColor: colors.lightBlue, borderWidth: 3, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -38 },
+  name: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.ink, textAlign: 'center' },
+  sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 2 },
+  stats: { flexDirection: 'row', justifyContent: 'center', gap: 26, marginTop: 14 },
+  statN: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
+  statL: { fontFamily: fonts.semiBold, fontSize: 11, color: colors.muted, marginTop: 1 },
+  btns: { flexDirection: 'row', gap: 10, marginTop: 16, paddingHorizontal: 22 },
+  btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderRadius: 12, paddingVertical: 11 },
+  btnText: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
+  section: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.5, color: colors.muted },
   empty: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, marginTop: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9, marginTop: 4 },
-  medal: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
-  medalText: { fontFamily: fonts.extraBold, fontSize: 13, color: colors.ink },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: colors.line },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   rowName: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },
   rowSub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 1 },
+  trust: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.lightBlue, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
+  trustText: { fontFamily: fonts.bold, fontSize: 11, color: colors.ink },
+  seeAll: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 10 },
+  seeAllText: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink },
+  todayHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 18 },
+  gone: { fontFamily: fonts.semiBold, fontSize: 11.5, color: colors.muted },
 });
