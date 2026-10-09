@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CommentsSheet } from '@/components/comments-sheet';
 import { Logo } from '@/components/logo';
 import { PostCard } from '@/components/post-card';
+import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, reportPost, setLiked } from '@/lib/feed';
@@ -16,6 +17,7 @@ import { unreadMessageCount } from '@/lib/chat';
 import { unreadNotificationCount } from '@/lib/notifications';
 import { fetchMyCommunities, type MyCommunity, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
+import { fetchStories, loadSeen, type StoryGroup } from '@/lib/stories';
 import { supabaseConfigured } from '@/lib/supabase';
 
 // Screen s6: Home is the social feed (design flow 15): signature dishes from the communities and cooks you watch.
@@ -29,6 +31,8 @@ export default function Home() {
   const here = useMyLocation();
   const [unread, setUnread] = useState(0);
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [stories, setStories] = useState<StoryGroup[]>([]);
+  const [seen, setSeen] = useState<string[]>([]);
   const [mine, setMine] = useState<MyCommunity[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [watching, setWatching] = useState<Watching | null>(null);
@@ -41,8 +45,16 @@ export default function Home() {
     if (!supabaseConfigured) return setLoading(false);
     setLoading(true);
     try {
-      const [feed, communities, follows] = await Promise.all([fetchFeed(me), me ? fetchMyCommunities(me) : Promise.resolve([]), me ? fetchFollowing(me) : Promise.resolve([])]);
+      const [feed, communities, follows, groups, seenIds] = await Promise.all([
+        fetchFeed(me),
+        me ? fetchMyCommunities(me) : Promise.resolve([]),
+        me ? fetchFollowing(me) : Promise.resolve([]),
+        fetchStories(me).catch(() => [] as StoryGroup[]),
+        loadSeen(),
+      ]);
       setPosts(feed);
+      setStories(groups);
+      setSeen(seenIds);
       setMine(communities);
       setFollowing(follows);
       // Start by watching everything; the member's choice is kept while the screen stays mounted.
@@ -136,6 +148,7 @@ export default function Home() {
             {unread > 0 ? <View style={styles.dot} /> : null}
           </Pressable>
         </View>
+        <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => router.push('/compose/story')} />
       </SafeAreaView>
       <FlatList
         data={shown}
