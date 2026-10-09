@@ -20,3 +20,5 @@ $P -d tbkhn_test -f migrations/0005_admin_orders_referrals.sql
 $P -d tbkhn_test -f tests/admin_orders_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0006_countries_regions.sql
 $P -d tbkhn_test -t -f tests/countries_test.sql | grep ok
+$P -d tbkhn_test -f migrations/0007_profile_country_and_cities.sql
+$P -d tbkhn_test -t -f tests/profile_country_test.sql | grep ok

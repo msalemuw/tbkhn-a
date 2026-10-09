@@ -79,12 +79,16 @@ export default function ProfileStep() {
 
   useEffect(() => {
     logFunnel('profile_started', {}, { userRef: session?.user.id });
+    // Approved communities, plus this member's own pending requests, so a request made before going back still shows up.
+    const mine = session?.user.id ? `,requested_by.eq.${session.user.id}` : '';
     supabase
       .from('communities')
       .select('*')
-      .eq('status', 'approved')
+      .or(`status.eq.approved${mine}`)
       .order('name')
-      .then(({ data }) => setCommunities((data as Community[] | null) ?? []));
+      .then(({ data }) =>
+        setCommunities(((data as (Community & { status: string })[] | null) ?? []).filter((c) => c.status !== 'rejected').map((c) => ({ ...c, pending: c.status === 'pending' }))),
+      );
     // If the countries table is not there yet, the form falls back to Egypt only.
     fetchCountries().then(setCountries, () => {});
   }, [session?.user.id]);
