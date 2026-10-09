@@ -43,6 +43,7 @@ export default function RootLayout() {
         <Stack.Screen name="verify" />
         <Stack.Screen name="sign-up/profile" options={{ gestureEnabled: false }} />
         <Stack.Screen name="compose/today" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="compose/signature" options={{ presentation: 'modal' }} />
         <Stack.Screen name="dish/[id]" />
         <Stack.Screen name="order/[id]" />
         <Stack.Screen name="orders" />

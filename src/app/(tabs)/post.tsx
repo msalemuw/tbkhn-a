@@ -13,7 +13,7 @@ type IconName = ComponentProps<typeof MaterialIcons>['name'];
 const OPTIONS: { title: string; note: string; icon: IconName; href?: Href }[] = [
   { title: 'What you’re cooking today', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen', href: '/compose/today' },
   { title: 'Story', note: 'Just a moment · no price, no orders · stays 24 hours', icon: 'history-toggle-off' },
-  { title: 'Post', note: 'Signature dish on your profile · not for ordering', icon: 'grid-view' },
+  { title: 'Post', note: 'Signature dish on your profile · not for ordering', icon: 'grid-view', href: '/compose/signature' },
 ];
 
 export default function Post() {
