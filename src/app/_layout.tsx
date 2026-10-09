@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { colors } from '@/constants/theme';
+import { LocationProvider } from '@/lib/location';
 import { SessionProvider } from '@/lib/session';
 
 SplashScreen.preventAutoHideAsync();
@@ -30,6 +31,7 @@ export default function RootLayout() {
 
   return (
     <SessionProvider>
+      <LocationProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
         <Stack.Screen name="index" />
@@ -44,10 +46,12 @@ export default function RootLayout() {
         <Stack.Screen name="dish/[id]" />
         <Stack.Screen name="order/[id]" />
         <Stack.Screen name="orders" />
+        <Stack.Screen name="location" options={{ presentation: 'modal' }} />
         <Stack.Screen name="cook/[id]" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="chat/[id]" />
       </Stack>
+      </LocationProvider>
     </SessionProvider>
   );
 }

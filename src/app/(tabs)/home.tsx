@@ -9,6 +9,7 @@ import { DishList } from '@/components/dish-list';
 import { Logo } from '@/components/logo';
 import { colors, fonts } from '@/constants/theme';
 import { unreadMessageCount } from '@/lib/chat';
+import { usePlace } from '@/lib/location';
 import { unreadNotificationCount } from '@/lib/notifications';
 import { useSession } from '@/lib/session';
 
@@ -17,6 +18,7 @@ const NAVY = colors.navy;
 
 export default function Home() {
   const { session } = useSession();
+  const { place } = usePlace();
   const [unread, setUnread] = useState(0);
   // Light status bar text over the navy header, back to dark when another tab shows.
   useFocusEffect(
@@ -33,9 +35,11 @@ export default function Home() {
         <View style={styles.header}>
           <Logo on="dark" height={28} />
           <View style={styles.headerRight}>
-            <Pressable style={styles.locPill} accessibilityLabel="Choose your location">
+            <Pressable style={styles.locPill} accessibilityLabel="Choose your location" onPress={() => router.push('/location')}>
               <MaterialIcons name="location-on" size={16} color={colors.white} />
-              <Text style={styles.locText}>Your area</Text>
+              <Text style={styles.locText} numberOfLines={1}>
+                {place?.label || 'Location'}
+              </Text>
             </Pressable>
             <Pressable accessibilityLabel="Orders" onPress={() => router.push('/orders')} hitSlop={8}>
               <MaterialIcons name="receipt-long" size={24} color={colors.white} />
@@ -57,7 +61,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  locPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,.12)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  locPill: { maxWidth: 150, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,.12)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   locText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   badge: { position: 'absolute', top: -6, right: -8, minWidth: 18, textAlign: 'center', fontFamily: fonts.extraBold, fontSize: 10.5, color: colors.navy, backgroundColor: colors.yellow, borderRadius: 999, paddingHorizontal: 4, paddingVertical: 1, overflow: 'hidden' },
   feedTitle: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
