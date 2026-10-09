@@ -168,7 +168,7 @@ export function PickerSheet({
       <View style={styles.modalRoot}>
         <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={close} />
         <View style={{ paddingBottom: keyboard }}>
-          <SafeAreaView edges={keyboard ? [] : ['bottom']} style={[styles.sheet, searchable && { height: Math.min(sheetHeight, screenH - keyboard - 60) }]}>
+          <SafeAreaView edges={keyboard ? [] : ['bottom']} style={[styles.sheet, searchable ? { height: Math.min(sheetHeight, screenH - keyboard - 60) } : { maxHeight: Math.round(screenH * 0.75) }]}>
             <View style={styles.grabArea} onTouchStart={(e) => setTouchY(e.nativeEvent.pageY)} onTouchEnd={(e) => onSwipeEnd(e.nativeEvent.pageY)}>
               <View style={styles.grab} />
             </View>
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 2 },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   scrimFill: { backgroundColor: 'rgba(40,48,58,.35)' },
-  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '75%' },
+  sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20 },
   footerRow: { borderTopWidth: 1, borderTopColor: colors.line },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, marginBottom: 4 },
   searchInput: { flex: 1, fontFamily: fonts.semiBold, fontSize: 16, color: colors.ink, paddingVertical: 10 },
