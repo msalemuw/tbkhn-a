@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BuildInfo } from '@/components/build-info';
 import { BackHeader, danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
@@ -385,6 +386,7 @@ export default function ProfileStep() {
 
           {error ? <Text style={formStyles.error}>{error}</Text> : null}
           <PrimaryButton label="Continue" onPress={onContinue} busy={busy} disabled={!canSubmit} style={{ marginTop: 22 }} />
+          <BuildInfo />
         </ScrollView>
       </KeyboardAvoidingView>
       <PickerSheet title={sheet?.title ?? ''} items={sheet?.items ?? null} onClose={() => setSheet(null)} searchable={sheet?.searchable} footer={sheet?.footer} />
