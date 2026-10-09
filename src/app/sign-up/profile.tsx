@@ -208,7 +208,14 @@ export default function ProfileStep() {
     <SafeAreaView style={styles.screen}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
-          <BackHeader title="Create your account" />
+          <BackHeader
+            title="Create your account"
+            onBack={async () => {
+              // The welcome screen sends a signed-in account straight back here, so going back means signing out.
+              await supabase.auth.signOut();
+              router.replace('/');
+            }}
+          />
           <Text style={styles.required}>
             <Text style={{ color: colors.muted }}>*</Text> Required
           </Text>
