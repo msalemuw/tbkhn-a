@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { danger, Field, formStyles, PrimaryButton } from '@/components/form';
+import { danger, Field, formStyles, PrimaryButton, useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { similarNames } from '@/lib/community-names';
 
@@ -29,14 +29,15 @@ export function RequestCommunitySheet({
   onClose: () => void;
 }) {
   const [name, setName] = useState('');
+  const keyboard = useKeyboardHeight();
   const { exact, close } = similarNames(name, existing);
   const ok = name.trim().length >= 2 && !exact;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalRoot}>
       <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={onClose} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <SafeAreaView edges={['bottom']} style={styles.sheet}>
+      <View style={{ paddingBottom: keyboard }}>
+        <SafeAreaView edges={keyboard ? [] : ['bottom']} style={styles.sheet}>
           <View style={styles.grab} />
           <Text style={styles.title}>Request a new {kindLabel}</Text>
           <Text style={styles.sub}>
@@ -59,7 +60,7 @@ export function RequestCommunitySheet({
           {error ? <Text style={[formStyles.error, { backgroundColor: danger }]}>{error}</Text> : null}
           <PrimaryButton label="Send request" onPress={() => onSubmit(name.trim())} busy={busy} disabled={!ok} style={{ marginTop: 16, marginBottom: 12 }} />
         </SafeAreaView>
-      </KeyboardAvoidingView>
+      </View>
       </View>
     </Modal>
   );
