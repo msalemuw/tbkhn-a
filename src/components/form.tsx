@@ -168,7 +168,7 @@ export function PickerSheet({
       <View style={styles.modalRoot}>
         <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={close} />
         <View style={{ paddingBottom: keyboard }}>
-          <SafeAreaView edges={keyboard ? [] : ['bottom']} style={[styles.sheet, searchable ? { height: Math.min(sheetHeight, screenH - keyboard - 60) } : { maxHeight: Math.round(screenH * 0.75) }]}>
+          <SafeAreaView edges={keyboard ? [] : ['bottom']} style={[styles.sheet, searchable ? { height: Math.min(sheetHeight, screenH - keyboard - 60) } : { maxHeight: Math.min(Math.round(screenH * 0.92), screenH - keyboard - 60) }]}>
             <View style={styles.grabArea} onTouchStart={(e) => setTouchY(e.nativeEvent.pageY)} onTouchEnd={(e) => onSwipeEnd(e.nativeEvent.pageY)}>
               <View style={styles.grab} />
             </View>
@@ -187,7 +187,7 @@ export function PickerSheet({
               />
             </View>
           ) : null}
-          <ScrollView keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 12 }} showsVerticalScrollIndicator>
             {shown.map((it) => (
               <Pressable
                 key={it.label}
@@ -250,6 +250,6 @@ const styles = StyleSheet.create({
   grabArea: { paddingVertical: 14, alignItems: 'center' },
   grab: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line },
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginBottom: 6 },
-  sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
+  sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
   sheetLabel: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
 });
