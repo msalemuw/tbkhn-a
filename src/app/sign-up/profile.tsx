@@ -9,6 +9,7 @@ import { BackHeader, danger, Field, formStyles, PickerSheet, PrimaryButton, Sele
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
+import { HEARD, OTHER_DETAIL } from '@/lib/heard';
 import { formatPhone } from '@/lib/phone';
 import { type Country, fetchCountries, fetchRegions, type Region } from '@/lib/regions';
 import { useSession } from '@/lib/session';
@@ -26,16 +27,6 @@ const OPTIONAL: { kind: Optional; label: string; noun: string }[] = [
   { kind: 'work', label: 'WORK', noun: 'workplace' },
 ];
 
-const HEARD = [
-  { value: 'friend', label: 'A friend' },
-  { value: 'family', label: 'Family' },
-  { value: 'community', label: 'My community' },
-  { value: 'social_media', label: 'Social media' },
-  { value: 'ad', label: 'An ad' },
-  { value: 'search', label: 'Search' },
-  { value: 'other', label: 'Other' },
-] as const;
-type Heard = (typeof HEARD)[number]['value'];
 
 type UsernameState = { msg: string; color: string; icon?: 'error' | 'check-circle'; ok: boolean; suggestions: string[] };
 
@@ -69,7 +60,9 @@ export default function ProfileStep() {
   const [areaId, setAreaId] = useState<string | null>(null);
   const [optional, setOptional] = useState<Partial<Record<Optional, string>>>({});
   const [instapay, setInstapay] = useState('');
-  const [heard, setHeard] = useState<Heard | null>(null);
+  const [heard, setHeard] = useState<string | null>(null);
+  const [heardPick, setHeardPick] = useState<string | null>(null);
+  const [heardText, setHeardText] = useState('');
   const [inviter, setInviter] = useState('');
   const [sheet, setSheet] = useState<{ title: string; items: SheetItem[]; searchable?: boolean; footer?: { label: string; onPress: () => void } } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -131,6 +124,9 @@ export default function ProfileStep() {
   const byId = (id?: string | null) => all.find((c) => c.id === id);
   const label = (c: Community) => (c.pending ? `${c.name} (pending approval)` : c.name);
 
+  const heardDef = HEARD.find((h) => h.value === heard);
+  const heardDetail = heardDef?.detail.kind === 'pick' ? (heardPick && heardPick !== OTHER_DETAIL ? heardPick : heardText.trim() || null) : heardDef?.detail.kind === 'text' ? heardText.trim() || null : null;
+
   const canSubmit = name.trim().length > 0 && un.ok && Boolean(gov?.trim() && areaId);
 
   function openPicker(
@@ -184,6 +180,7 @@ export default function ProfileStep() {
         area: area.name,
         instapay_handle: instapay.trim() || null,
         heard_from: heard,
+        heard_detail: heardDetail,
         inviter_name: heard === 'friend' || heard === 'family' ? inviter.trim() || null : null,
       })
       .eq('id', session.user.id);
@@ -203,7 +200,7 @@ export default function ProfileStep() {
       .from('community_members')
       .upsert(joined.map((community_id) => ({ community_id, user_id: session.user.id })), { ignoreDuplicates: true });
     logFunnel('communities_selected', { count: joined.length, kinds: joined.map((id) => byId(id)?.kind), pending: requested.length }, { userRef: session.user.id });
-    logFunnel('signup_completed', { heard_from: heard }, { userRef: session.user.id });
+    logFunnel('signup_completed', { heard_from: heard, heard_detail: heardPick && heardPick !== OTHER_DETAIL ? heardPick : null }, { userRef: session.user.id });
     await refreshProfile();
     setBusy(false);
     router.replace('/home');
@@ -378,10 +375,42 @@ export default function ProfileStep() {
           <View style={styles.group}>
             <SelectField
               label="I HEARD FROM"
-              value={HEARD.find((h) => h.value === heard)?.label ?? 'None'}
-              onPress={() => openPicker('How did you hear about tabkheen A?', [...HEARD, { label: 'None', value: null }], heard, (v) => setHeard(v as Heard | null))}
+              value={heardDef?.label ?? 'Prefer not to say'}
+              onPress={() =>
+                openPicker('How did you hear about tabkheen A?', [...HEARD.map((h) => ({ label: h.label, value: h.value })), { label: 'Prefer not to say', value: null }], heard, (v) => {
+                  setHeard(v);
+                  setHeardPick(null);
+                  setHeardText('');
+                })
+              }
             />
-            {heard === 'friend' || heard === 'family' ? (
+            {heardDef?.detail.kind === 'pick' ? (
+              <SelectField
+                label="WHICH ONE?"
+                value={heardPick === OTHER_DETAIL ? 'Another one' : (heardPick ?? 'Choose (optional)')}
+                onPress={() =>
+                  openPicker(
+                    heardDef.detail.kind === 'pick' ? heardDef.detail.title : '',
+                    [...(heardDef.detail.kind === 'pick' ? heardDef.detail.options : []).map((o) => ({ label: o, value: o })), { label: 'Another one', value: OTHER_DETAIL }],
+                    heardPick,
+                    setHeardPick,
+                  )
+                }
+              />
+            ) : null}
+            {heardDef?.detail.kind === 'text' || (heardDef?.detail.kind === 'pick' && heardPick === OTHER_DETAIL) ? (
+              <Field label={heardDef.detail.kind === 'text' ? heardDef.detail.label : 'WHICH ONE? (OPTIONAL)'}>
+                <TextInput
+                  value={heardText}
+                  onChangeText={setHeardText}
+                  placeholder={heardDef.detail.kind === 'text' ? heardDef.detail.placeholder : 'Type the name'}
+                  placeholderTextColor={colors.faint}
+                  maxLength={80}
+                  style={formStyles.input}
+                />
+              </Field>
+            ) : null}
+            {heardDef?.detail.kind === 'person' ? (
               <Field label="WHO INVITED YOU? (OPTIONAL)">
                 <TextInput value={inviter} onChangeText={setInviter} placeholder="Their name or @username" placeholderTextColor={colors.faint} maxLength={60} style={formStyles.input} />
               </Field>

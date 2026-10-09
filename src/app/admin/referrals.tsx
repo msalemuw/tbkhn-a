@@ -5,8 +5,9 @@ import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native
 import { AdminScreen, adminStyles, Card, ErrorLine } from '@/components/admin-ui';
 import { Chip } from '@/components/chip';
 import { colors, fonts } from '@/constants/theme';
-import { type AdminCommunity, fetchCommunities, fetchInviterNames, fetchReferralTally, HEARD_LABEL, type InviterRow, type ReferralRow } from '@/lib/admin';
+import { type AdminCommunity, fetchCommunities, fetchInviterNames, fetchReferralTally, type InviterRow, type ReferralRow } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
+import { HEARD_LABEL } from '@/lib/heard';
 
 // Referral tally: finished sign-ups by their "How did you hear about tabkheen A?" answer, in total and per week,
 // for everyone or one community, plus the names typed under "Who invited you?".
@@ -21,11 +22,18 @@ const weekLabel = (d: string) => {
 
 const answer = (h: string | null) => (h ? HEARD_LABEL[h] ?? h : 'Skipped the question');
 
-/** Answer → count, biggest first. */
+/** Answer → count, biggest first, each with its details (platform, ad, typed name) biggest first. */
 function countBy(rows: ReferralRow[]) {
-  const by = new Map<string | null, number>();
-  for (const r of rows) by.set(r.heard_from, (by.get(r.heard_from) ?? 0) + r.signups);
-  return [...by.entries()].sort((a, b) => b[1] - a[1]);
+  const by = new Map<string | null, { n: number; details: Map<string, number> }>();
+  for (const r of rows) {
+    const e = by.get(r.heard_from) ?? { n: 0, details: new Map<string, number>() };
+    e.n += r.signups;
+    if (r.heard_detail) e.details.set(r.heard_detail, (e.details.get(r.heard_detail) ?? 0) + r.signups);
+    by.set(r.heard_from, e);
+  }
+  return [...by.entries()]
+    .sort((a, b) => b[1].n - a[1].n)
+    .map(([h, e]) => ({ h, n: e.n, details: [...e.details.entries()].sort((a, b) => b[1] - a[1]) }));
 }
 
 export default function Referrals() {
@@ -84,8 +92,8 @@ export default function Referrals() {
 
         <Card>
           <Text style={adminStyles.title}>All time · {total} sign-ups</Text>
-          {countBy(rows).map(([h, n]) => (
-            <Line key={h ?? 'none'} label={answer(h)} value={n} of={total} />
+          {countBy(rows).map((e) => (
+            <Answer key={e.h ?? 'none'} label={answer(e.h)} n={e.n} of={total} details={e.details} />
           ))}
           {!loading && total === 0 ? <Text style={adminStyles.muted}>No finished sign-ups yet.</Text> : null}
         </Card>
@@ -111,14 +119,28 @@ export default function Referrals() {
               <Text style={adminStyles.title}>
                 {weekLabel(w)} · {n} sign-ups
               </Text>
-              {countBy(week).map(([h, c]) => (
-                <Line key={h ?? 'none'} label={answer(h)} value={c} of={n} />
+              {countBy(week).map((e) => (
+                <Answer key={e.h ?? 'none'} label={answer(e.h)} n={e.n} of={n} details={e.details} />
               ))}
             </Card>
           );
         })}
       </ScrollView>
     </AdminScreen>
+  );
+}
+
+function Answer({ label, n, of, details }: { label: string; n: number; of: number; details: [string, number][] }) {
+  return (
+    <View>
+      <Line label={label} value={n} of={of} />
+      {details.map(([d, c]) => (
+        <View key={d} style={styles.sub}>
+          <Text style={styles.subLabel}>{d}</Text>
+          <Text style={styles.lineValue}>{c}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -136,5 +158,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: colors.line },
   lineLabel: { flex: 1, fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink },
+  sub: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5, paddingLeft: 16 },
+  subLabel: { flex: 1, fontFamily: fonts.medium, fontSize: 13.5, color: colors.muted },
   lineValue: { minWidth: 32, textAlign: 'right', fontFamily: fonts.extraBold, fontSize: 15, color: colors.navy },
 });
