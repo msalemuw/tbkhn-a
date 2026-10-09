@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import { type ReactNode, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { type ReactNode, useEffect, useState } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
@@ -116,18 +116,46 @@ export function PickerSheet({
   footer?: { label: string; onPress: () => void };
 }) {
   const [q, setQ] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const { height: screenH } = useWindowDimensions();
+  const open = items !== null;
+  // Close the form's keyboard first, or the sheet would sit above it with the form showing underneath.
+  useEffect(() => {
+    if (open) Keyboard.dismiss();
+  }, [open]);
   const close = () => {
     setQ('');
+    setExpanded(false);
     onClose();
+  };
+  // Swiping the handle: down closes (or shrinks an expanded list), up opens the list to nearly full height.
+  const [touchY, setTouchY] = useState<number | null>(null);
+  const onSwipeEnd = (endY: number) => {
+    if (touchY === null) return;
+    const dy = endY - touchY;
+    setTouchY(null);
+    if (dy > 40) {
+      if (expanded) {
+        LayoutAnimation.easeInEaseOut();
+        setExpanded(false);
+      } else close();
+    } else if (dy < -40) {
+      LayoutAnimation.easeInEaseOut();
+      setExpanded(true);
+    }
   };
   const needle = q.trim().toLowerCase();
   const shown = (items ?? []).filter((it) => !needle || it.label.toLowerCase().includes(needle));
+  const sheetHeight = Math.round(screenH * (expanded ? 0.92 : 0.75));
   return (
-    <Modal visible={items !== null} transparent animationType="slide" onRequestClose={close}>
-      <Pressable style={styles.scrim} onPress={close} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <SafeAreaView edges={['bottom']} style={[styles.sheet, searchable && styles.sheetTall]}>
-          <View style={styles.grab} />
+    <Modal visible={open} transparent animationType="slide" onRequestClose={close}>
+      <View style={styles.modalRoot}>
+        <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={close} />
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <SafeAreaView edges={['bottom']} style={[styles.sheet, searchable && { height: sheetHeight }]}>
+            <View style={styles.grabArea} onTouchStart={(e) => setTouchY(e.nativeEvent.pageY)} onTouchEnd={(e) => onSwipeEnd(e.nativeEvent.pageY)}>
+              <View style={styles.grab} />
+            </View>
           <Text style={styles.sheetTitle}>{title}</Text>
           {searchable ? (
             <View style={styles.search}>
@@ -169,8 +197,9 @@ export function PickerSheet({
               <MaterialIcons name="add-circle-outline" size={22} color={colors.teal} />
             </Pressable>
           ) : null}
-        </SafeAreaView>
-      </KeyboardAvoidingView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -195,15 +224,15 @@ const styles = StyleSheet.create({
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 2 },
   value: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
   selectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 2 },
-  scrim: { flex: 1, backgroundColor: 'rgba(40,48,58,.35)' },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  scrimFill: { backgroundColor: 'rgba(40,48,58,.35)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, maxHeight: '75%' },
-  // A searchable list keeps one tall size so the footer row stays visible even when the search finds nothing.
-  sheetTall: { height: '75%' },
   footerRow: { borderTopWidth: 1, borderTopColor: colors.line },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, marginBottom: 4 },
   searchInput: { flex: 1, fontFamily: fonts.semiBold, fontSize: 16, color: colors.ink, paddingVertical: 10 },
   none: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, paddingVertical: 14 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 10 },
+  grabArea: { paddingVertical: 14, alignItems: 'center' },
+  grab: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line },
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginBottom: 6 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   sheetLabel: { fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },

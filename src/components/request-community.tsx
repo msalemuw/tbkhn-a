@@ -33,7 +33,8 @@ export function RequestCommunitySheet({
   const ok = name.trim().length >= 2 && !exact;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} onPress={onClose} />
+      <View style={styles.modalRoot}>
+      <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={onClose} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <View style={styles.grab} />
@@ -59,12 +60,14 @@ export function RequestCommunitySheet({
           <PrimaryButton label="Send request" onPress={() => onSubmit(name.trim())} busy={busy} disabled={!ok} style={{ marginTop: 16, marginBottom: 12 }} />
         </SafeAreaView>
       </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(40,48,58,.35)' },
+  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  scrimFill: { backgroundColor: 'rgba(40,48,58,.35)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20 },
   grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 10 },
   title: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
