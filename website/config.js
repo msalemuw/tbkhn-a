@@ -11,8 +11,8 @@ window.TABKHEEN = {
   contactEmail: 'tbkheen.A@gmail.com',
   // Social media links shown at the bottom of the page (full https:// links). Empty ones are hidden.
   social: {
-    instagram: '',
+    instagram: 'https://www.instagram.com/tabkheen.a',
     facebook: 'https://www.facebook.com/106214638238182', // the "Tabkheen.a" page
-    tiktok: '',
+    tiktok: 'https://www.tiktok.com/@tabkheen.a',
   },
 };
