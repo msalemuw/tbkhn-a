@@ -5,6 +5,8 @@ window.TABKHEEN = {
   supabaseKey: 'sb_publishable_K5a4F0aQtkS65nUEm0iZNA_x71rp4UA',
   // Google sign-in: the public web client ID, the same one the app uses (Google Cloud project tabkheen-a).
   googleClientId: '259310650536-bbcejl2bs5vt6rcne1kmrdedh5v6le6u.apps.googleusercontent.com',
+  // Apple sign-in on the website: the Services ID from the Apple Developer account. Empty hides the Apple button.
+  appleServiceId: 'com.tabkheen.a.web',
   // Meta pixel ID from Events Manager, so ads can count sign-ups. Leave empty until the ads thread has one.
   metaPixelId: '',
   // Shown at the bottom of the page. Use the domain address once Cloudflare Email Routing forwards it.
