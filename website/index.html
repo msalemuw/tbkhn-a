@@ -277,10 +277,13 @@
       notListedArea: 'Can’t find your area? Type it', areaTypedPh: 'example: Rehab City',
       areaTypedHint: 'We’ll add it after a quick check, and you’ll join it automatically.',
       optional: { club: 'CLUB', sahel: 'SAHEL', school: 'SCHOOL', work: 'WORK' },
+      notListedOpt: { club: 'Can’t find your club? Type it', sahel: 'Can’t find your Sahel community? Type it', school: 'Can’t find your school? Type it', work: 'Can’t find your workplace? Type it' },
+      optTypedPh: 'Type the name', errOptTyped: 'Please type the name of the community you want to add.',
+      errOptExists: 'One of the communities you typed already exists or is waiting for approval. Pick it from the list.',
       moreLater: 'You can join more communities anytime in the app.',
       secPaid: 'GETTING PAID', fInstapay: 'INSTAPAY HANDLE (OPTIONAL)',
       instapayHint: 'Needed when you cook, so neighbours can pay you directly. Add it later if you like.',
-      secHeard: 'HOW DID YOU HEAR ABOUT TABKHEEN A? (OPTIONAL)', fHeard: 'I HEARD FROM', preferNot: 'Prefer not to say',
+      secHeard: 'HOW DID YOU HEAR ABOUT TABKHEEN A? (OPTIONAL)', fHeard: 'I HEARD FROM',
       fWhichOne: 'WHICH ONE?', anotherOne: 'Another one', fInviter: 'THEIR NAME (OPTIONAL)',
       unEmpty: 'Choose a username: 3–20 letters, numbers, . or _', unShort: 'At least 3 characters', unChecking: 'Checking…',
       unTaken: function (u) { return '@' + u + ' is already taken. Try one of these:'; },
@@ -325,10 +328,13 @@
       notListedArea: 'منطقتك مش موجودة؟ اكتبها', areaTypedPh: 'مثال: مدينة الرحاب',
       areaTypedHint: 'هنضيفها بعد مراجعة سريعة، وهتنضم لها تلقائيًا.',
       optional: { club: 'النادي', sahel: 'الساحل', school: 'المدرسة', work: 'الشغل' },
+      notListedOpt: { club: 'ناديك مش موجود؟ اكتبه', sahel: 'مكانك في الساحل مش موجود؟ اكتبه', school: 'مدرستك مش موجودة؟ اكتبها', work: 'شغلك مش موجود؟ اكتبه' },
+      optTypedPh: 'اكتب الاسم', errOptTyped: 'اكتب اسم المجتمع اللي عايز تضيفه.',
+      errOptExists: 'واحد من المجتمعات اللي كتبتها موجود أو مستني المراجعة. اختاره من القايمة.',
       moreLater: 'تقدر تنضم لمجتمعات تانية في أي وقت من التطبيق.',
       secPaid: 'استلام الفلوس', fInstapay: 'حساب إنستاباي (اختياري)',
       instapayHint: 'محتاجه لما تطبخ، عشان جيرانك يدفعولك على طول. تقدر تضيفه بعدين.',
-      secHeard: 'عرفت tabkheen A منين؟ (اختياري)', fHeard: 'عرفت من', preferNot: 'أفضّل ما أقولش',
+      secHeard: 'عرفت tabkheen A منين؟ (اختياري)', fHeard: 'عرفت من',
       fWhichOne: 'أنهي واحد؟', anotherOne: 'حاجة تانية', fInviter: 'اسمه (اختياري)',
       unEmpty: 'اختار اسم مستخدم: من 3 لـ 20 حرف إنجليزي أو رقم أو . أو _', unShort: '3 حروف على الأقل', unChecking: 'بنشوف…',
       unTaken: function (u) { return '@' + u + ' مستخدم قبل كده. جرّب واحد من دول:'; },
@@ -644,15 +650,20 @@
     $('areaTypedBox').hidden = $('area').value !== OTHER;
   }
   function fillOptional() {
-    var box = $('optional'), cur = {};
-    box.querySelectorAll('select').forEach(function (s) { cur[s.dataset.kind] = s.value; });
+    var box = $('optional'), cur = {}, typed = {};
+    box.querySelectorAll('select').forEach(function (sel) { cur[sel.dataset.kind] = sel.value; });
+    box.querySelectorAll('input').forEach(function (inp) { typed[inp.dataset.kind] = inp.value; });
     box.innerHTML = '';
     OPTIONAL.forEach(function (kind) {
       var label = document.createElement('label'); label.className = 'f'; label.htmlFor = 'opt-' + kind; label.textContent = t('optional')[kind];
       var sel = document.createElement('select'); sel.id = 'opt-' + kind; sel.dataset.kind = kind;
       var list = state.communities.filter(function (c) { return c.kind === kind; });
-      fillSelect(sel, [{ value: '', label: t('none') }].concat(list.map(function (c) { return { value: c.id, label: communityLabel(c) }; })), cur[kind] || '');
-      box.appendChild(label); box.appendChild(sel);
+      fillSelect(sel, [{ value: '', label: t('none') }].concat(list.map(function (c) { return { value: c.id, label: communityLabel(c) }; }), [{ value: OTHER, label: t('notListedOpt')[kind] }]), cur[kind] || '');
+      // Same as the app's "Can't find your club? Request it": the typed name becomes a community request.
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 80; inp.id = 'opt-' + kind + '-typed'; inp.dataset.kind = kind;
+      inp.placeholder = t('optTypedPh'); inp.style.marginTop = '8px'; inp.value = typed[kind] || ''; inp.hidden = sel.value !== OTHER;
+      sel.addEventListener('change', function () { inp.hidden = sel.value !== OTHER; if (!inp.hidden) inp.focus(); });
+      box.appendChild(label); box.appendChild(sel); box.appendChild(inp);
     });
   }
   $('gov').addEventListener('change', function () { $('area').value = ''; fillAreas(); });
@@ -661,8 +672,9 @@
   var prefillHeard = null;
   function heardDef() { var v = $('heard').value; return HEARD.filter(function (h) { return h.value === v; })[0] || null; }
   function fillHeard() {
-    var cur = $('heard').value || (prefillHeard && prefillHeard.heard) || '';
-    fillSelect($('heard'), [{ value: '', label: t('preferNot') }].concat(HEARD.map(function (h) { return { value: h.value, label: h[lang] }; })), cur);
+    // "A friend" is preselected, the same as the app; there is no "prefer not to say".
+    var cur = $('heard').value || (prefillHeard && prefillHeard.heard) || 'friend';
+    fillSelect($('heard'), HEARD.map(function (h) { return { value: h.value, label: h[lang] }; }), cur);
     if (prefillHeard) { $('inviter').value = prefillHeard.inviter; prefillHeard = null; }
     var d = heardDef(), pickCur = $('heardPick').value;
     $('heardPickBox').hidden = !(d && d.detail.kind === 'pick');
@@ -741,6 +753,9 @@
     if (!state.loves) return fail('errLoves');
     if (!gov) return fail('errGov');
     if (!areaId || (areaId === OTHER && typed.length < 2)) return fail('errArea');
+    var optTyped = OPTIONAL.filter(function (k) { return $('opt-' + k).value === OTHER; })
+      .map(function (k) { return { kind: k, name: $('opt-' + k + '-typed').value.trim() }; });
+    if (optTyped.some(function (o) { return o.name.length < 2; })) return fail('errOptTyped');
     if (!$('consent').checked) return fail('errConsent');
 
     var d = heardDef(), pick = $('heardPick').value, text = $('heardText').value.trim();
@@ -759,7 +774,20 @@
           return res.data;
         });
 
-    areaStep.then(function (area) {
+    // Typed clubs, Sahel communities, schools and workplaces are requests too, like in the app.
+    function requestOptional(area) {
+      return Promise.all(optTyped.map(function (o) {
+        return sb.insertOne('communities', { name: o.name, kind: o.kind, governorate: gov, area: area.name, requested_by: uid, status: 'pending', country_code: 'EG' },
+          'id,name,kind,governorate,status').then(function (res) {
+            if (res.error && res.error.code === '23505') throw { msg: 'errOptExists' };
+            if (res.error) throw res.error;
+            state.communities.push(res.data);
+            logFunnel('community_requested', { kind: o.kind, country: 'EG' });
+          });
+      })).then(function () { return area; });
+    }
+
+    areaStep.then(requestOptional).then(function (area) {
       return sb.update('profiles', 'id=eq.' + uid, {
         display_name: name, username: username, loves: state.loves, country_code: 'EG', governorate: gov, area: area.name,
         instapay_handle: $('instapay').value.trim() || null,
