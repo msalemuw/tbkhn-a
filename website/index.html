@@ -67,6 +67,10 @@
   .card h2 { font: 700 22px var(--sans); margin: 0 0 4px; }
   .card .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; line-height: 1.5; }
   .gbtn { display: flex; justify-content: center; min-height: 44px; margin-top: 6px; }
+  .abtn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 360px; min-height: 44px; margin: 10px auto 0;
+          border: 0; border-radius: 999px; background: var(--navy); color: var(--white); font: 600 15px/1 'Hanken Grotesk', system-ui, sans-serif; cursor: pointer; direction: ltr; }
+  .abtn svg { width: 18px; height: 18px; fill: currentColor; }
+  .abtn[disabled] { opacity: .6; cursor: default; }
   .note { display: flex; gap: 10px; align-items: flex-start; background: rgba(202,231,241,0.45); border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.5; margin-top: 16px; }
   .note b { font-weight: 700; }
   h3.sec { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; margin: 26px 0 2px; }
@@ -150,11 +154,12 @@
     <p class="lead" data-t="lead"></p>
     <p class="pitch" data-t="pitch"></p>
 
-    <!-- Step 1: sign in with Google, the same account the app uses -->
+    <!-- Step 1: sign in with Google or Apple, the same account the app uses -->
     <div class="card" id="stepStart">
       <h2 data-t="startTitle"></h2>
       <p class="sub" data-t="startSub"></p>
       <div class="gbtn" id="gbtn"></div>
+      <button type="button" class="abtn" id="abtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg>Continue with Apple</button>
       <div class="note"><span>ⓘ</span><span data-t="startNote"></span></div>
       <div class="err" id="errStart" role="alert"></div>
     </div>
@@ -258,9 +263,9 @@
       pitch: 'The biggest communities get our focus first, and the most prizes.',
       startTitle: 'Create your account now',
       startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
-      startNote: '<b>Use your Google account.</b> On launch day, open the app and tap <b>Continue with Google</b> with the same account.',
+      startNote: '<b>Use your Google or Apple account.</b> On launch day, open the app and tap the same button with the same account.',
       profileTitle: 'Create your account',
-      signedInAs: 'Signed in with Google as ',
+      signedInAs: function (p) { return 'Signed in with ' + p + ' as '; },
       fName: 'FULL NAME', fUsername: 'USERNAME', fWhatsapp: 'WHATSAPP NUMBER',
       whatsappHint: 'We’ll message you here the day the app opens. Only our team sees it.',
       secAbout: 'ABOUT YOU', lovesCooking: 'I love cooking', lovesEating: 'I love eating', lovesBoth: 'I love cooking and eating',
@@ -281,18 +286,18 @@
       unOk: function (u) { return '@' + u + ' is available'; },
       consent: 'Message me on WhatsApp when tabkheen A opens. I agree to the <a href="privacy.html?lang=en">privacy notice</a>.',
       submit: 'Create my account', sending: 'Saving…',
-      notYou: 'Not you? Use another Google account',
+      notYou: 'Not you? Use another account',
       errName: 'Please write your name.', errUsername: 'Please choose an available username.',
       errPhone: 'Please write a valid Egyptian mobile number, like 010 1234 5678.',
       errGov: 'Please choose your governorate.', errArea: 'Please choose or type your area.',
       errConsent: 'Please tick the box so we can message you when we open.',
       errAreaExists: 'That area already exists or is waiting for approval. Pick it from the list.',
       errNet: 'We couldn’t save your account. Check your connection and try again.',
-      errSignIn: 'We couldn’t sign you in with Google. Please try again.',
+      errSignIn: 'We couldn’t sign you in. Please try again.',
       errLoad: 'We couldn’t load the page. Check your connection and refresh.',
       doneTitle: function (u) { return 'You’re in, @' + u + '!'; },
       doneSub: 'Your account is ready. We’ll message you on WhatsApp the day the app opens. The more neighbours join, the sooner your area opens: share your link.',
-      doneNote: function (e) { return 'On launch day, install tabkheen A and tap <b>Continue with Google</b> with <b>' + e + '</b>.'; },
+      doneNote: function (e, p) { return 'On launch day, install tabkheen A and tap <b>Continue with ' + p + '</b> with <b>' + e + '</b>.'; },
       share: 'Share with friends', copy: 'Copy my link', copied: 'Link copied', signOut: 'Sign out',
       shareText: 'I joined tabkheen A: home-cooked dishes from people in our community, pickup only. Make your account here:',
       privacy: 'Privacy notice', contact: 'Questions?', follow: 'Follow us'
@@ -305,9 +310,9 @@
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
       startTitle: 'اعمل حسابك دلوقتي',
       startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
-      startNote: '<b>استخدم حساب Google بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس <b>Continue with Google</b> بنفس الحساب.',
+      startNote: '<b>استخدم حساب Google أو Apple بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس على نفس الزرار بنفس الحساب.',
       profileTitle: 'اعمل حسابك',
-      signedInAs: 'داخل بحساب Google: ',
+      signedInAs: function (p) { return 'داخل بحساب ' + p + ': '; },
       fName: 'الاسم بالكامل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الواتساب',
       whatsappHint: 'هنبعتلك عليه أول يوم التطبيق ينزل. فريقنا بس اللي يشوفه.',
       secAbout: 'عنك', lovesCooking: 'بحب الطبخ', lovesEating: 'بحب الأكل', lovesBoth: 'بحب الطبخ والأكل',
@@ -328,18 +333,18 @@
       unOk: function (u) { return '@' + u + ' متاح'; },
       consent: 'ابعتولي على واتساب أول ما tabkheen A ينزل. موافق على <a href="privacy.html?lang=ar">سياسة الخصوصية</a>.',
       submit: 'اعمل حسابي', sending: 'جاري الحفظ…',
-      notYou: 'مش إنت؟ ادخل بحساب Google تاني',
+      notYou: 'مش إنت؟ ادخل بحساب تاني',
       errName: 'من فضلك اكتب اسمك.', errUsername: 'من فضلك اختار اسم مستخدم متاح.',
       errPhone: 'من فضلك اكتب رقم موبايل مصري صحيح، زي 010 1234 5678.',
       errGov: 'من فضلك اختار محافظتك.', errArea: 'من فضلك اختار أو اكتب منطقتك.',
       errConsent: 'من فضلك علّم على المربع عشان نقدر نبعتلك أول ما نفتح.',
       errAreaExists: 'المنطقة دي موجودة أو مستنية المراجعة. اختارها من القائمة.',
       errNet: 'مقدرناش نحفظ حسابك. اتأكد من الإنترنت وجرّب تاني.',
-      errSignIn: 'مقدرناش ندخلك بحساب Google. جرّب تاني.',
+      errSignIn: 'مقدرناش ندخلك. جرّب تاني.',
       errLoad: 'مقدرناش نحمّل الصفحة. اتأكد من الإنترنت وحدّث الصفحة.',
       doneTitle: function (u) { return 'حسابك جاهز يا @' + u + '!'; },
       doneSub: 'هنبعتلك على واتساب أول يوم التطبيق ينزل. كل ما جيرانك يسجّلوا، منطقتك تفتح أسرع: ابعت الرابط بتاعك.',
-      doneNote: function (e) { return 'يوم الإطلاق نزّل tabkheen A ودوس <b>Continue with Google</b> بحساب <b>' + e + '</b>.'; },
+      doneNote: function (e, p) { return 'يوم الإطلاق نزّل tabkheen A ودوس <b>Continue with ' + p + '</b> بحساب <b>' + e + '</b>.'; },
       share: 'ابعت لصحابك', copy: 'انسخ الرابط بتاعي', copied: 'تم نسخ الرابط', signOut: 'تسجيل الخروج',
       shareText: 'أنا عملت حساب على tabkheen A: أكل بيتي من ناس في مجتمعنا، والاستلام بنفسك. اعمل حسابك هنا:',
       privacy: 'سياسة الخصوصية', contact: 'عندك سؤال؟', follow: 'تابعنا'
@@ -404,7 +409,7 @@
   var ref = (params.get('ref') || store('tabkheen.ref') || '').toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
   if (ref) { source.ref = ref; store('tabkheen.ref', ref); }
 
-  // A small Supabase client: the same auth (Google ID token) and database API the app uses, without a
+  // A small Supabase client: the same auth (Google or Apple ID token) and database API the app uses, without a
   // library download, so the page keeps working if a script CDN is slow or blocked.
   var sb = (function () {
     var KEY = 'tabkheen.session', session = null;
@@ -486,12 +491,12 @@
     $('stepStart').hidden = state.step !== 'start';
     $('stepProfile').hidden = state.step !== 'profile';
     $('stepDone').hidden = state.step !== 'done';
-    if (state.user) $('signedInAs').textContent = t('signedInAs') + (state.user.email || '');
-    if (state.step === 'start') renderGoogleButton();
+    if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
+    if (state.step === 'start') { renderGoogleButton(); renderAppleButton(); }
     if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t('doneTitle')(state.profile.username);
-      $('doneNote').innerHTML = t('doneNote')(escapeHtml(state.user && state.user.email || ''));
+      $('doneNote').innerHTML = t('doneNote')(escapeHtml(state.user && state.user.email || ''), providerName());
     }
   }
   function escapeHtml(s) { return s.replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
@@ -540,6 +545,52 @@
     });
   }
 
+  // ---------- step 1: Apple ----------
+  // Apple signs in with the web Services ID; Supabase accepts it next to the app's ID, so it is the same account
+  // the iPhone app signs into. The button stays hidden until config.js has the Services ID.
+  var appleReady = null, appleName = '';
+  function loadApple() {
+    if (appleReady) return appleReady;
+    appleReady = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      s.onload = resolve; s.onerror = function () { appleReady = null; reject(new Error('apple script')); };
+      document.head.appendChild(s);
+    });
+    return appleReady;
+  }
+  function renderAppleButton() {
+    if (!CFG.appleServiceId) return;
+    $('abtn').hidden = false;
+    loadApple().catch(function () { /* retried on click */ });
+  }
+  $('abtn').addEventListener('click', function () {
+    var btn = $('abtn'), started = Date.now(), raw = crypto.getRandomValues(new Uint32Array(4)).join('-');
+    $('errStart').classList.remove('show');
+    btn.disabled = true;
+    loadApple().then(function () { return sha256Hex(raw); }).then(function (hashed) {
+      AppleID.auth.init({ clientId: CFG.appleServiceId, scope: 'name email', redirectURI: location.origin + '/', nonce: hashed, usePopup: true });
+      return AppleID.auth.signIn();
+    }).then(function (resp) {
+      // Apple sends the name only the first time someone signs in, so keep it for the form.
+      var n = resp.user && resp.user.name;
+      if (n) appleName = [n.firstName, n.lastName].filter(Boolean).join(' ');
+      return sb.auth.signInWithIdToken({ provider: 'apple', token: resp.authorization.id_token, nonce: raw });
+    }).then(function (res) {
+      logFunnel('signup_method_chosen', { method: 'apple', result: res.error ? 'error' : 'ok', latency_ms: Date.now() - started });
+      if (res.error || !res.data.user) throw res.error || new Error('no user');
+      return afterSignIn(res.data.user);
+    }).catch(function (err) {
+      // Closing Apple's window is not an error.
+      if (err && (err.error === 'popup_closed_by_user' || err.error === 'user_cancelled_authorize')) return;
+      var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show');
+    }).then(function () { btn.disabled = false; });
+  });
+  function providerName() {
+    var p = state.user && state.user.app_metadata && state.user.app_metadata.provider;
+    return p === 'apple' ? 'Apple' : 'Google';
+  }
+
   function afterSignIn(user) {
     state.user = user;
     return sb.rpc('my_profile').then(function (res) {
@@ -547,7 +598,7 @@
       if (state.profile && state.profile.username) { state.step = 'done'; render(); return; }
       state.step = 'profile';
       var meta = user.user_metadata || {};
-      if (!$('name').value) $('name').value = (state.profile && state.profile.display_name) || meta.full_name || meta.name || '';
+      if (!$('name').value) $('name').value = (state.profile && state.profile.display_name) || meta.full_name || meta.name || appleName || '';
       if (ref && !$('heard').value) { prefillHeard = { heard: 'friend', inviter: '@' + ref }; }
       logFunnel('profile_started');
       return loadLists().then(render);
