@@ -537,6 +537,7 @@
     var started = Date.now();
     $('errStart').classList.remove('show');
     sb.auth.signInWithIdToken({ provider: 'google', token: resp.credential, nonce: state.rawNonce }).then(function (res) {
+      if (!res.error) store('tabkheen.method', 'google');
       logFunnel('signup_method_chosen', { method: 'google', result: res.error ? 'error' : 'ok', latency_ms: Date.now() - started });
       if (res.error || !res.data.user) throw res.error || new Error('no user');
       return afterSignIn(res.data.user);
@@ -577,6 +578,7 @@
       if (n) appleName = [n.firstName, n.lastName].filter(Boolean).join(' ');
       return sb.auth.signInWithIdToken({ provider: 'apple', token: resp.authorization.id_token, nonce: raw });
     }).then(function (res) {
+      if (!res.error) store('tabkheen.method', 'apple');
       logFunnel('signup_method_chosen', { method: 'apple', result: res.error ? 'error' : 'ok', latency_ms: Date.now() - started });
       if (res.error || !res.data.user) throw res.error || new Error('no user');
       return afterSignIn(res.data.user);
@@ -586,8 +588,9 @@
       var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show');
     }).then(function () { btn.disabled = false; });
   });
+  // The button used on this device wins; one account can have both Google and Apple linked by the same email.
   function providerName() {
-    var p = state.user && state.user.app_metadata && state.user.app_metadata.provider;
+    var p = store('tabkheen.method') || (state.user && state.user.app_metadata && state.user.app_metadata.provider);
     return p === 'apple' ? 'Apple' : 'Google';
   }
 
