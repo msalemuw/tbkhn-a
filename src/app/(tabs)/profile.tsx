@@ -49,7 +49,6 @@ export default function Profile() {
           <MaterialIcons name="settings" size={26} color={colors.ink} />
         </Pressable>
       }
-      onAvatarPlus={() => router.push('/edit-profile')}
       actions={
         <>
           <Pressable style={styles.btn} onPress={() => router.push('/edit-profile')} accessibilityRole="button">

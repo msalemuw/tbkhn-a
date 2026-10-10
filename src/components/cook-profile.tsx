@@ -41,7 +41,7 @@ const TABS: { key: Tab; label: string }[] = [
  * Used for other cooks (with a back arrow) and for my own Profile tab (with my actions and a footer).
  * The rank line ("#1 in Mohandeseen") comes with the Masters, which is not in the launch build.
  */
-export function CookProfileView({ id, onBack, actions, footer, barRight, belowStats, onAvatarPlus }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode; barRight?: ReactNode; belowStats?: ReactNode; onAvatarPlus?: () => void }) {
+export function CookProfileView({ id, onBack, actions, footer, barRight, belowStats }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode; barRight?: ReactNode; belowStats?: ReactNode }) {
   const { session } = useSession();
   const here = useMyLocation();
   const [cook, setCook] = useState<CookProfile | null | undefined>(undefined);
@@ -116,14 +116,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight, belowSt
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.top}>
-          <View>
-            <Avatar person={cook} size={86} />
-            {onAvatarPlus ? (
-              <Pressable style={styles.plus} onPress={onAvatarPlus} accessibilityRole="button" accessibilityLabel="Change photo">
-                <MaterialIcons name="add" size={18} color={colors.white} />
-              </Pressable>
-            ) : null}
-          </View>
+          <Avatar person={cook} size={86} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.row}>
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
@@ -263,7 +256,6 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 22, paddingTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { fontFamily: fonts.extraBold, fontSize: 21, color: colors.ink, flexShrink: 1 },
-  plus: { position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.teal, borderWidth: 2, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center' },
   badges: { gap: 5, marginTop: 4 },
   area: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 2 },
   rating: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink, marginTop: 3 },
