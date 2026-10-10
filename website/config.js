@@ -12,9 +12,7 @@ window.TABKHEEN = {
   // Social media links shown at the bottom of the page (full https:// links). Empty ones are hidden.
   social: {
     instagram: '',
-    facebook: '',
+    facebook: 'https://www.facebook.com/106214638238182', // the "Tabkheen.a" page
     tiktok: '',
-    whatsapp: '',
-    youtube: '',
   },
 };
