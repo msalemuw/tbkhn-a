@@ -18,4 +18,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci
       - run: npx tsc --noEmit
-      - run: eas update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+      # The commit message goes through an environment variable, so quotes in it cannot break the command.
+      - run: eas update --branch preview --message "$MESSAGE" --non-interactive
+        env:
+          MESSAGE: ${{ github.event.head_commit.message }}
