@@ -40,6 +40,8 @@
   .brand .ar { font: 600 34px 'IBM Plex Sans Arabic', sans-serif; }
   h1 { font: 400 40px/1.08 var(--serif); margin: 20px 0 14px; }
   h1 b { color: var(--yellow); font-weight: inherit; }
+  .early { display: block; width: 100%; margin-top: 28px; border: 0; border-radius: 18px; background: var(--yellow); color: var(--navy);
+    font: 800 21px var(--sans); padding: 18px 16px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
   /* Phone showing the app's welcome screen, with "launching soon" under it. */
   .soon { margin: 26px 0 26px; text-align: center; }
   .phone { position: relative; width: min(270px, 72vw); aspect-ratio: 9 / 19.5; margin: 0 auto; border-radius: 46px;
@@ -126,14 +128,13 @@
         <button type="button" data-lang="ar">ع</button>
       </div>
     </div>
-    <div class="brand"><img src="logo.png" alt="tabkheen A"><span class="bar"></span><span class="ar">طابخين إيه</span></div>
-    <h1 data-t="headline"></h1>
+    <button type="button" class="early" id="earlyBtn" data-t="earlyBtn"></button>
 
     <div class="soon">
       <div class="phone">
         <div class="screen">
           <span class="island" aria-hidden="true"></span>
-          <img class="logo" src="logo.png" alt="">
+          <img class="logo" src="logo.png" alt="tabkheen A">
           <span class="ar">طابخين إيه</span>
           <span class="tag" data-t="headline"></span>
           <div class="bottom">
@@ -259,6 +260,7 @@
     en: {
       // Tagline from the app's welcome screen (src/lib/welcome-copy.ts).
       headline: 'Good food brings us <b>closer</b>',
+      earlyBtn: 'Early sign-up: join now ↓',
       soonTitle: 'App launching <span>soon</span>',
       lead: 'Early sign-up is open. Make your account now and you’re ready the moment the app launches.',
       pitch: 'The biggest communities get our focus first, and the most prizes.',
@@ -309,6 +311,7 @@
     },
     ar: {
       headline: 'الأكل الحلو بيقرّبنا <b>أكتر</b>',
+      earlyBtn: 'تسجيل مبكر: سجّل دلوقتي ↓',
       soonTitle: 'التطبيق نازل <span>قريب</span>',
       lead: 'التسجيل المبكر بدأ. اعمل حسابك دلوقتي وتبقى جاهز أول ما التطبيق ينزل.',
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
@@ -372,6 +375,13 @@
     { value: 'other', en: 'Something else', ar: 'حاجة تانية', detail: { kind: 'text', en: 'TELL US MORE', ar: 'قولنا أكتر' } }
   ];
   var OPTIONAL = ['club', 'sahel', 'school', 'work'];
+
+  // "Early sign-up" button above the phone: scrolls to whichever sign-up step is showing.
+  document.getElementById('earlyBtn').addEventListener('click', function () {
+    var card = ['stepStart', 'stepProfile', 'stepDone'].map(function (id) { return document.getElementById(id); })
+      .filter(function (el) { return el && !el.hidden; })[0];
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   // Footer: contact email and the social links filled in config.js (empty ones are left out).
   var email = CFG.contactEmail || 'tbkheen.A@gmail.com';
