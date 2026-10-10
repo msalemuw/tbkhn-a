@@ -39,6 +39,7 @@
   .brand .bar { width: 1.5px; height: 34px; background: rgba(255,255,255,0.4); }
   .brand .ar { font: 600 34px 'IBM Plex Sans Arabic', sans-serif; }
   h1 { font: 400 40px/1.08 var(--serif); margin: 20px 0 14px; }
+  h1 b { color: var(--yellow); font-weight: inherit; }
   html[lang="ar"] h1 { font-weight: 600; font-size: 34px; line-height: 1.35; }
   .lead { color: var(--on-navy-muted); font-size: 17px; line-height: 1.55; margin: 0 0 10px; }
   .pitch { font-weight: 600; font-size: 17px; line-height: 1.55; margin: 0; }
@@ -94,6 +95,7 @@
   .how .n { flex: 0 0 30px; height: 30px; border-radius: 50%; background: var(--yellow); color: var(--navy); display: grid; place-items: center; font-weight: 700; }
   footer { max-width: 480px; margin: 0 auto; padding: 8px 16px 40px; color: var(--on-navy-muted); font-size: 14px; }
   footer a { color: var(--white); }
+  footer p { margin: 0 0 10px; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -209,16 +211,20 @@
     </section>
   </div>
 </div>
-<footer><a href="privacy.html" id="privacyLink" data-t="privacy"></a> · <span data-t="contact"></span> <a href="mailto:tbkheen.A@gmail.com">tbkheen.A@gmail.com</a></footer>
+<footer>
+  <p id="social" hidden><span data-t="follow"></span>: </p>
+  <a href="privacy.html" id="privacyLink" data-t="privacy"></a> · <span data-t="contact"></span> <a id="contactEmail"></a>
+</footer>
 
 <script>
 (function () {
   var CFG = window.TABKHEEN || {};
   var T = {
     en: {
-      headline: 'Cooking daily is a hassle. Delivery is slow and pricey. Your community’s dishes are steps away.',
-      lead: 'Hygienic, diverse dishes from people you know and trust in your community: your club, office or neighbours.',
-      pitch: 'Reserve a plate and pick it up. No fees, no rider.',
+      // Tagline from the app's welcome screen (src/lib/welcome-copy.ts).
+      headline: 'Good food brings us <b>closer</b>',
+      lead: 'Early sign-up is open. Make your account now and you’re ready the moment the app launches.',
+      pitch: 'The biggest communities get our focus first, and the most prizes.',
       startTitle: 'Create your account now',
       startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
       startNote: '<b>Use your Google account.</b> On launch day, open the app and tap <b>Continue with Google</b> with the same account.',
@@ -262,12 +268,12 @@
       how1: 'Join your community', how1s: 'Your area, club, compound, school or office.',
       how2: 'Reserve a plate', how2s: 'See what neighbours are cooking today and reserve.',
       how3: 'Pick it up', how3s: 'Pay the cook by InstaPay and pick up. No delivery fees.',
-      privacy: 'Privacy notice', contact: 'Questions?'
+      privacy: 'Privacy notice', contact: 'Questions?', follow: 'Follow us'
     },
     ar: {
-      headline: 'الطبخ كل يوم تعب، والدليفري بطيء وغالي. أطباق مجتمعك على بُعد خطوات.',
-      lead: 'أطباق نضيفة ومتنوعة من ناس تعرفهم وتثق فيهم في مجتمعك: النادي أو الشغل أو الجيران.',
-      pitch: 'احجز طبقك واستلمه بنفسك. من غير مصاريف توصيل ولا مندوب.',
+      headline: 'الأكل الحلو بيقرّبنا <b>أكتر</b>',
+      lead: 'التسجيل المبكر بدأ. اعمل حسابك دلوقتي وتبقى جاهز أول ما التطبيق ينزل.',
+      pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
       startTitle: 'اعمل حسابك دلوقتي',
       startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
       startNote: '<b>استخدم حساب Google بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس <b>Continue with Google</b> بنفس الحساب.',
@@ -311,7 +317,7 @@
       how1: 'انضم لمجتمعك', how1s: 'منطقتك أو النادي أو الكمبوند أو المدرسة أو الشغل.',
       how2: 'احجز طبقك', how2s: 'شوف جيرانك طابخين إيه النهارده واحجز.',
       how3: 'استلمه بنفسك', how3s: 'ادفع للطبّاخ بإنستاباي واستلم. من غير مصاريف توصيل.',
-      privacy: 'سياسة الخصوصية', contact: 'عندك سؤال؟'
+      privacy: 'سياسة الخصوصية', contact: 'عندك سؤال؟', follow: 'تابعنا'
     }
   };
 
@@ -328,6 +334,22 @@
     { value: 'other', en: 'Something else', ar: 'حاجة تانية', detail: { kind: 'text', en: 'TELL US MORE', ar: 'قولنا أكتر' } }
   ];
   var OPTIONAL = ['club', 'sahel', 'school', 'work'];
+
+  // Footer: contact email and the social links filled in config.js (empty ones are left out).
+  var email = CFG.contactEmail || 'tbkheen.A@gmail.com';
+  document.getElementById('contactEmail').href = 'mailto:' + email;
+  document.getElementById('contactEmail').textContent = email;
+  var SOCIAL = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tiktok', 'TikTok'], ['whatsapp', 'WhatsApp'], ['youtube', 'YouTube']];
+  var socialBox = document.getElementById('social');
+  SOCIAL.forEach(function (s) {
+    var url = (CFG.social || {})[s[0]];
+    if (!/^https:\/\//.test(url || '')) return;
+    if (!socialBox.hidden) socialBox.appendChild(document.createTextNode(' · '));
+    var link = document.createElement('a');
+    link.href = url; link.textContent = s[1]; link.target = '_blank'; link.rel = 'noopener';
+    socialBox.appendChild(link);
+    socialBox.hidden = false;
+  });
   var OTHER = '__other';
 
   var params = new URLSearchParams(location.search);
