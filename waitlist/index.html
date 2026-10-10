@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tabkheen A · طابخين إيه</title>
+<meta name="description" content="Home-cooked dishes from people you trust in your community. Pickup only, no delivery fees. Join the list and be first when the app opens.">
+<meta property="og:title" content="tabkheen A · طابخين إيه">
+<meta property="og:description" content="أطباق بيتي من ناس تعرفهم في مجتمعك. سجّل وكن أول من يعرف أول ما التطبيق ينزل.">
+<meta property="og:image" content="art.jpg">
+<meta name="theme-color" content="#28303a">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+  /* The tabkheen A palette (founder, 2026-10-04): only these five colors, plus see-through tints. */
+  :root {
+    --navy: #28303a; --yellow: #ffc107; --white: #ffffff; --light-blue: #cae7f1; --teal: #00c2a8;
+    --muted: rgba(40,48,58,0.68); --faint: rgba(40,48,58,0.4); --on-navy-muted: rgba(255,255,255,0.78);
+    --sans: 'Hanken Grotesk', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --serif: 'Instrument Serif', Georgia, serif;
+  }
+  html[lang="ar"] { --sans: 'IBM Plex Sans Arabic', 'Hanken Grotesk', system-ui, sans-serif; --serif: 'IBM Plex Sans Arabic', serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--navy); color: var(--white); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  .hero { position: relative; background: var(--navy) url(art.jpg) center top / cover no-repeat; }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(40,48,58,0.35), rgba(40,48,58,0.92) 70%, var(--navy)); }
+  .wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 16px 16px 32px; }
+  .top { display: flex; justify-content: flex-end; }
+  .lang { display: inline-flex; border: 1.5px solid rgba(255,255,255,0.4); border-radius: 999px; padding: 3px; }
+  .lang button { border: 0; background: none; color: var(--white); font: 600 15px var(--sans); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--white); color: var(--navy); }
+  .brand { display: flex; align-items: center; gap: 14px; margin-top: 120px; }
+  .brand img { height: 36px; width: auto; }
+  .brand .bar { width: 1.5px; height: 34px; background: rgba(255,255,255,0.4); }
+  .brand .ar { font: 600 34px 'IBM Plex Sans Arabic', sans-serif; }
+  h1 { font: 400 40px/1.08 var(--serif); margin: 20px 0 14px; }
+  html[lang="ar"] h1 { font-weight: 600; font-size: 34px; line-height: 1.35; }
+  .lead { color: var(--on-navy-muted); font-size: 17px; line-height: 1.55; margin: 0 0 10px; }
+  .pitch { font-weight: 600; font-size: 17px; line-height: 1.55; margin: 0; }
+  .card { background: var(--white); color: var(--navy); border-radius: 22px; padding: 22px 18px; margin-top: 26px; }
+  .card h2 { font: 700 22px var(--sans); margin: 0 0 4px; }
+  .card .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; line-height: 1.5; }
+  label.f { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); margin: 16px 0 6px; }
+  html[lang="ar"] label.f { letter-spacing: 0; font-size: 14px; }
+  input[type=text], input[type=tel], select {
+    width: 100%; font: 500 17px var(--sans); color: var(--navy); background: var(--white);
+    border: 1.5px solid var(--light-blue); border-radius: 14px; padding: 13px 14px; outline: none; appearance: none;
+  }
+  select { background-image: linear-gradient(45deg, transparent 50%, var(--navy) 50%), linear-gradient(135deg, var(--navy) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; }
+  html[dir="rtl"] select { background-position: 20px 55%, 26px 55%; }
+  input:focus, select:focus { border-color: var(--teal); }
+  .phone { display: flex; gap: 8px; direction: ltr; }
+  .phone .cc { flex: 0 0 auto; display: flex; align-items: center; padding: 0 14px; border: 1.5px solid var(--light-blue); border-radius: 14px; font-weight: 600; }
+  .phone input { direction: ltr; text-align: left; }
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .roles button { border: 1.5px solid var(--light-blue); background: var(--white); color: var(--navy); border-radius: 14px; padding: 12px 6px; font: 600 15px var(--sans); cursor: pointer; }
+  .roles button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 18px; font-size: 15px; line-height: 1.45; }
+  .check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--teal); flex: 0 0 auto; }
+  .check a { color: var(--navy); }
+  .err { color: var(--navy); background: rgba(255,193,7,0.25); border-radius: 10px; padding: 8px 10px; font-size: 14px; margin-top: 8px; display: none; }
+  .err.show { display: block; }
+  .cta { width: 100%; margin-top: 20px; border: 0; border-radius: 16px; background: var(--teal); color: var(--navy); font: 700 18px var(--sans); padding: 17px; cursor: pointer; }
+  .cta:disabled { opacity: 0.6; cursor: default; }
+  .ghost { width: 100%; margin-top: 10px; border: 1.5px solid var(--navy); border-radius: 16px; background: none; color: var(--navy); font: 600 16px var(--sans); padding: 14px; cursor: pointer; }
+  .done { text-align: center; }
+  .done .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--teal); margin: 6px auto 14px; display: grid; place-items: center; }
+  .how { margin-top: 28px; }
+  .how h3 { font: 700 18px var(--sans); margin: 0 0 12px; }
+  .how ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+  .how li { display: flex; gap: 12px; align-items: flex-start; color: var(--on-navy-muted); line-height: 1.5; }
+  .how li b { color: var(--white); display: block; }
+  .how .n { flex: 0 0 30px; height: 30px; border-radius: 50%; background: var(--yellow); color: var(--navy); display: grid; place-items: center; font-weight: 700; }
+  footer { max-width: 480px; margin: 0 auto; padding: 8px 16px 40px; color: var(--on-navy-muted); font-size: 14px; }
+  footer a { color: var(--white); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <div class="top">
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+    <div class="brand"><img src="logo.png" alt="tabkheen A"><span class="bar"></span><span class="ar">طابخين إيه</span></div>
+    <h1 data-t="headline"></h1>
+    <p class="lead" data-t="lead"></p>
+    <p class="pitch" data-t="pitch"></p>
+
+    <div class="card" id="formCard">
+      <h2 data-t="formTitle"></h2>
+      <p class="sub" data-t="formSub"></p>
+      <form id="form" novalidate>
+        <label class="f" for="name" data-t="name"></label>
+        <input id="name" type="text" autocomplete="name" maxlength="80" required>
+
+        <label class="f" for="phone" data-t="phone"></label>
+        <div class="phone"><span class="cc">+20</span><input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="14" required></div>
+
+        <label class="f" data-t="role"></label>
+        <div class="roles" id="roles">
+          <button type="button" data-role="eat" data-t="roleEat"></button>
+          <button type="button" data-role="cook" data-t="roleCook"></button>
+          <button type="button" data-role="both" data-t="roleBoth"></button>
+        </div>
+
+        <label class="f" for="gov" data-t="governorate"></label>
+        <select id="gov" required></select>
+
+        <div id="communityBox" hidden>
+          <label class="f" for="community" data-t="community"></label>
+          <select id="community"></select>
+        </div>
+        <div id="areaBox" hidden>
+          <label class="f" for="area" data-t="area"></label>
+          <input id="area" type="text" maxlength="80">
+        </div>
+
+        <label class="check"><input id="consent" type="checkbox"><span data-t="consent"></span></label>
+        <div class="err" id="err" role="alert"></div>
+        <button class="cta" id="submit" type="submit" data-t="submit"></button>
+      </form>
+    </div>
+
+    <div class="card done" id="doneCard" hidden>
+      <div class="tick"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#28303a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h2 id="doneTitle"></h2>
+      <p class="sub" data-t="doneSub"></p>
+      <button class="cta" id="share" type="button" data-t="share"></button>
+      <button class="ghost" id="copy" type="button" data-t="copy"></button>
+    </div>
+
+    <section class="how">
+      <h3 data-t="howTitle"></h3>
+      <ol>
+        <li><span class="n">1</span><span><b data-t="how1"></b><span data-t="how1s"></span></span></li>
+        <li><span class="n">2</span><span><b data-t="how2"></b><span data-t="how2s"></span></span></li>
+        <li><span class="n">3</span><span><b data-t="how3"></b><span data-t="how3s"></span></span></li>
+      </ol>
+    </section>
+  </div>
+</div>
+<footer><a href="privacy.html" id="privacyLink" data-t="privacy"></a> · <span data-t="contact"></span> <a href="mailto:tbkheen.A@gmail.com">tbkheen.A@gmail.com</a></footer>
+
+<script>
+(function () {
+  var CFG = window.TABKHEEN || {};
+  var T = {
+    en: {
+      headline: 'Cooking daily is a hassle. Delivery is slow and pricey. Your community’s dishes are steps away.',
+      lead: 'Hygienic, diverse dishes from people you know and trust in your community: your club, office or neighbours.',
+      pitch: 'Reserve a plate and pick it up. No fees, no rider.',
+      formTitle: 'Be first when we open',
+      formSub: 'The app is almost ready. Leave your details and we’ll message you on WhatsApp the day it’s in the App Store and Google Play.',
+      name: 'YOUR NAME', phone: 'WHATSAPP NUMBER', role: 'I WANT TO',
+      roleEat: 'Order', roleCook: 'Cook & sell', roleBoth: 'Both',
+      governorate: 'GOVERNORATE', chooseGov: 'Choose your governorate',
+      community: 'YOUR COMMUNITY (AREA, CLUB, COMPOUND, WORK…)', chooseCommunity: 'Choose your community', notListed: 'Not in the list, I’ll type it',
+      area: 'YOUR AREA OR COMMUNITY', areaPh: 'example: Rehab City',
+      consent: 'Message me on WhatsApp when tabkheen A opens. I agree to the <a href="privacy.html?lang=en">privacy notice</a>.',
+      submit: 'Join the list',
+      sending: 'Joining…',
+      errName: 'Please write your name.',
+      errPhone: 'Please write a valid Egyptian mobile number, like 010 1234 5678.',
+      errRole: 'Please choose whether you want to order, cook or both.',
+      errGov: 'Please choose your governorate.',
+      errArea: 'Please choose or type your community.',
+      errConsent: 'Please tick the box so we can message you when we open.',
+      errNet: 'Something went wrong on our side. Please try again in a minute.',
+      errLoad: 'We couldn’t load the list of areas. Check your connection and refresh the page.',
+      doneNew: 'You’re on the list!', doneAgain: 'You’re already on the list',
+      doneSub: 'We’ll message you on WhatsApp the day the app opens. The more neighbours join, the sooner your area opens: share your link.',
+      share: 'Share with friends', copy: 'Copy my link', copied: 'Link copied',
+      shareText: 'I joined tabkheen A: home-cooked dishes from people in our community, pickup only. Join the list here:',
+      howTitle: 'How it works',
+      how1: 'Join your community', how1s: 'Your area, club, compound, school or office.',
+      how2: 'Reserve a plate', how2s: 'See what neighbours are cooking today and reserve.',
+      how3: 'Pick it up', how3s: 'Pay the cook by InstaPay and pick up. No delivery fees.',
+      privacy: 'Privacy notice', contact: 'Questions?'
+    },
+    ar: {
+      headline: 'الطبخ كل يوم تعب، والدليفري بطيء وغالي. أطباق مجتمعك على بُعد خطوات.',
+      lead: 'أطباق نضيفة ومتنوعة من ناس تعرفهم وتثق فيهم في مجتمعك: النادي أو الشغل أو الجيران.',
+      pitch: 'احجز طبقك واستلمه بنفسك. من غير مصاريف توصيل ولا مندوب.',
+      formTitle: 'كن أول من يعرف',
+      formSub: 'التطبيق قرّب يخلص. سيب بياناتك وهنبعتلك على واتساب أول يوم ينزل فيه على App Store وGoogle Play.',
+      name: 'اسمك', phone: 'رقم الواتساب', role: 'عايز',
+      roleEat: 'أطلب أكل', roleCook: 'أطبخ وأبيع', roleBoth: 'الاتنين',
+      governorate: 'المحافظة', chooseGov: 'اختار محافظتك',
+      community: 'مجتمعك (منطقة، نادي، كمبوند، شغل…)', chooseCommunity: 'اختار مجتمعك', notListed: 'مش موجود، هكتبه',
+      area: 'منطقتك أو مجتمعك', areaPh: 'مثال: مدينة الرحاب',
+      consent: 'ابعتولي على واتساب أول ما tabkheen A ينزل. موافق على <a href="privacy.html?lang=ar">سياسة الخصوصية</a>.',
+      submit: 'سجّلني',
+      sending: 'جاري التسجيل…',
+      errName: 'من فضلك اكتب اسمك.',
+      errPhone: 'من فضلك اكتب رقم موبايل مصري صحيح، زي 010 1234 5678.',
+      errRole: 'من فضلك اختار: تطلب أكل، تطبخ، ولا الاتنين.',
+      errGov: 'من فضلك اختار محافظتك.',
+      errArea: 'من فضلك اختار أو اكتب مجتمعك.',
+      errConsent: 'من فضلك علّم على المربع عشان نقدر نبعتلك أول ما نفتح.',
+      errNet: 'حصلت مشكلة عندنا. جرّب تاني بعد دقيقة.',
+      errLoad: 'مقدرناش نحمّل قائمة المناطق. اتأكد من الإنترنت وحدّث الصفحة.',
+      doneNew: 'تم تسجيلك!', doneAgain: 'إنت مسجّل معانا بالفعل',
+      doneSub: 'هنبعتلك على واتساب أول يوم التطبيق ينزل. كل ما جيرانك يسجّلوا، منطقتك تفتح أسرع: ابعت الرابط بتاعك.',
+      share: 'ابعت لصحابك', copy: 'انسخ الرابط بتاعي', copied: 'تم نسخ الرابط',
+      shareText: 'أنا سجّلت في tabkheen A: أكل بيتي من ناس في مجتمعنا، والاستلام بنفسك. سجّل هنا:',
+      howTitle: 'إزاي بيشتغل',
+      how1: 'انضم لمجتمعك', how1s: 'منطقتك أو النادي أو الكمبوند أو المدرسة أو الشغل.',
+      how2: 'احجز طبقك', how2s: 'شوف جيرانك طابخين إيه النهارده واحجز.',
+      how3: 'استلمه بنفسك', how3s: 'ادفع للطبّاخ بإنستاباي واستلم. من غير مصاريف توصيل.',
+      privacy: 'سياسة الخصوصية', contact: 'عندك سؤال؟'
+    }
+  };
+
+  var params = new URLSearchParams(location.search);
+  function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
+  var lang = params.get('lang') === 'en' || params.get('lang') === 'ar' ? params.get('lang') : (store('tabkheen.lang') || 'ar');
+  var role = null, regions = [], communities = [], refCode = null;
+  var $ = function (id) { return document.getElementById(id); };
+
+  // Ad and invite details from the link, kept for the whole visit.
+  var utm = {};
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].forEach(function (k) { if (params.get(k)) utm[k] = params.get(k).slice(0, 200); });
+  var referredBy = (params.get('ref') || '').replace(/[^a-z0-9]/gi, '').slice(0, 16) || null;
+
+  function t(k) { return T[lang][k]; }
+  function render() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.querySelectorAll('[data-t]').forEach(function (el) {
+      var k = el.getAttribute('data-t');
+      if (k === 'consent') el.innerHTML = t(k); else el.textContent = t(k);
+    });
+    document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+    $('privacyLink').href = 'privacy.html?lang=' + lang;
+    $('area').placeholder = t('areaPh');
+    fillGovernorates();
+    fillCommunities();
+    if (refCode) showDone(lastAlready);
+  }
+  document.querySelectorAll('.lang button').forEach(function (b) {
+    b.addEventListener('click', function () { lang = b.dataset.lang; store('tabkheen.lang', lang); render(); });
+  });
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ apikey: CFG.supabaseKey, 'Content-Type': 'application/json' }, opts.headers || {});
+    return fetch(CFG.supabaseUrl + '/rest/v1/' + path, opts).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    });
+  }
+
+  function option(value, label, selected) {
+    var o = document.createElement('option'); o.value = value; o.textContent = label; if (selected) o.selected = true; return o;
+  }
+  function fillGovernorates() {
+    var sel = $('gov'), cur = sel.value;
+    sel.innerHTML = '';
+    sel.appendChild(option('', t('chooseGov'), !cur));
+    regions.forEach(function (r) { sel.appendChild(option(r.name, lang === 'ar' && r.name_ar ? r.name_ar : r.name, r.name === cur)); });
+  }
+  function fillCommunities() {
+    var gov = $('gov').value, sel = $('community'), cur = sel.value;
+    var list = communities.filter(function (c) { return c.governorate === gov; });
+    sel.innerHTML = '';
+    sel.appendChild(option('', t('chooseCommunity'), !cur));
+    list.forEach(function (c) { sel.appendChild(option(c.id, c.name, c.id === cur)); });
+    sel.appendChild(option('other', t('notListed'), cur === 'other'));
+    $('communityBox').hidden = !gov || list.length === 0;
+    $('areaBox').hidden = !gov || (list.length > 0 && sel.value !== 'other');
+  }
+  $('gov').addEventListener('change', function () { $('community').value = ''; fillCommunities(); });
+  $('community').addEventListener('change', fillCommunities);
+
+  $('roles').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    role = b.dataset.role;
+    document.querySelectorAll('#roles button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  });
+
+  // Egyptian mobile: 01x + 8 digits, written with or without the 0, +20 or 0020; Arabic digits allowed.
+  function normalizePhone(raw) {
+    var d = raw.replace(/[٠-٩]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+               .replace(/[۰-۹]/g, function (c) { return String(c.charCodeAt(0) - 0x06f0); })
+               .replace(/\D/g, '');
+    if (d.indexOf('0020') === 0) d = d.slice(4); else if (d.indexOf('20') === 0 && d.length === 12) d = d.slice(2);
+    if (d.charAt(0) === '0') d = d.slice(1);
+    return /^1[0125]\d{8}$/.test(d) ? '+20' + d : null;
+  }
+
+  function fail(k) { var e = $('err'); e.textContent = t(k); e.classList.add('show'); }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    $('err').classList.remove('show');
+    var name = $('name').value.trim(), phone = normalizePhone($('phone').value), gov = $('gov').value;
+    var communityId = $('community').value, area = $('area').value.trim();
+    var useList = !$('communityBox').hidden && communityId && communityId !== 'other';
+    if (name.length < 2) return fail('errName');
+    if (!phone) return fail('errPhone');
+    if (!role) return fail('errRole');
+    if (!gov) return fail('errGov');
+    if (!useList && area.length < 2) return fail('errArea');
+    if (!$('consent').checked) return fail('errConsent');
+    var btn = $('submit'); btn.disabled = true; btn.textContent = t('sending');
+    api('rpc/join_waitlist', {
+      method: 'POST',
+      body: JSON.stringify({
+        p_name: name, p_phone: phone, p_role: role, p_governorate: gov,
+        p_community_id: useList ? communityId : null, p_area: useList ? null : area,
+        p_lang: lang, p_consent: true, p_referred_by: referredBy, p_utm: utm
+      })
+    }).then(function (rows) {
+      var row = rows && rows[0];
+      if (!row) throw new Error('empty');
+      refCode = row.ref_code;
+      if (!row.already && window.fbq) window.fbq('track', 'Lead');
+      showDone(row.already);
+    }).catch(function () {
+      fail('errNet');
+    }).then(function () { btn.disabled = false; btn.textContent = t('submit'); });
+  });
+
+  var lastAlready = false;
+  function inviteLink() { return location.origin + location.pathname + '?ref=' + refCode; }
+  function showDone(already) {
+    lastAlready = already;
+    $('formCard').hidden = true; $('doneCard').hidden = false;
+    $('doneTitle').textContent = t(already ? 'doneAgain' : 'doneNew');
+    $('doneCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  $('share').addEventListener('click', function () {
+    var text = t('shareText'), url = inviteLink();
+    if (navigator.share) { navigator.share({ text: text, url: url }).catch(function () {}); return; }
+    location.href = 'https://wa.me/?text=' + encodeURIComponent(text + ' ' + url);
+  });
+  $('copy').addEventListener('click', function () {
+    var b = $('copy');
+    function ok() { b.textContent = t('copied'); setTimeout(function () { b.textContent = t('copy'); }, 2000); }
+    if (navigator.clipboard) navigator.clipboard.writeText(inviteLink()).then(ok, function () { prompt('', inviteLink()); });
+    else prompt('', inviteLink());
+  });
+
+  // Meta pixel, only when the ads account gives us an ID (config.js).
+  if (CFG.metaPixelId) {
+    /* eslint-disable */
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    window.fbq('init', CFG.metaPixelId); window.fbq('track', 'PageView');
+  }
+
+  render();
+  // Governorates and communities come from the database, so new ones show up without editing this page.
+  Promise.all([
+    api('regions?country_code=eq.EG&enabled=eq.true&select=name,name_ar&order=sort,name'),
+    api('communities?status=eq.approved&select=id,name,governorate&order=name')
+  ]).then(function (res) { regions = res[0]; communities = res[1]; fillGovernorates(); fillCommunities(); })
+    .catch(function () { fail('errLoad'); });
+})();
+</script>
+</body>
+</html>

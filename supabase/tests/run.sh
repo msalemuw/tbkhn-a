@@ -26,3 +26,5 @@ $P -d tbkhn_test -f migrations/0008_heard_from_detail.sql
 $P -d tbkhn_test -t -f tests/heard_detail_test.sql | grep ok
 $P -d tbkhn_test -f migrations/0009_rankings.sql
 $P -d tbkhn_test -t -f tests/rankings_test.sql | grep ok
+$P -d tbkhn_test -f migrations/0010_waitlist.sql
+$P -d tbkhn_test -t -f tests/waitlist_test.sql | grep ok
