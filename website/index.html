@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tabkheen A · طابخين إيه</title>
+<meta name="description" content="Home-cooked dishes from people you trust in your community. Pickup only, no delivery fees. Create your account now and be ready on launch day.">
+<meta property="og:title" content="tabkheen A · طابخين إيه">
+<meta property="og:description" content="أطباق بيتي من ناس تعرفهم في مجتمعك. اعمل حسابك دلوقتي وأول ما التطبيق ينزل ادخل على طول.">
+<meta property="og:image" content="art.jpg">
+<meta name="theme-color" content="#28303a">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+  /* The tabkheen A palette (founder, 2026-10-04): only these five colors, plus see-through tints. */
+  :root {
+    --navy: #28303a; --yellow: #ffc107; --white: #ffffff; --light-blue: #cae7f1; --teal: #00c2a8;
+    --muted: rgba(40,48,58,0.68); --faint: rgba(40,48,58,0.4); --on-navy-muted: rgba(255,255,255,0.78);
+    --sans: 'Hanken Grotesk', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+    --serif: 'Instrument Serif', Georgia, serif;
+  }
+  html[lang="ar"] { --sans: 'IBM Plex Sans Arabic', 'Hanken Grotesk', system-ui, sans-serif; --serif: 'IBM Plex Sans Arabic', serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--navy); color: var(--white); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  .hero { position: relative; background: var(--navy) url(art.jpg) center top / cover no-repeat; }
+  .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(40,48,58,0.35), rgba(40,48,58,0.92) 70%, var(--navy)); }
+  .wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 16px 16px 32px; }
+  .top { display: flex; justify-content: flex-end; }
+  .lang { display: inline-flex; border: 1.5px solid rgba(255,255,255,0.4); border-radius: 999px; padding: 3px; }
+  .lang button { border: 0; background: none; color: var(--white); font: 600 15px var(--sans); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--white); color: var(--navy); }
+  .brand { display: flex; align-items: center; gap: 14px; margin-top: 120px; }
+  .brand img { height: 36px; width: auto; }
+  .brand .bar { width: 1.5px; height: 34px; background: rgba(255,255,255,0.4); }
+  .brand .ar { font: 600 34px 'IBM Plex Sans Arabic', sans-serif; }
+  h1 { font: 400 40px/1.08 var(--serif); margin: 20px 0 14px; }
+  html[lang="ar"] h1 { font-weight: 600; font-size: 34px; line-height: 1.35; }
+  .lead { color: var(--on-navy-muted); font-size: 17px; line-height: 1.55; margin: 0 0 10px; }
+  .pitch { font-weight: 600; font-size: 17px; line-height: 1.55; margin: 0; }
+  .card { background: var(--white); color: var(--navy); border-radius: 22px; padding: 22px 18px; margin-top: 26px; }
+  .card h2 { font: 700 22px var(--sans); margin: 0 0 4px; }
+  .card .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; line-height: 1.5; }
+  .gbtn { display: flex; justify-content: center; min-height: 44px; margin-top: 6px; }
+  .note { display: flex; gap: 10px; align-items: flex-start; background: rgba(202,231,241,0.45); border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.5; margin-top: 16px; }
+  .note b { font-weight: 700; }
+  h3.sec { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; margin: 26px 0 2px; }
+  html[lang="ar"] h3.sec { letter-spacing: 0; font-size: 15px; }
+  .secsub { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+  label.f { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); margin: 16px 0 6px; }
+  html[lang="ar"] label.f { letter-spacing: 0; font-size: 14px; }
+  label.f .req { color: var(--faint); }
+  input[type=text], input[type=tel], select {
+    width: 100%; font: 500 17px var(--sans); color: var(--navy); background: var(--white);
+    border: 1.5px solid var(--light-blue); border-radius: 14px; padding: 13px 14px; outline: none; appearance: none;
+  }
+  input[readonly] { background: rgba(202,231,241,0.3); }
+  select { background-image: linear-gradient(45deg, transparent 50%, var(--navy) 50%), linear-gradient(135deg, var(--navy) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; }
+  html[dir="rtl"] select { background-position: 20px 55%, 26px 55%; }
+  input:focus, select:focus { border-color: var(--teal); }
+  input.ok { border-color: var(--teal); }
+  .ltr { display: flex; gap: 8px; direction: ltr; }
+  .ltr .pre { flex: 0 0 auto; display: flex; align-items: center; padding: 0 14px; border: 1.5px solid var(--light-blue); border-radius: 14px; font-weight: 600; }
+  .ltr input { direction: ltr; text-align: left; }
+  .hint { font-size: 13.5px; color: var(--muted); margin: 6px 2px 0; line-height: 1.45; }
+  .hint.bad { color: var(--navy); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; direction: ltr; }
+  .chips button { border: 1.5px solid var(--navy); background: none; color: var(--navy); border-radius: 999px; padding: 6px 12px; font: 600 14px var(--sans); cursor: pointer; }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; font-size: 15px; line-height: 1.45; }
+  .check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--teal); flex: 0 0 auto; }
+  .check a { color: var(--navy); }
+  .err { color: var(--navy); background: rgba(255,193,7,0.25); border-radius: 10px; padding: 8px 10px; font-size: 14px; margin-top: 12px; display: none; }
+  .err.show { display: block; }
+  .cta { width: 100%; margin-top: 20px; border: 0; border-radius: 16px; background: var(--teal); color: var(--navy); font: 700 18px var(--sans); padding: 17px; cursor: pointer; }
+  .cta:disabled { opacity: 0.6; cursor: default; }
+  .ghost { width: 100%; margin-top: 10px; border: 1.5px solid var(--navy); border-radius: 16px; background: none; color: var(--navy); font: 600 16px var(--sans); padding: 14px; cursor: pointer; }
+  .textlink { background: none; border: 0; color: var(--muted); font: 500 14px var(--sans); text-decoration: underline; cursor: pointer; padding: 0; margin-top: 16px; }
+  .done { text-align: center; }
+  .done .tick { width: 64px; height: 64px; border-radius: 50%; background: var(--teal); margin: 6px auto 14px; display: grid; place-items: center; }
+  .done .note { text-align: start; }
+  .how { margin-top: 28px; }
+  .how h3 { font: 700 18px var(--sans); margin: 0 0 12px; }
+  .how ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+  .how li { display: flex; gap: 12px; align-items: flex-start; color: var(--on-navy-muted); line-height: 1.5; }
+  .how li b { color: var(--white); display: block; }
+  .how .n { flex: 0 0 30px; height: 30px; border-radius: 50%; background: var(--yellow); color: var(--navy); display: grid; place-items: center; font-weight: 700; }
+  footer { max-width: 480px; margin: 0 auto; padding: 8px 16px 40px; color: var(--on-navy-muted); font-size: 14px; }
+  footer a { color: var(--white); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <div class="top">
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ar">ع</button>
+      </div>
+    </div>
+    <div class="brand"><img src="logo.png" alt="tabkheen A"><span class="bar"></span><span class="ar">طابخين إيه</span></div>
+    <h1 data-t="headline"></h1>
+    <p class="lead" data-t="lead"></p>
+    <p class="pitch" data-t="pitch"></p>
+
+    <!-- Step 1: sign in with Google, the same account the app uses -->
+    <div class="card" id="stepStart">
+      <h2 data-t="startTitle"></h2>
+      <p class="sub" data-t="startSub"></p>
+      <div class="gbtn" id="gbtn"></div>
+      <div class="note"><span>ⓘ</span><span data-t="startNote"></span></div>
+      <div class="err" id="errStart" role="alert"></div>
+    </div>
+
+    <!-- Step 2: the app's "Create your account" profile step -->
+    <div class="card" id="stepProfile" hidden>
+      <h2 data-t="profileTitle"></h2>
+      <p class="sub" id="signedInAs"></p>
+      <form id="form" novalidate>
+        <label class="f" for="name"><span data-t="fName"></span> <span class="req">*</span></label>
+        <input id="name" type="text" autocomplete="name" maxlength="60">
+
+        <label class="f" for="username"><span data-t="fUsername"></span> <span class="req">*</span></label>
+        <div class="ltr"><span class="pre">@</span><input id="username" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" placeholder="nour.s"></div>
+        <p class="hint" id="usernameHint"></p>
+        <div class="chips" id="usernameChips"></div>
+
+        <label class="f" for="whatsapp"><span data-t="fWhatsapp"></span> <span class="req">*</span></label>
+        <div class="ltr"><span class="pre">+20</span><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="14"></div>
+        <p class="hint" data-t="whatsappHint"></p>
+
+        <h3 class="sec"><span data-t="secCommunities"></span> <span class="req">*</span></h3>
+        <p class="secsub" data-t="secCommunitiesSub"></p>
+
+        <label class="f" for="gov"><span data-t="fGov"></span> <span class="req">*</span></label>
+        <select id="gov"></select>
+
+        <label class="f" for="area"><span data-t="fArea"></span> <span class="req">*</span></label>
+        <select id="area"></select>
+        <div id="areaTypedBox" hidden>
+          <input id="areaTyped" type="text" maxlength="80" style="margin-top:8px">
+          <p class="hint" data-t="areaTypedHint"></p>
+        </div>
+
+        <div id="optional"></div>
+        <p class="hint" data-t="moreLater"></p>
+
+        <h3 class="sec" data-t="secPaid"></h3>
+        <label class="f" for="instapay" data-t="fInstapay"></label>
+        <div class="ltr"><input id="instapay" type="text" autocapitalize="none" autocorrect="off" maxlength="60" placeholder="nour@instapay"></div>
+        <p class="hint" data-t="instapayHint"></p>
+
+        <h3 class="sec" data-t="secHeard"></h3>
+        <label class="f" for="heard" data-t="fHeard"></label>
+        <select id="heard"></select>
+        <div id="heardPickBox" hidden>
+          <label class="f" for="heardPick" data-t="fWhichOne"></label>
+          <select id="heardPick"></select>
+        </div>
+        <div id="heardTextBox" hidden>
+          <label class="f" for="heardText" id="heardTextLabel"></label>
+          <input id="heardText" type="text" maxlength="80">
+        </div>
+        <div id="inviterBox" hidden>
+          <label class="f" for="inviter" data-t="fInviter"></label>
+          <input id="inviter" type="text" maxlength="60">
+        </div>
+
+        <label class="check"><input id="consent" type="checkbox"><span data-t="consent"></span></label>
+        <div class="err" id="err" role="alert"></div>
+        <button class="cta" id="submit" type="submit" data-t="submit"></button>
+      </form>
+      <button class="textlink" type="button" data-signout data-t="notYou"></button>
+    </div>
+
+    <!-- Step 3: done -->
+    <div class="card done" id="stepDone" hidden>
+      <div class="tick"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#28303a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h2 id="doneTitle"></h2>
+      <p class="sub" data-t="doneSub"></p>
+      <div class="note"><span>ⓘ</span><span id="doneNote"></span></div>
+      <button class="cta" id="share" type="button" data-t="share"></button>
+      <button class="ghost" id="copy" type="button" data-t="copy"></button>
+      <button class="textlink" type="button" data-signout data-t="signOut"></button>
+    </div>
+
+    <section class="how">
+      <h3 data-t="howTitle"></h3>
+      <ol>
+        <li><span class="n">1</span><span><b data-t="how1"></b><span data-t="how1s"></span></span></li>
+        <li><span class="n">2</span><span><b data-t="how2"></b><span data-t="how2s"></span></span></li>
+        <li><span class="n">3</span><span><b data-t="how3"></b><span data-t="how3s"></span></span></li>
+      </ol>
+    </section>
+  </div>
+</div>
+<footer><a href="privacy.html" id="privacyLink" data-t="privacy"></a> · <span data-t="contact"></span> <a href="mailto:tbkheen.A@gmail.com">tbkheen.A@gmail.com</a></footer>
+
+<script>
+(function () {
+  var CFG = window.TABKHEEN || {};
+  var T = {
+    en: {
+      headline: 'Cooking daily is a hassle. Delivery is slow and pricey. Your community’s dishes are steps away.',
+      lead: 'Hygienic, diverse dishes from people you know and trust in your community: your club, office or neighbours.',
+      pitch: 'Reserve a plate and pick it up. No fees, no rider.',
+      startTitle: 'Create your account now',
+      startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
+      startNote: '<b>Use your Google account.</b> On launch day, open the app and tap <b>Continue with Google</b> with the same account.',
+      profileTitle: 'Create your account',
+      signedInAs: 'Signed in with Google as ',
+      fName: 'FULL NAME', fUsername: 'USERNAME', fWhatsapp: 'WHATSAPP NUMBER',
+      whatsappHint: 'We’ll message you here the day the app opens. Only our team sees it.',
+      secCommunities: 'YOUR COMMUNITIES',
+      secCommunitiesSub: 'Tell us where you belong: this decides who sees your posts and whose posts you see.',
+      fGov: 'GOVERNORATE', fArea: 'AREA', choose: 'Choose', chooseGovFirst: 'Choose a governorate first', none: 'None',
+      notListedArea: 'Can’t find your area? Type it', areaTypedPh: 'example: Rehab City',
+      areaTypedHint: 'We’ll add it after a quick check, and you’ll join it automatically.',
+      optional: { club: 'CLUB', sahel: 'SAHEL', school: 'SCHOOL', work: 'WORK' },
+      moreLater: 'You can join more communities anytime in the app.',
+      secPaid: 'GETTING PAID', fInstapay: 'INSTAPAY HANDLE (OPTIONAL)',
+      instapayHint: 'Needed when you cook, so neighbours can pay you directly. Add it later if you like.',
+      secHeard: 'HOW DID YOU HEAR ABOUT TABKHEEN A? (OPTIONAL)', fHeard: 'I HEARD FROM', preferNot: 'Prefer not to say',
+      fWhichOne: 'WHICH ONE?', anotherOne: 'Another one', fInviter: 'THEIR NAME (OPTIONAL)',
+      unEmpty: 'Choose a username: 3–20 letters, numbers, . or _', unShort: 'At least 3 characters', unChecking: 'Checking…',
+      unTaken: function (u) { return '@' + u + ' is already taken. Try one of these:'; },
+      unOk: function (u) { return '@' + u + ' is available'; },
+      consent: 'Message me on WhatsApp when tabkheen A opens. I agree to the <a href="privacy.html?lang=en">privacy notice</a>.',
+      submit: 'Create my account', sending: 'Saving…',
+      notYou: 'Not you? Use another Google account',
+      errName: 'Please write your name.', errUsername: 'Please choose an available username.',
+      errPhone: 'Please write a valid Egyptian mobile number, like 010 1234 5678.',
+      errGov: 'Please choose your governorate.', errArea: 'Please choose or type your area.',
+      errConsent: 'Please tick the box so we can message you when we open.',
+      errAreaExists: 'That area already exists or is waiting for approval. Pick it from the list.',
+      errNet: 'We couldn’t save your account. Check your connection and try again.',
+      errSignIn: 'We couldn’t sign you in with Google. Please try again.',
+      errLoad: 'We couldn’t load the page. Check your connection and refresh.',
+      doneTitle: function (u) { return 'You’re in, @' + u + '!'; },
+      doneSub: 'Your account is ready. We’ll message you on WhatsApp the day the app opens. The more neighbours join, the sooner your area opens: share your link.',
+      doneNote: function (e) { return 'On launch day, install tabkheen A and tap <b>Continue with Google</b> with <b>' + e + '</b>.'; },
+      share: 'Share with friends', copy: 'Copy my link', copied: 'Link copied', signOut: 'Sign out',
+      shareText: 'I joined tabkheen A: home-cooked dishes from people in our community, pickup only. Make your account here:',
+      howTitle: 'How it works',
+      how1: 'Join your community', how1s: 'Your area, club, compound, school or office.',
+      how2: 'Reserve a plate', how2s: 'See what neighbours are cooking today and reserve.',
+      how3: 'Pick it up', how3s: 'Pay the cook by InstaPay and pick up. No delivery fees.',
+      privacy: 'Privacy notice', contact: 'Questions?'
+    },
+    ar: {
+      headline: 'الطبخ كل يوم تعب، والدليفري بطيء وغالي. أطباق مجتمعك على بُعد خطوات.',
+      lead: 'أطباق نضيفة ومتنوعة من ناس تعرفهم وتثق فيهم في مجتمعك: النادي أو الشغل أو الجيران.',
+      pitch: 'احجز طبقك واستلمه بنفسك. من غير مصاريف توصيل ولا مندوب.',
+      startTitle: 'اعمل حسابك دلوقتي',
+      startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
+      startNote: '<b>استخدم حساب Google بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس <b>Continue with Google</b> بنفس الحساب.',
+      profileTitle: 'اعمل حسابك',
+      signedInAs: 'داخل بحساب Google: ',
+      fName: 'الاسم بالكامل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الواتساب',
+      whatsappHint: 'هنبعتلك عليه أول يوم التطبيق ينزل. فريقنا بس اللي يشوفه.',
+      secCommunities: 'مجتمعاتك',
+      secCommunitiesSub: 'قولنا إنت منين: ده بيحدد مين يشوف بوستاتك وإنت تشوف بوستات مين.',
+      fGov: 'المحافظة', fArea: 'المنطقة', choose: 'اختار', chooseGovFirst: 'اختار المحافظة الأول', none: 'لا يوجد',
+      notListedArea: 'منطقتك مش موجودة؟ اكتبها', areaTypedPh: 'مثال: مدينة الرحاب',
+      areaTypedHint: 'هنضيفها بعد مراجعة سريعة، وهتنضم لها تلقائيًا.',
+      optional: { club: 'النادي', sahel: 'الساحل', school: 'المدرسة', work: 'الشغل' },
+      moreLater: 'تقدر تنضم لمجتمعات تانية في أي وقت من التطبيق.',
+      secPaid: 'استلام الفلوس', fInstapay: 'حساب إنستاباي (اختياري)',
+      instapayHint: 'محتاجه لما تطبخ، عشان جيرانك يدفعولك على طول. تقدر تضيفه بعدين.',
+      secHeard: 'عرفت tabkheen A منين؟ (اختياري)', fHeard: 'عرفت من', preferNot: 'أفضّل ما أقولش',
+      fWhichOne: 'أنهي واحد؟', anotherOne: 'حاجة تانية', fInviter: 'اسمه (اختياري)',
+      unEmpty: 'اختار اسم مستخدم: من 3 لـ 20 حرف إنجليزي أو رقم أو . أو _', unShort: '3 حروف على الأقل', unChecking: 'بنشوف…',
+      unTaken: function (u) { return '@' + u + ' مستخدم قبل كده. جرّب واحد من دول:'; },
+      unOk: function (u) { return '@' + u + ' متاح'; },
+      consent: 'ابعتولي على واتساب أول ما tabkheen A ينزل. موافق على <a href="privacy.html?lang=ar">سياسة الخصوصية</a>.',
+      submit: 'اعمل حسابي', sending: 'جاري الحفظ…',
+      notYou: 'مش إنت؟ ادخل بحساب Google تاني',
+      errName: 'من فضلك اكتب اسمك.', errUsername: 'من فضلك اختار اسم مستخدم متاح.',
+      errPhone: 'من فضلك اكتب رقم موبايل مصري صحيح، زي 010 1234 5678.',
+      errGov: 'من فضلك اختار محافظتك.', errArea: 'من فضلك اختار أو اكتب منطقتك.',
+      errConsent: 'من فضلك علّم على المربع عشان نقدر نبعتلك أول ما نفتح.',
+      errAreaExists: 'المنطقة دي موجودة أو مستنية المراجعة. اختارها من القائمة.',
+      errNet: 'مقدرناش نحفظ حسابك. اتأكد من الإنترنت وجرّب تاني.',
+      errSignIn: 'مقدرناش ندخلك بحساب Google. جرّب تاني.',
+      errLoad: 'مقدرناش نحمّل الصفحة. اتأكد من الإنترنت وحدّث الصفحة.',
+      doneTitle: function (u) { return 'حسابك جاهز يا @' + u + '!'; },
+      doneSub: 'هنبعتلك على واتساب أول يوم التطبيق ينزل. كل ما جيرانك يسجّلوا، منطقتك تفتح أسرع: ابعت الرابط بتاعك.',
+      doneNote: function (e) { return 'يوم الإطلاق نزّل tabkheen A ودوس <b>Continue with Google</b> بحساب <b>' + e + '</b>.'; },
+      share: 'ابعت لصحابك', copy: 'انسخ الرابط بتاعي', copied: 'تم نسخ الرابط', signOut: 'تسجيل الخروج',
+      shareText: 'أنا عملت حساب على tabkheen A: أكل بيتي من ناس في مجتمعنا، والاستلام بنفسك. اعمل حسابك هنا:',
+      howTitle: 'إزاي بيشتغل',
+      how1: 'انضم لمجتمعك', how1s: 'منطقتك أو النادي أو الكمبوند أو المدرسة أو الشغل.',
+      how2: 'احجز طبقك', how2s: 'شوف جيرانك طابخين إيه النهارده واحجز.',
+      how3: 'استلمه بنفسك', how3s: 'ادفع للطبّاخ بإنستاباي واستلم. من غير مصاريف توصيل.',
+      privacy: 'سياسة الخصوصية', contact: 'عندك سؤال؟'
+    }
+  };
+
+  // "How did you hear about tabkheen A?": the same answers and details as the app (src/lib/heard.ts).
+  var HEARD = [
+    { value: 'friend', en: 'A friend', ar: 'صاحب', detail: { kind: 'person' } },
+    { value: 'family', en: 'Family', ar: 'العيلة', detail: { kind: 'person' } },
+    { value: 'social_media', en: 'Social media', ar: 'السوشيال ميديا', detail: { kind: 'pick', options: ['Instagram', 'Facebook', 'TikTok', 'WhatsApp', 'YouTube', 'X (Twitter)', 'Snapchat', 'LinkedIn', 'Telegram'] } },
+    { value: 'ad', en: 'An ad', ar: 'إعلان', detail: { kind: 'pick', options: ['Instagram ad', 'Facebook ad', 'TikTok ad', 'YouTube ad', 'Snapchat ad', 'Google ad', 'Street or billboard ad'] } },
+    { value: 'search', en: 'Searching online or in a store', ar: 'بحث على النت أو في المتجر', detail: { kind: 'pick', options: ['Google', 'App Store', 'Google Play'] } },
+    { value: 'community', en: 'A community, club, school or work', ar: 'مجتمع أو نادي أو مدرسة أو شغل', detail: { kind: 'text', en: 'WHICH ONE?', ar: 'أنهي واحد؟' } },
+    { value: 'event', en: 'An event or flyer', ar: 'إيفنت أو فلاير', detail: { kind: 'text', en: 'WHICH EVENT OR WHERE?', ar: 'أنهي إيفنت أو فين؟' } },
+    { value: 'media', en: 'News, a blog or a podcast', ar: 'أخبار أو مدونة أو بودكاست', detail: { kind: 'text', en: 'WHICH ONE?', ar: 'أنهي واحد؟' } },
+    { value: 'other', en: 'Something else', ar: 'حاجة تانية', detail: { kind: 'text', en: 'TELL US MORE', ar: 'قولنا أكتر' } }
+  ];
+  var OPTIONAL = ['club', 'sahel', 'school', 'work'];
+  var OTHER = '__other';
+
+  var params = new URLSearchParams(location.search);
+  function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
+  var lang = params.get('lang') === 'en' || params.get('lang') === 'ar' ? params.get('lang') : (store('tabkheen.lang') || 'ar');
+  var $ = function (id) { return document.getElementById(id); };
+  function t(k) { return T[lang][k]; }
+
+  // Ad and invite details from the link, kept for the visit and saved with the account.
+  var source = { via: 'web' };
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].forEach(function (k) {
+    var v = params.get(k) || store('tabkheen.' + k); if (v) { source[k] = v.slice(0, 200); store('tabkheen.' + k, source[k]); }
+  });
+  var ref = (params.get('ref') || store('tabkheen.ref') || '').toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
+  if (ref) { source.ref = ref; store('tabkheen.ref', ref); }
+
+  // A small Supabase client: the same auth (Google ID token) and database API the app uses, without a
+  // library download, so the page keeps working if a script CDN is slow or blocked.
+  var sb = (function () {
+    var KEY = 'tabkheen.session', session = null;
+    try { session = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { session = null; }
+    function save(s) { session = s; try { if (s) localStorage.setItem(KEY, JSON.stringify(s)); else localStorage.removeItem(KEY); } catch (e) { /* private mode: session lasts for this visit */ } }
+    function call(path, opts) {
+      opts = opts || {};
+      var headers = Object.assign({ apikey: CFG.supabaseKey, 'Content-Type': 'application/json' }, opts.headers || {});
+      if (session && session.access_token) headers.Authorization = 'Bearer ' + session.access_token;
+      return fetch(CFG.supabaseUrl + path, { method: opts.method || 'GET', headers: headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) })
+        .then(function (r) {
+          return r.text().then(function (txt) {
+            var json = null; try { json = txt ? JSON.parse(txt) : null; } catch (e) { json = null; }
+            return r.ok ? { data: json, error: null } : { data: null, error: json || { message: 'http ' + r.status } };
+          });
+        }, function (e) { return { data: null, error: { message: String(e) } }; });
+    }
+    function tokenGrant(grant, body) {
+      return call('/auth/v1/token?grant_type=' + grant, { method: 'POST', body: body }).then(function (res) {
+        if (res.error || !res.data || !res.data.access_token) return { data: { user: null, session: null }, error: res.error || { message: 'no session' } };
+        var s = res.data; s.expires_at = s.expires_at || Math.floor(Date.now() / 1000) + (s.expires_in || 3600);
+        save(s);
+        return { data: { user: s.user, session: s }, error: null };
+      });
+    }
+    return {
+      auth: {
+        signInWithIdToken: function (o) { return tokenGrant('id_token', { provider: o.provider, id_token: o.token, nonce: o.nonce }); },
+        getSession: function () {
+          if (!session) return Promise.resolve({ data: { session: null } });
+          if (session.expires_at - 60 > Date.now() / 1000) return Promise.resolve({ data: { session: session } });
+          return tokenGrant('refresh_token', { refresh_token: session.refresh_token }).then(function (res) {
+            if (res.error) save(null);
+            return { data: { session: res.data.session } };
+          });
+        },
+        signOut: function () {
+          var done = function () { save(null); };
+          return session ? call('/auth/v1/logout', { method: 'POST' }).then(done, done) : Promise.resolve(done());
+        }
+      },
+      rpc: function (fn, args) { return call('/rest/v1/rpc/' + fn, { method: 'POST', body: args || {} }); },
+      get: function (query) { return call('/rest/v1/' + query); },
+      insertOne: function (table, row, columns) {
+        return call('/rest/v1/' + table + '?select=' + columns, { method: 'POST', body: row, headers: { Prefer: 'return=representation', Accept: 'application/vnd.pgrst.object+json' } });
+      },
+      insert: function (table, rows, ignoreDuplicates) {
+        return call('/rest/v1/' + table, { method: 'POST', body: rows, headers: { Prefer: 'return=minimal' + (ignoreDuplicates ? ',resolution=ignore-duplicates' : '') } });
+      },
+      update: function (table, filter, row) {
+        return call('/rest/v1/' + table + '?' + filter, { method: 'PATCH', body: row, headers: { Prefer: 'return=minimal' } });
+      }
+    };
+  })();
+  var state = { step: 'start', user: null, profile: null, regions: [], communities: [], taken: null, usernameTimer: null, rawNonce: null };
+
+  // Sign-up funnel (docs/SIGNUP-FUNNEL.md), same table as the app. Fire and forget.
+  var funnelSession = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+  function logFunnel(step, props) {
+    sb.insert('signup_events', {
+      session_id: funnelSession, user_ref: state.user ? state.user.id : null, step: step, props: Object.assign({ via: 'web' }, props || {}),
+      app_version: 'web', os: 'web ' + (/iPhone|iPad/.test(navigator.userAgent) ? 'ios' : /Android/.test(navigator.userAgent) ? 'android' : 'desktop'),
+      locale: navigator.language || null
+    });
+  }
+
+  // ---------- rendering ----------
+  function render() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.querySelectorAll('[data-t]').forEach(function (el) {
+      var v = t(el.getAttribute('data-t'));
+      if (typeof v !== 'string') return;
+      if (/<b>|<a /.test(v)) el.innerHTML = v; else el.textContent = v;
+    });
+    document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+    $('privacyLink').href = 'privacy.html?lang=' + lang;
+    $('areaTyped').placeholder = t('areaTypedPh');
+    $('stepStart').hidden = state.step !== 'start';
+    $('stepProfile').hidden = state.step !== 'profile';
+    $('stepDone').hidden = state.step !== 'done';
+    if (state.user) $('signedInAs').textContent = t('signedInAs') + (state.user.email || '');
+    if (state.step === 'start') renderGoogleButton();
+    if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
+    if (state.step === 'done' && state.profile) {
+      $('doneTitle').textContent = t('doneTitle')(state.profile.username);
+      $('doneNote').innerHTML = t('doneNote')(escapeHtml(state.user && state.user.email || ''));
+    }
+  }
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function option(value, label, selected) { var o = document.createElement('option'); o.value = value; o.textContent = label; if (selected) o.selected = true; return o; }
+  function fillSelect(sel, items, current) {
+    sel.innerHTML = '';
+    items.forEach(function (it) { sel.appendChild(option(it.value, it.label, it.value === current)); });
+  }
+
+  document.querySelectorAll('.lang button').forEach(function (b) {
+    b.addEventListener('click', function () { lang = b.dataset.lang; store('tabkheen.lang', lang); render(); });
+  });
+
+  // ---------- step 1: Google ----------
+  function sha256Hex(text) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    });
+  }
+  var gsiReady = false;
+  function renderGoogleButton() {
+    var el = $('gbtn');
+    if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(renderGoogleButton, 300); return; }
+    var draw = function () {
+      el.innerHTML = '';
+      google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'left', locale: lang, width: Math.min(360, el.clientWidth || 320) });
+    };
+    if (gsiReady) return draw();
+    // Google gets the hash of a one-time value; Supabase checks the original against the token, like the app does.
+    state.rawNonce = crypto.getRandomValues(new Uint32Array(4)).join('-');
+    sha256Hex(state.rawNonce).then(function (hashed) {
+      google.accounts.id.initialize({ client_id: CFG.googleClientId, callback: onGoogleCredential, nonce: hashed, ux_mode: 'popup', itp_support: true });
+      gsiReady = true;
+      draw();
+    });
+  }
+  function onGoogleCredential(resp) {
+    var started = Date.now();
+    $('errStart').classList.remove('show');
+    sb.auth.signInWithIdToken({ provider: 'google', token: resp.credential, nonce: state.rawNonce }).then(function (res) {
+      logFunnel('signup_method_chosen', { method: 'google', result: res.error ? 'error' : 'ok', latency_ms: Date.now() - started });
+      if (res.error || !res.data.user) throw res.error || new Error('no user');
+      return afterSignIn(res.data.user);
+    }).catch(function () {
+      var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show');
+    });
+  }
+
+  function afterSignIn(user) {
+    state.user = user;
+    return sb.rpc('my_profile').then(function (res) {
+      state.profile = res.data || null;
+      if (state.profile && state.profile.username) { state.step = 'done'; render(); return; }
+      state.step = 'profile';
+      var meta = user.user_metadata || {};
+      if (!$('name').value) $('name').value = (state.profile && state.profile.display_name) || meta.full_name || meta.name || '';
+      if (ref && !$('heard').value) { prefillHeard = { heard: 'friend', inviter: '@' + ref }; }
+      logFunnel('profile_started');
+      return loadLists().then(render);
+    });
+  }
+
+  // ---------- step 2: profile ----------
+  var listsLoaded = null;
+  function loadLists() {
+    if (listsLoaded) return listsLoaded;
+    var mine = state.user ? ',requested_by.eq.' + state.user.id : '';
+    listsLoaded = Promise.all([
+      sb.get('regions?select=name,name_ar&country_code=eq.EG&enabled=eq.true&order=sort,name'),
+      sb.get('communities?select=id,name,kind,governorate,country_code,status&or=(status.eq.approved' + mine + ')&order=name')
+    ]).then(function (res) {
+      if (res[0].error || res[1].error) throw new Error('load');
+      state.regions = res[0].data || [];
+      state.communities = (res[1].data || []).filter(function (c) { return c.status !== 'rejected' && (c.country_code || 'EG') === 'EG'; });
+    }).catch(function () { listsLoaded = null; fail('errLoad'); });
+    return listsLoaded;
+  }
+  function communityLabel(c) { return c.status === 'pending' ? c.name + (lang === 'ar' ? ' (مستني المراجعة)' : ' (pending approval)') : c.name; }
+
+  function fillGovernorates() {
+    var cur = $('gov').value;
+    fillSelect($('gov'), [{ value: '', label: t('choose') }].concat(state.regions.map(function (r) {
+      return { value: r.name, label: lang === 'ar' && r.name_ar ? r.name_ar : r.name };
+    })), cur);
+  }
+  function fillAreas() {
+    var gov = $('gov').value, cur = $('area').value;
+    var areas = state.communities.filter(function (c) { return c.kind === 'area' && c.governorate === gov; });
+    var items = gov ? [{ value: '', label: t('choose') }].concat(areas.map(function (a) { return { value: a.id, label: communityLabel(a) }; }), [{ value: OTHER, label: t('notListedArea') }])
+                    : [{ value: '', label: t('chooseGovFirst') }];
+    fillSelect($('area'), items, cur);
+    $('area').disabled = !gov;
+    $('areaTypedBox').hidden = $('area').value !== OTHER;
+  }
+  function fillOptional() {
+    var box = $('optional'), cur = {};
+    box.querySelectorAll('select').forEach(function (s) { cur[s.dataset.kind] = s.value; });
+    box.innerHTML = '';
+    OPTIONAL.forEach(function (kind) {
+      var label = document.createElement('label'); label.className = 'f'; label.htmlFor = 'opt-' + kind; label.textContent = t('optional')[kind];
+      var sel = document.createElement('select'); sel.id = 'opt-' + kind; sel.dataset.kind = kind;
+      var list = state.communities.filter(function (c) { return c.kind === kind; });
+      fillSelect(sel, [{ value: '', label: t('none') }].concat(list.map(function (c) { return { value: c.id, label: communityLabel(c) }; })), cur[kind] || '');
+      box.appendChild(label); box.appendChild(sel);
+    });
+  }
+  $('gov').addEventListener('change', function () { $('area').value = ''; fillAreas(); });
+  $('area').addEventListener('change', function () { $('areaTypedBox').hidden = $('area').value !== OTHER; });
+
+  var prefillHeard = null;
+  function heardDef() { var v = $('heard').value; return HEARD.filter(function (h) { return h.value === v; })[0] || null; }
+  function fillHeard() {
+    var cur = $('heard').value || (prefillHeard && prefillHeard.heard) || '';
+    fillSelect($('heard'), [{ value: '', label: t('preferNot') }].concat(HEARD.map(function (h) { return { value: h.value, label: h[lang] }; })), cur);
+    if (prefillHeard) { $('inviter').value = prefillHeard.inviter; prefillHeard = null; }
+    var d = heardDef(), pickCur = $('heardPick').value;
+    $('heardPickBox').hidden = !(d && d.detail.kind === 'pick');
+    $('heardTextBox').hidden = !(d && (d.detail.kind === 'text' || (d.detail.kind === 'pick' && pickCur === OTHER)));
+    $('inviterBox').hidden = !(d && d.detail.kind === 'person');
+    if (d && d.detail.kind === 'pick') {
+      fillSelect($('heardPick'), [{ value: '', label: t('choose') }].concat(d.detail.options.map(function (o) { return { value: o, label: o }; }), [{ value: OTHER, label: t('anotherOne') }]), pickCur);
+    }
+    $('heardTextLabel').textContent = d && d.detail.kind === 'text' ? d.detail[lang] : t('fWhichOne');
+  }
+  $('heard').addEventListener('change', function () { $('heardPick').value = ''; $('heardText').value = ''; fillHeard(); });
+  $('heardPick').addEventListener('change', fillHeard);
+
+  // Live, advisory username check; the unique index decides on save (same rules as the app).
+  function renderUsername() {
+    var u = $('username').value, hint = $('usernameHint'), chips = $('usernameChips'), input = $('username');
+    chips.innerHTML = ''; hint.classList.remove('bad'); input.classList.remove('ok');
+    if (!u) { hint.textContent = t('unEmpty'); return; }
+    if (u.length < 3) { hint.textContent = t('unShort'); hint.classList.add('bad'); return; }
+    if (state.taken === null) { hint.textContent = t('unChecking'); return; }
+    if (state.taken) {
+      hint.textContent = t('unTaken')(u); hint.classList.add('bad');
+      var yy = new Date().getFullYear() % 100;
+      [u + '1', u + '_', u + '.' + yy].filter(function (x) { return x.length <= 20; }).forEach(function (s) {
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = '@' + s;
+        b.addEventListener('click', function () { $('username').value = s; onUsernameInput(); });
+        chips.appendChild(b);
+      });
+      return;
+    }
+    hint.textContent = t('unOk')(u); input.classList.add('ok');
+  }
+  function onUsernameInput() {
+    var el = $('username'), clean = el.value.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
+    if (clean !== el.value) el.value = clean;
+    state.taken = null; renderUsername();
+    clearTimeout(state.usernameTimer);
+    if (clean.length < 3) return;
+    state.usernameTimer = setTimeout(function () {
+      sb.rpc('username_available', { candidate: clean }).then(function (res) {
+        if ($('username').value !== clean) return;
+        state.taken = res.data === false;
+        if (state.taken) logFunnel('profile_field_error', { field: 'username_taken' });
+        renderUsername();
+      });
+    }, 400);
+  }
+  $('username').addEventListener('input', onUsernameInput);
+
+  // Egyptian mobile: 01x + 8 digits, written with or without the 0, +20 or 0020; Arabic digits allowed.
+  function normalizePhone(raw) {
+    var d = raw.replace(/[٠-٩]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
+               .replace(/[۰-۹]/g, function (c) { return String(c.charCodeAt(0) - 0x06f0); })
+               .replace(/\D/g, '');
+    if (d.indexOf('0020') === 0) d = d.slice(4); else if (d.indexOf('20') === 0 && d.length === 12) d = d.slice(2);
+    if (d.charAt(0) === '0') d = d.slice(1);
+    return /^1[0125]\d{8}$/.test(d) ? '+20' + d : null;
+  }
+
+  function fail(k, boxId) { var e = $(boxId || 'err'); e.textContent = t(k); e.classList.add('show'); }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    $('err').classList.remove('show');
+    var name = $('name').value.trim(), username = $('username').value, whatsapp = normalizePhone($('whatsapp').value);
+    var gov = $('gov').value, areaId = $('area').value, typed = $('areaTyped').value.trim();
+    if (!name) return fail('errName');
+    if (username.length < 3 || state.taken !== false) return fail('errUsername');
+    if (!whatsapp) return fail('errPhone');
+    if (!gov) return fail('errGov');
+    if (!areaId || (areaId === OTHER && typed.length < 2)) return fail('errArea');
+    if (!$('consent').checked) return fail('errConsent');
+
+    var d = heardDef(), pick = $('heardPick').value, text = $('heardText').value.trim();
+    var heardDetail = !d ? null : d.detail.kind === 'pick' ? (pick && pick !== OTHER ? pick : text || null) : d.detail.kind === 'text' ? text || null : null;
+    var uid = state.user.id, btn = $('submit');
+    btn.disabled = true; btn.textContent = t('sending');
+
+    // A typed area is sent as a community request; the database adds the member when an admin approves.
+    var areaStep = areaId !== OTHER ? Promise.resolve(state.communities.filter(function (c) { return c.id === areaId; })[0]) :
+      sb.insertOne('communities', { name: typed, kind: 'area', governorate: gov, area: typed, requested_by: uid, status: 'pending', country_code: 'EG' },
+        'id,name,kind,governorate,status').then(function (res) {
+          if (res.error && res.error.code === '23505') throw { msg: 'errAreaExists' };
+          if (res.error) throw res.error;
+          state.communities.push(res.data);
+          logFunnel('community_requested', { kind: 'area', country: 'EG' });
+          return res.data;
+        });
+
+    areaStep.then(function (area) {
+      return sb.update('profiles', 'id=eq.' + uid, {
+        display_name: name, username: username, country_code: 'EG', governorate: gov, area: area.name,
+        instapay_handle: $('instapay').value.trim() || null,
+        heard_from: d ? d.value : null, heard_detail: heardDetail,
+        inviter_name: d && d.detail.kind === 'person' ? $('inviter').value.trim() || null : null,
+        whatsapp: whatsapp, signup_source: source, lang: lang
+      }).then(function (res) {
+        if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
+        if (res.error) throw res.error;
+        var ids = [area].concat(OPTIONAL.map(function (k) { var v = $('opt-' + k).value; return state.communities.filter(function (c) { return c.id === v; })[0]; }))
+          .filter(function (c) { return c && c.status === 'approved'; }).map(function (c) { return c.id; });
+        logFunnel('communities_selected', { count: ids.length });
+        return ids.length ? sb.insert('community_members', ids.map(function (id) { return { community_id: id, user_id: uid }; }), true) : null;
+      });
+    }).then(function () {
+      logFunnel('signup_completed', { heard_from: d ? d.value : null });
+      if (window.fbq) window.fbq('track', 'CompleteRegistration');
+      return sb.rpc('my_profile');
+    }).then(function (res) {
+      state.profile = res.data; state.step = 'done'; render();
+      $('stepDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }).catch(function (err) {
+      fail(err && err.msg ? err.msg : 'errNet');
+    }).then(function () { btn.disabled = false; btn.textContent = t('submit'); });
+  });
+
+  // ---------- step 3: done ----------
+  function inviteLink() { return location.origin + location.pathname + '?ref=' + encodeURIComponent(state.profile.username); }
+  $('share').addEventListener('click', function () {
+    var text = t('shareText'), url = inviteLink();
+    if (navigator.share) { navigator.share({ text: text, url: url }).catch(function () {}); return; }
+    location.href = 'https://wa.me/?text=' + encodeURIComponent(text + ' ' + url);
+  });
+  $('copy').addEventListener('click', function () {
+    var b = $('copy');
+    function ok() { b.textContent = t('copied'); setTimeout(function () { b.textContent = t('copy'); }, 2000); }
+    if (navigator.clipboard) navigator.clipboard.writeText(inviteLink()).then(ok, function () { prompt('', inviteLink()); });
+    else prompt('', inviteLink());
+  });
+  document.querySelectorAll('[data-signout]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      sb.auth.signOut().then(function () { state.user = null; state.profile = null; state.step = 'start'; render(); });
+    });
+  });
+
+  // Meta pixel, only when the ads account gives us an ID (config.js).
+  if (CFG.metaPixelId) {
+    /* eslint-disable */
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    window.fbq('init', CFG.metaPixelId); window.fbq('track', 'PageView');
+  }
+
+  render();
+  logFunnel('welcome_viewed', { lang: lang });
+  // Coming back on the same browser: carry on where they left off.
+  sb.auth.getSession().then(function (res) {
+    var s = res.data && res.data.session;
+    if (s) afterSignIn(s.user);
+  });
+})();
+</script>
+</body>
+</html>
