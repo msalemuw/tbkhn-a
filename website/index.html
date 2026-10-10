@@ -240,6 +240,7 @@
       <div class="note"><span>ⓘ</span><span id="doneNote"></span></div>
       <button class="cta" id="share" type="button" data-t="share"></button>
       <button class="ghost" id="copy" type="button" data-t="copy"></button>
+      <p class="hint" data-t="shareHint" style="text-align:center"></p>
       <button class="textlink" type="button" data-signout data-t="signOut"></button>
     </div>
 
@@ -298,7 +299,8 @@
       doneTitle: function (u) { return 'You’re in, @' + u + '!'; },
       doneSub: 'Your account is ready. We’ll message you on WhatsApp the day the app opens. The more neighbours join, the sooner your area opens: share your link.',
       doneNote: function (e, p) { return 'On launch day, install tabkheen A and tap <b>Continue with ' + p + '</b> with <b>' + e + '</b>.'; },
-      share: 'Share with friends', copy: 'Copy my link', copied: 'Link copied', signOut: 'Sign out',
+      share: 'Invite friends on WhatsApp', copy: 'Copy my invite link', copied: 'Link copied', signOut: 'Sign out',
+      shareHint: 'Your invite link has your username in it, so friends who join with it are counted as invited by you. Paste it anywhere: Instagram, Facebook or a group chat.',
       shareText: 'I joined tabkheen A: home-cooked dishes from people in our community, pickup only. Make your account here:',
       privacy: 'Privacy notice', contact: 'Questions?', follow: 'Follow us'
     },
@@ -345,7 +347,8 @@
       doneTitle: function (u) { return 'حسابك جاهز يا @' + u + '!'; },
       doneSub: 'هنبعتلك على واتساب أول يوم التطبيق ينزل. كل ما جيرانك يسجّلوا، منطقتك تفتح أسرع: ابعت الرابط بتاعك.',
       doneNote: function (e, p) { return 'يوم الإطلاق نزّل tabkheen A ودوس <b>Continue with ' + p + '</b> بحساب <b>' + e + '</b>.'; },
-      share: 'ابعت لصحابك', copy: 'انسخ الرابط بتاعي', copied: 'تم نسخ الرابط', signOut: 'تسجيل الخروج',
+      share: 'ادعي صحابك على واتساب', copy: 'انسخ رابط الدعوة بتاعي', copied: 'تم نسخ الرابط', signOut: 'تسجيل الخروج',
+      shareHint: 'رابط الدعوة فيه اسم المستخدم بتاعك، فاللي يسجّل منه بيتحسب إنك إنت اللي دعيته. تقدر تحطه في أي مكان: إنستجرام أو فيسبوك أو جروب.',
       shareText: 'أنا عملت حساب على tabkheen A: أكل بيتي من ناس في مجتمعنا، والاستلام بنفسك. اعمل حسابك هنا:',
       privacy: 'سياسة الخصوصية', contact: 'عندك سؤال؟', follow: 'تابعنا'
     }
@@ -784,11 +787,13 @@
   });
 
   // ---------- step 3: done ----------
-  function inviteLink() { return location.origin + location.pathname + '?ref=' + encodeURIComponent(state.profile.username); }
+  // Always the public address, even when the page is opened on a preview link.
+  function inviteLink() { return (CFG.siteUrl || location.origin + '/') + '?ref=' + encodeURIComponent(state.profile.username); }
+  // WhatsApp with the message ready to send: the app on phones, WhatsApp Web on a computer.
   $('share').addEventListener('click', function () {
-    var text = t('shareText'), url = inviteLink();
-    if (navigator.share) { navigator.share({ text: text, url: url }).catch(function () {}); return; }
-    location.href = 'https://wa.me/?text=' + encodeURIComponent(text + ' ' + url);
+    var url = 'https://wa.me/?text=' + encodeURIComponent(t('shareText') + ' ' + inviteLink());
+    var w = window.open(url, '_blank');
+    if (w) w.opener = null; else location.href = url;
   });
   $('copy').addEventListener('click', function () {
     var b = $('copy');
