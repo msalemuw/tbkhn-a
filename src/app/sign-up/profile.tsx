@@ -70,7 +70,8 @@ export default function ProfileStep() {
   const [areaId, setAreaId] = useState<string | null>(null);
   const [optional, setOptional] = useState<Partial<Record<Optional, string>>>({});
   const [instapay, setInstapay] = useState('');
-  const [heard, setHeard] = useState<string | null>(null);
+  // "A friend" is preselected and there is no "prefer not to say" (founder, 2026-10-10); the website matches.
+  const [heard, setHeard] = useState<string | null>('friend');
   const [heardPick, setHeardPick] = useState<string | null>(null);
   const [heardText, setHeardText] = useState('');
   const [inviter, setInviter] = useState('');
@@ -395,9 +396,9 @@ export default function ProfileStep() {
           <View style={styles.group}>
             <SelectField
               label="I HEARD FROM"
-              value={heardDef?.label ?? 'Prefer not to say'}
+              value={heardDef?.label ?? 'Choose'}
               onPress={() =>
-                openPicker('How did you hear about tabkheen A?', [...HEARD.map((h) => ({ label: h.label, value: h.value })), { label: 'Prefer not to say', value: null }], heard, (v) => {
+                openPicker('How did you hear about tabkheen A?', HEARD.map((h) => ({ label: h.label, value: h.value })), heard, (v) => {
                   setHeard(v);
                   setHeardPick(null);
                   setHeardText('');
