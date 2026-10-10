@@ -30,3 +30,5 @@ $P -d tbkhn_test -f migrations/0010_waitlist.sql
 $P -d tbkhn_test -t -f tests/waitlist_test.sql | grep ok
 $P -d tbkhn_test -f migrations/0011_web_signup.sql
 $P -d tbkhn_test -t -f tests/web_signup_test.sql | grep ok
+$P -d tbkhn_test -f migrations/0012_loves.sql
+$P -d tbkhn_test -t -f tests/loves_test.sql | grep ok

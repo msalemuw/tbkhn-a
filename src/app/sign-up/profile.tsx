@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuildInfo } from '@/components/build-info';
+import { Chip } from '@/components/chip';
 import { BackHeader, danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
@@ -20,6 +21,14 @@ import { supabase } from '@/lib/supabase';
 
 type Community = { id: string; name: string; kind: string; governorate: string; country_code?: string; pending?: boolean };
 type Optional = 'club' | 'sahel' | 'school' | 'work';
+// "I love …" (founder, 2026-10-10), asked on the website sign-up too.
+type Loves = 'cooking' | 'eating' | 'both';
+const LOVES: { value: Loves; label: string }[] = [
+  { value: 'cooking', label: 'I love cooking' },
+  { value: 'eating', label: 'I love eating' },
+  { value: 'both', label: 'I love cooking and eating' },
+];
+
 const OPTIONAL: { kind: Optional; label: string; noun: string }[] = [
   { kind: 'club', label: 'CLUB', noun: 'club' },
   { kind: 'sahel', label: 'SAHEL', noun: 'Sahel community' },
@@ -47,6 +56,7 @@ export default function ProfileStep() {
   // Google and Apple share the member's name, so it starts filled in.
   const [name, setName] = useState(() => String(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? ''));
   const [username, setUsername] = useState('');
+  const [loves, setLoves] = useState<Loves | null>(null);
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
@@ -127,7 +137,7 @@ export default function ProfileStep() {
   const heardDef = HEARD.find((h) => h.value === heard);
   const heardDetail = heardDef?.detail.kind === 'pick' ? (heardPick && heardPick !== OTHER_DETAIL ? heardPick : heardText.trim() || null) : heardDef?.detail.kind === 'text' ? heardText.trim() || null : null;
 
-  const canSubmit = name.trim().length > 0 && un.ok && Boolean(gov?.trim() && areaId);
+  const canSubmit = name.trim().length > 0 && un.ok && loves !== null && Boolean(gov?.trim() && areaId);
 
   function openPicker(
     title: string,
@@ -175,6 +185,7 @@ export default function ProfileStep() {
       .update({
         display_name: name.trim(),
         username,
+        loves,
         country_code: countries.length ? country : undefined,
         governorate: gov?.trim(),
         area: area.name,
@@ -269,6 +280,15 @@ export default function ProfileStep() {
                 </View>
               ) : null}
             </View>
+          </View>
+
+          <Text style={styles.section}>
+            ABOUT YOU <Text style={{ color: colors.muted }}>*</Text>
+          </Text>
+          <View style={styles.chips}>
+            {LOVES.map((l) => (
+              <Chip key={l.value} label={l.label} on={loves === l.value} onPress={() => setLoves(l.value)} />
+            ))}
           </View>
 
           <Text style={styles.section}>
