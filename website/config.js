@@ -12,7 +12,7 @@ window.TABKHEEN = {
   // Meta pixel ID from Events Manager, so ads can count sign-ups. Leave empty until the ads thread has one.
   metaPixelId: '',
   // Shown at the bottom of the page. Use the domain address once Cloudflare Email Routing forwards it.
-  contactEmail: 'tbkheen.A@gmail.com',
+  contactEmail: 'help@tabkheen-a.com',
   // Social media links shown at the bottom of the page (full https:// links). Empty ones are hidden.
   social: {
     instagram: 'https://www.instagram.com/tabkheen.a',
