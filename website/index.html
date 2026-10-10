@@ -71,6 +71,9 @@
   .hint.bad { color: var(--navy); font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; direction: ltr; }
   .chips button { border: 1.5px solid var(--navy); background: none; color: var(--navy); border-radius: 999px; padding: 6px 12px; font: 600 14px var(--sans); cursor: pointer; }
+  .loves { display: grid; gap: 8px; margin-top: 10px; }
+  .loves button { border: 1.5px solid var(--light-blue); background: var(--white); color: var(--navy); border-radius: 14px; padding: 13px 14px; font: 600 16px var(--sans); text-align: start; cursor: pointer; }
+  .loves button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); }
   .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; font-size: 15px; line-height: 1.45; }
   .check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--teal); flex: 0 0 auto; }
   .check a { color: var(--navy); }
@@ -133,6 +136,13 @@
         <label class="f" for="whatsapp"><span data-t="fWhatsapp"></span> <span class="req">*</span></label>
         <div class="ltr"><span class="pre">+20</span><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="14"></div>
         <p class="hint" data-t="whatsappHint"></p>
+
+        <h3 class="sec"><span data-t="secAbout"></span> <span class="req">*</span></h3>
+        <div class="loves" id="loves">
+          <button type="button" data-loves="cooking" data-t="lovesCooking"></button>
+          <button type="button" data-loves="eating" data-t="lovesEating"></button>
+          <button type="button" data-loves="both" data-t="lovesBoth"></button>
+        </div>
 
         <h3 class="sec"><span data-t="secCommunities"></span> <span class="req">*</span></h3>
         <p class="secsub" data-t="secCommunitiesSub"></p>
@@ -216,6 +226,8 @@
       signedInAs: 'Signed in with Google as ',
       fName: 'FULL NAME', fUsername: 'USERNAME', fWhatsapp: 'WHATSAPP NUMBER',
       whatsappHint: 'We’ll message you here the day the app opens. Only our team sees it.',
+      secAbout: 'ABOUT YOU', lovesCooking: 'I love cooking', lovesEating: 'I love eating', lovesBoth: 'I love cooking and eating',
+      errLoves: 'Please choose what you love: cooking, eating or both.',
       secCommunities: 'YOUR COMMUNITIES',
       secCommunitiesSub: 'Tell us where you belong: this decides who sees your posts and whose posts you see.',
       fGov: 'GOVERNORATE', fArea: 'AREA', choose: 'Choose', chooseGovFirst: 'Choose a governorate first', none: 'None',
@@ -263,6 +275,8 @@
       signedInAs: 'داخل بحساب Google: ',
       fName: 'الاسم بالكامل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الواتساب',
       whatsappHint: 'هنبعتلك عليه أول يوم التطبيق ينزل. فريقنا بس اللي يشوفه.',
+      secAbout: 'عنك', lovesCooking: 'بحب الطبخ', lovesEating: 'بحب الأكل', lovesBoth: 'بحب الطبخ والأكل',
+      errLoves: 'من فضلك اختار: بتحب الطبخ، الأكل، ولا الاتنين.',
       secCommunities: 'مجتمعاتك',
       secCommunitiesSub: 'قولنا إنت منين: ده بيحدد مين يشوف بوستاتك وإنت تشوف بوستات مين.',
       fGov: 'المحافظة', fArea: 'المنطقة', choose: 'اختار', chooseGovFirst: 'اختار المحافظة الأول', none: 'لا يوجد',
@@ -385,7 +399,7 @@
       }
     };
   })();
-  var state = { step: 'start', user: null, profile: null, regions: [], communities: [], taken: null, usernameTimer: null, rawNonce: null };
+  var state = { loves: null, step: 'start', user: null, profile: null, regions: [], communities: [], taken: null, usernameTimer: null, rawNonce: null };
 
   // Sign-up funnel (docs/SIGNUP-FUNNEL.md), same table as the app. Fire and forget.
   var funnelSession = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
@@ -581,6 +595,12 @@
   }
   $('username').addEventListener('input', onUsernameInput);
 
+  $('loves').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state.loves = b.dataset.loves;
+    document.querySelectorAll('#loves button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+  });
+
   // Egyptian mobile: 01x + 8 digits, written with or without the 0, +20 or 0020; Arabic digits allowed.
   function normalizePhone(raw) {
     var d = raw.replace(/[٠-٩]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
@@ -601,6 +621,7 @@
     if (!name) return fail('errName');
     if (username.length < 3 || state.taken !== false) return fail('errUsername');
     if (!whatsapp) return fail('errPhone');
+    if (!state.loves) return fail('errLoves');
     if (!gov) return fail('errGov');
     if (!areaId || (areaId === OTHER && typed.length < 2)) return fail('errArea');
     if (!$('consent').checked) return fail('errConsent');
@@ -623,7 +644,7 @@
 
     areaStep.then(function (area) {
       return sb.update('profiles', 'id=eq.' + uid, {
-        display_name: name, username: username, country_code: 'EG', governorate: gov, area: area.name,
+        display_name: name, username: username, loves: state.loves, country_code: 'EG', governorate: gov, area: area.name,
         instapay_handle: $('instapay').value.trim() || null,
         heard_from: d ? d.value : null, heard_detail: heardDetail,
         inviter_name: d && d.detail.kind === 'person' ? $('inviter').value.trim() || null : null,
