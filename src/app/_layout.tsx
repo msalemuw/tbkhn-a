@@ -54,6 +54,7 @@ export default function RootLayout() {
         <Stack.Screen name="community/[id]" />
         <Stack.Screen name="community-cooks/[id]" />
         <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="chat/[id]" />
       </Stack>
