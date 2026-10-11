@@ -508,10 +508,13 @@
   var state = { loves: null, step: 'start', user: null, profile: null, regions: [], communities: [], taken: null, usernameTimer: null, rawNonce: null };
 
   // Sign-up funnel (docs/SIGNUP-FUNNEL.md), same table as the app. Fire and forget.
+  // The ad's place and message ride on every event, so started-vs-finished can be read per place.
+  var adTags = {};
+  ['utm_campaign', 'utm_term', 'utm_content', 'placement'].forEach(function (k) { if (source[k]) adTags[k] = source[k]; });
   var funnelSession = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   function logFunnel(step, props) {
     sb.insert('signup_events', {
-      session_id: funnelSession, user_ref: state.user ? state.user.id : null, step: step, props: Object.assign({ via: 'web' }, props || {}),
+      session_id: funnelSession, user_ref: state.user ? state.user.id : null, step: step, props: Object.assign({ via: 'web' }, adTags, props || {}),
       app_version: 'web', os: 'web ' + (/iPhone|iPad/.test(navigator.userAgent) ? 'ios' : /Android/.test(navigator.userAgent) ? 'android' : 'desktop'),
       locale: navigator.language || null
     });
@@ -667,8 +670,14 @@
     return p === 'apple' ? 'Apple' : 'Google';
   }
 
+  // Ad and invite details go on the account at sign-in, so people who stop before the last button still count
+  // for their ad. First touch wins: only an empty value on an unfinished account is filled.
+  function saveSource(uid) {
+    return sb.update('profiles', 'id=eq.' + uid + '&username=is.null&signup_source=eq.' + encodeURIComponent('{}'), { signup_source: source });
+  }
   function afterSignIn(user) {
     state.user = user;
+    saveSource(user.id);
     return sb.rpc('my_profile').then(function (res) {
       state.profile = res.data || null;
       if (state.profile && state.profile.username) { state.step = 'done'; render(); return; }
@@ -852,13 +861,17 @@
     }
 
     areaStep.then(requestOptional).then(function (area) {
-      return sb.update('profiles', 'id=eq.' + uid, {
+      return saveSource(uid).then(function (res) { return { area: area, sourceFailed: !!(res && res.error) }; });
+    }).then(function (step) {
+      var area = step.area, row = {
         display_name: name, username: username, loves: state.loves, country_code: 'EG', governorate: gov, area: area.name,
         instapay_handle: $('instapay').value.trim() || null,
         heard_from: d ? d.value : null, heard_detail: heardDetail,
         inviter_name: d && d.detail.kind === 'person' ? $('inviter').value.trim() || null : null,
-        whatsapp: whatsapp, signup_source: source, lang: lang
-      }).then(function (res) {
+        whatsapp: whatsapp, lang: lang
+      };
+      if (step.sourceFailed) row.signup_source = source; // the first-touch save did not go through: keep this visit's
+      return sb.update('profiles', 'id=eq.' + uid, row).then(function (res) {
         if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
         if (res.error) throw res.error;
         var ids = [area].concat(OPTIONAL.map(function (k) { var v = $('opt-' + k).value; return state.communities.filter(function (c) { return c.id === v; })[0]; }))
