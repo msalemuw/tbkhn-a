@@ -171,13 +171,18 @@ export default function ProfileStep() {
     if (countries.length) row.country_code = country;
     const { data, error: reqError } = await supabase.from('communities').insert(row).select('id, name, kind, governorate').single();
     setRequestBusy(false);
-    if (reqError?.code === '23505') return setRequestError('That community already exists or is waiting for approval. Check the list again.');
-    if (reqError || !data) return setRequestError('We couldn’t send your request. Check your connection and try again.');
-    const made: Community = { ...(data as Community), country_code: country, pending: true };
+    // Someone else already asked for it and it is waiting for approval, so it is not in this member's list.
+    // Accept it as typed instead of blocking (founder, 2026-10-11): the name is saved; they join it once it is approved.
+    const duplicate = reqError?.code === '23505';
+    if (duplicate) logFunnel('community_request_duplicate', { kind: request.kind }, { userRef: session.user.id });
+    else if (reqError || !data) return setRequestError('We couldn’t send your request. Check your connection and try again.');
+    const made: Community = duplicate
+      ? { id: `waiting:${request.kind}:${communityName}`, name: communityName, kind: request.kind, governorate: gov.trim(), country_code: country, pending: true }
+      : { ...(data as Community), country_code: country, pending: true };
     setRequested((r) => [...r, made]);
     if (request.kind === 'area') setAreaId(made.id);
     else setOptional((o) => ({ ...o, [request.kind as Optional]: made.id }));
-    logFunnel('community_requested', { kind: request.kind, country }, { userRef: session.user.id });
+    if (!duplicate) logFunnel('community_requested', { kind: request.kind, country }, { userRef: session.user.id });
     setRequest(null);
   }
 
