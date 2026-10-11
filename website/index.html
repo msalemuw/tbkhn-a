@@ -166,20 +166,19 @@
     <div class="card" id="stepStart">
       <h2 data-t="startTitle"></h2>
       <p class="sub" data-t="startSub"></p>
-      <!-- Inside Instagram or Facebook, Google blocks sign-in (disallowed_useragent), so send people to their browser first. -->
       <p class="already" id="already" hidden></p>
-      <div class="iab" id="iab" hidden>
-        <p class="t" data-t="iabTitle"></p>
-        <p data-t="iabBody"></p>
-        <button class="cta" id="iabOpen" type="button" data-t="iabOpen"></button>
-        <p class="steps" id="iabSteps"></p>
-        <button class="ghost" id="iabCopy" type="button" data-t="iabCopy"></button>
-        <button class="linkbtn" id="iabAnyway" type="button" data-t="iabAnyway"></button>
-        <p class="steps" data-t="iabAlready"></p>
-      </div>
       <div id="signin">
       <div class="gbtn" id="gbtn"></div>
       <button type="button" class="abtn" id="abtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg>Continue with Apple</button>
+      </div>
+      <!-- Inside Instagram or Facebook sign-in sometimes fails (Google may refuse that browser), so offer the way out under the buttons. -->
+      <div class="iab" id="iab" hidden>
+        <p class="t" data-t="iabTitle"></p>
+        <p data-t="iabBody"></p>
+        <button class="ghost" id="iabOpen" type="button" data-t="iabOpen"></button>
+        <p class="steps" id="iabSteps"></p>
+        <button class="ghost" id="iabCopy" type="button" data-t="iabCopy"></button>
+        <p class="steps" data-t="iabAlready"></p>
       </div>
       <div class="note"><span>ⓘ</span><span data-t="startNote"></span></div>
       <div class="err" id="errStart" role="alert"></div>
@@ -285,8 +284,8 @@
       pitch: 'The biggest communities get our focus first, and the most prizes.',
       startTitle: 'Create your account now',
       startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
-      iabTitle: 'Open this page in your browser to sign up',
-      iabBody: 'Google and Apple sign-in often fail inside Instagram or Facebook. Your browser is one tap away:',
+      iabTitle: 'Trouble signing in inside Instagram or Facebook?',
+      iabBody: 'Open this page in your phone’s browser and sign in there:',
       iabOpen: 'Open in my browser',
       iabSteps: {
         instagram: 'Or tap ⋯ at the top right of the screen, then “Open in external browser”.',
@@ -297,7 +296,7 @@
       iabAlready: 'Already signed up before? You’re all set: nothing more to do. We’ll message you on WhatsApp on launch day.',
       already: function (u) { return '<b>You’re already signed up on this phone as @' + u + '.</b> Nothing more to do: we’ll message you on WhatsApp on launch day.'; },
       doneTitleBack: function (u) { return 'You’re already signed up, @' + u + '!'; },
-      iabCopy: 'Copy the link', iabAnyway: 'Try signing in here anyway',
+      iabCopy: 'Copy the link',
       startNote: '<b>Use your Google or Apple account.</b> On launch day, open the app and tap the same button with the same account.',
       profileTitle: 'Create your account',
       signedInAs: function (p) { return 'Signed in with ' + p + ' as '; },
@@ -349,8 +348,8 @@
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
       startTitle: 'اعمل حسابك دلوقتي',
       startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
-      iabTitle: 'افتح الصفحة دي في المتصفح عشان تسجّل',
-      iabBody: 'تسجيل الدخول بحساب Google أو Apple غالبًا مش بيشتغل جوه إنستجرام أو فيسبوك. المتصفح على بُعد دوسة واحدة:',
+      iabTitle: 'تسجيل الدخول مش راضي يشتغل جوه إنستجرام أو فيسبوك؟',
+      iabBody: 'افتح الصفحة دي في متصفح الموبايل وسجّل من هناك:',
       iabOpen: 'افتحها في المتصفح',
       iabSteps: {
         instagram: 'أو دوس على ⋯ فوق على اليمين، واختار «Open in external browser» أو «فتح في متصفح خارجي».',
@@ -361,7 +360,7 @@
       iabAlready: 'سجّلت قبل كده؟ كده تمام ومش محتاج تعمل حاجة تاني. هنبعتلك على واتساب يوم الإطلاق.',
       already: function (u) { return '<b>إنت مسجّل بالفعل على الموبايل ده باسم @' + u + '.</b> مش محتاج تعمل حاجة تاني: هنبعتلك على واتساب يوم الإطلاق.'; },
       doneTitleBack: function (u) { return 'إنت مسجّل بالفعل يا @' + u + '!'; },
-      iabCopy: 'انسخ الرابط', iabAnyway: 'جرّب تسجّل هنا برضه',
+      iabCopy: 'انسخ الرابط',
       startNote: '<b>استخدم حساب Google أو Apple بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس على نفس الزرار بنفس الحساب.',
       profileTitle: 'اعمل حسابك',
       signedInAs: function (p) { return 'داخل بحساب ' + p + ': '; },
@@ -556,17 +555,17 @@
     $('stepProfile').hidden = state.step !== 'profile';
     $('stepDone').hidden = state.step !== 'done';
     if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
-    var blocked = state.step === 'start' && inApp && !state.iabAnyway;
-    $('iab').hidden = !blocked;
+    // Sign-in inside Instagram/Facebook works for many people, so the buttons stay; the way out sits under them.
+    var showIab = state.step === 'start' && !!inApp;
+    $('iab').hidden = !showIab;
     var steps = t('iabSteps');
     $('iabSteps').textContent = (state.iabNudge ? t('iabNudge') : '') + (/Android/.test(ua) ? steps.android : steps[inApp] || steps.instagram);
     $('iabSteps').classList.toggle('nudge', !!state.iabNudge);
     var doneUser = store('tabkheen.doneUser');
     $('already').hidden = !(state.step === 'start' && doneUser);
     if (doneUser) $('already').innerHTML = t('already')(escapeHtml(doneUser));
-    $('signin').hidden = blocked;
-    if (blocked && !state.iabLogged) { state.iabLogged = true; logFunnel('inapp_browser_shown', { app: inApp }); }
-    if (state.step === 'start' && !blocked) { renderGoogleButton(); renderAppleButton(); }
+    if (showIab && !state.iabLogged) { state.iabLogged = true; logFunnel('inapp_browser_shown', { app: inApp }); }
+    if (state.step === 'start') { renderGoogleButton(); renderAppleButton(); }
     if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
@@ -624,7 +623,6 @@
     function ok() { b.textContent = t('copied'); setTimeout(function () { b.textContent = t('iabCopy'); }, 2000); }
     copyText(url, ok, function () { prompt('', url); });
   });
-  $('iabAnyway').addEventListener('click', function () { state.iabAnyway = true; logFunnel('inapp_try_anyway', { app: inApp }); render(); });
 
   // ---------- step 1: Google ----------
   function sha256Hex(text) {
