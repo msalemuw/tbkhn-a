@@ -11,6 +11,8 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
 6. `profile_started` / `profile_field_error` — `field` (username_taken, invalid_format, photo_upload …); a failed optional photo upload is logged and sign-up continues without it
 7. `communities_selected`
    - `community_requested`: a member asked for a community that was not in the list (props: kind, country)
+   - `community_request_matched` (web): a typed name matched one already in the list, which is used instead (props: kind, status)
+   - `community_request_duplicate`: a typed name someone else already requested; it is kept as typed and never blocks sign-up (props: kind)
 8. `signup_completed`
 
 Website only: `inapp_browser_shown` (props: `app` instagram | facebook) when the page opens inside Instagram's or Facebook's own browser, where Google sign-in sometimes fails (the sign-in buttons stay, with the way out shown under them); `inapp_open_tapped` for the "Open in my browser" button; `inapp_open_failed` when the page is still showing 1.5 s after that tap (the link is copied and the menu steps are highlighted). The browser link carries the ad tags plus `inapp`, saved in `profiles.signup_source` with `placement` (Meta's {{placement}}). Every web event also carries `utm_campaign`, `utm_term`, `utm_content` and `placement` from the landing link, and `signup_source` is written at sign-in (first touch wins, only while the account has no username), so drop-offs count for their ad.

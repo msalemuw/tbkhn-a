@@ -114,7 +114,8 @@
   .loves button[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); }
   .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; font-size: 15px; line-height: 1.45; }
   .check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--teal); flex: 0 0 auto; }
-  .check a { color: var(--navy); }
+  .check a, .agree a { color: var(--navy); }
+  .agree { margin: 22px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
   .err { color: var(--navy); background: rgba(255,193,7,0.25); border-radius: 10px; padding: 8px 10px; font-size: 14px; margin-top: 12px; display: none; }
   .err.show { display: block; }
   .cta { width: 100%; margin-top: 20px; border: 0; border-radius: 16px; background: var(--teal); color: var(--navy); font: 700 18px var(--sans); padding: 17px; cursor: pointer; }
@@ -256,7 +257,7 @@
           <input id="inviter" type="text" maxlength="60">
         </div>
 
-        <label class="check"><input id="consent" type="checkbox"><span data-t="consent"></span></label>
+        <p class="agree" data-t="consent"></p>
         <div class="err" id="err" role="alert"></div>
         <button class="cta" id="submit" type="submit" data-t="submit"></button>
       </form>
@@ -324,7 +325,6 @@
       optional: { club: 'CLUB', sahel: 'SAHEL', school: 'SCHOOL', work: 'WORK' },
       notListedOpt: { club: 'Can’t find your club? Type it', sahel: 'Can’t find your Sahel community? Type it', school: 'Can’t find your school? Type it', work: 'Can’t find your workplace? Type it' },
       optTypedPh: 'Type the name', errOptTyped: 'Please type the name of the community you want to add.',
-      errOptExists: 'One of the communities you typed already exists or is waiting for approval. Pick it from the list.',
       moreLater: 'You can join more communities anytime in the app.',
       secPaid: 'GETTING PAID', fInstapay: 'INSTAPAY HANDLE (OPTIONAL)',
       instapayHint: 'Needed when you cook, so neighbours can pay you directly. Add it later if you like.',
@@ -333,14 +333,12 @@
       unEmpty: 'Choose a username: 3–20 letters, numbers, . or _', unShort: 'At least 3 characters', unChecking: 'Checking…',
       unTaken: function (u) { return '@' + u + ' is already taken. Try one of these:'; },
       unOk: function (u) { return '@' + u + ' is available'; },
-      consent: 'Message me on WhatsApp when tabkheen A opens. I agree to the <a href="privacy.html?lang=en">privacy notice</a>.',
+      consent: 'By creating an account you agree to the <a href="privacy.html?lang=en">privacy notice</a>.',
       submit: 'Create my account', sending: 'Saving…',
       notYou: 'Not you? Use another account',
       errName: 'Please write your name.', errUsername: 'Please choose an available username.',
       errPhone: 'Please write a valid Egyptian mobile number, like 010 1234 5678.',
       errGov: 'Please choose your governorate.', errArea: 'Please choose or type your area.',
-      errConsent: 'Please tick the box so we can message you when we open.',
-      errAreaExists: 'That area already exists or is waiting for approval. Pick it from the list.',
       errNet: 'We couldn’t save your account. Check your connection and try again.',
       errSignIn: 'We couldn’t sign you in. Please try again.',
       errLoad: 'We couldn’t load the page. Check your connection and refresh.',
@@ -389,7 +387,6 @@
       optional: { club: 'النادي', sahel: 'الساحل', school: 'المدرسة', work: 'الشغل' },
       notListedOpt: { club: 'ناديك مش موجود؟ اكتبه', sahel: 'مكانك في الساحل مش موجود؟ اكتبه', school: 'مدرستك مش موجودة؟ اكتبها', work: 'شغلك مش موجود؟ اكتبه' },
       optTypedPh: 'اكتب الاسم', errOptTyped: 'اكتب اسم المجتمع اللي عايز تضيفه.',
-      errOptExists: 'واحد من المجتمعات اللي كتبتها موجود أو مستني المراجعة. اختاره من القايمة.',
       moreLater: 'تقدر تنضم لمجتمعات تانية في أي وقت من التطبيق.',
       secPaid: 'استلام الفلوس', fInstapay: 'حساب إنستاباي (اختياري)',
       instapayHint: 'محتاجه لما تطبخ، عشان جيرانك يدفعولك على طول. تقدر تضيفه بعدين.',
@@ -398,14 +395,12 @@
       unEmpty: 'اختار اسم مستخدم: من 3 لـ 20 حرف إنجليزي أو رقم أو . أو _', unShort: '3 حروف على الأقل', unChecking: 'بنشوف…',
       unTaken: function (u) { return '@' + u + ' مستخدم قبل كده. جرّب واحد من دول:'; },
       unOk: function (u) { return '@' + u + ' متاح'; },
-      consent: 'ابعتولي على واتساب أول ما tabkheen A ينزل. موافق على <a href="privacy.html?lang=ar">سياسة الخصوصية</a>.',
+      consent: 'لما تعمل حسابك تبقى موافق على <a href="privacy.html?lang=ar">سياسة الخصوصية</a>.',
       submit: 'اعمل حسابي', sending: 'جاري الحفظ…',
       notYou: 'مش إنت؟ ادخل بحساب تاني',
       errName: 'من فضلك اكتب اسمك.', errUsername: 'من فضلك اختار اسم مستخدم متاح.',
       errPhone: 'من فضلك اكتب رقم موبايل مصري صحيح، زي 010 1234 5678.',
       errGov: 'من فضلك اختار محافظتك.', errArea: 'من فضلك اختار أو اكتب منطقتك.',
-      errConsent: 'من فضلك علّم على المربع عشان نقدر نبعتلك أول ما نفتح.',
-      errAreaExists: 'المنطقة دي موجودة أو مستنية المراجعة. اختارها من القائمة.',
       errNet: 'مقدرناش نحفظ حسابك. اتأكد من الإنترنت وجرّب تاني.',
       errSignIn: 'مقدرناش ندخلك. جرّب تاني.',
       errLoad: 'مقدرناش نحمّل الصفحة. اتأكد من الإنترنت وحدّث الصفحة.',
@@ -870,6 +865,10 @@
     return /^1[0125]\d{8}$/.test(d) ? '+20' + d : null;
   }
 
+  // The same key the database uses to refuse duplicate communities (communities.name_key, like the app's nameKey).
+  function nameKey(n) {
+    return n.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+  }
   function fail(k, boxId) { var e = $(boxId || 'err'); e.textContent = t(k); e.classList.add('show'); }
 
   // ---------- optional profile photo, like the app: a square crop, kept small ----------
@@ -919,34 +918,39 @@
     var optTyped = OPTIONAL.filter(function (k) { return $('opt-' + k).value === OTHER; })
       .map(function (k) { return { kind: k, name: $('opt-' + k + '-typed').value.trim() }; });
     if (optTyped.some(function (o) { return o.name.length < 2; })) return fail('errOptTyped');
-    if (!$('consent').checked) return fail('errConsent');
 
     var d = heardDef(), pick = $('heardPick').value, text = $('heardText').value.trim();
     var heardDetail = !d ? null : d.detail.kind === 'pick' ? (pick && pick !== OTHER ? pick : text || null) : d.detail.kind === 'text' ? text || null : null;
     var uid = state.user.id, btn = $('submit');
     btn.disabled = true; btn.textContent = t('sending');
 
-    // A typed area is sent as a community request; the database adds the member when an admin approves.
-    var areaStep = areaId !== OTHER ? Promise.resolve(state.communities.filter(function (c) { return c.id === areaId; })[0]) :
-      sb.insertOne('communities', { name: typed, kind: 'area', governorate: gov, area: typed, requested_by: uid, status: 'pending', country_code: 'EG' },
+    // A typed community is sent as a request; the database adds the member when an admin approves.
+    // A name that already exists is never a dead end (founder, 2026-10-11): one in the list is simply used,
+    // and one someone else is waiting on is kept as typed, to be joined once it is approved.
+    function requestCommunity(kind, typedName, areaName) {
+      var key = nameKey(typedName), match = state.communities.filter(function (c) {
+        return c.kind === kind && c.governorate.toLowerCase() === gov.toLowerCase() && nameKey(c.name) === key;
+      })[0];
+      if (match) { logFunnel('community_request_matched', { kind: kind, status: match.status }); return Promise.resolve(match); }
+      return sb.insertOne('communities', { name: typedName, kind: kind, governorate: gov, area: areaName || typedName, requested_by: uid, status: 'pending', country_code: 'EG' },
         'id,name,kind,governorate,status').then(function (res) {
-          if (res.error && res.error.code === '23505') throw { msg: 'errAreaExists' };
+          if (res.error && res.error.code === '23505') {
+            logFunnel('community_request_duplicate', { kind: kind });
+            return { name: typedName, kind: kind, governorate: gov, status: 'waiting' };
+          }
           if (res.error) throw res.error;
           state.communities.push(res.data);
-          logFunnel('community_requested', { kind: 'area', country: 'EG' });
+          logFunnel('community_requested', { kind: kind, country: 'EG' });
           return res.data;
         });
+    }
+    var typedOptional = [];
+    var areaStep = areaId !== OTHER ? Promise.resolve(state.communities.filter(function (c) { return c.id === areaId; })[0]) : requestCommunity('area', typed);
 
     // Typed clubs, Sahel communities, schools and workplaces are requests too, like in the app.
     function requestOptional(area) {
       return Promise.all(optTyped.map(function (o) {
-        return sb.insertOne('communities', { name: o.name, kind: o.kind, governorate: gov, area: area.name, requested_by: uid, status: 'pending', country_code: 'EG' },
-          'id,name,kind,governorate,status').then(function (res) {
-            if (res.error && res.error.code === '23505') throw { msg: 'errOptExists' };
-            if (res.error) throw res.error;
-            state.communities.push(res.data);
-            logFunnel('community_requested', { kind: o.kind, country: 'EG' });
-          });
+        return requestCommunity(o.kind, o.name, area.name).then(function (c) { typedOptional.push(c); });
       })).then(function () { return area; });
     }
 
@@ -968,7 +972,7 @@
         if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
         if (res.error) throw res.error;
         var ids = [area].concat(OPTIONAL.map(function (k) { var v = $('opt-' + k).value; return state.communities.filter(function (c) { return c.id === v; })[0]; }))
-          .filter(function (c) { return c && c.status === 'approved'; }).map(function (c) { return c.id; });
+          .concat(typedOptional).filter(function (c) { return c && c.status === 'approved'; }).map(function (c) { return c.id; });
         logFunnel('communities_selected', { count: ids.length });
         return ids.length ? sb.insert('community_members', ids.map(function (id) { return { community_id: id, user_id: uid }; }), true) : null;
       });
