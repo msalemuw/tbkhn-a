@@ -76,6 +76,8 @@
   .iab p { margin: 0; font-size: 14.5px; line-height: 1.5; }
   .iab .cta { margin-top: 12px; }
   .iab .steps { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+  .iab .steps.nudge { color: var(--navy); font-size: 15px; font-weight: 600; background: var(--white); border: 2px solid var(--teal); border-radius: 12px; padding: 10px 12px; }
+  .already { background: var(--white); border: 1.5px solid var(--teal); border-radius: 14px; padding: 12px; margin: 0 0 14px; font-size: 14.5px; line-height: 1.5; }
   .linkbtn { display: block; margin: 12px auto 0; border: 0; background: none; color: var(--navy); font: 600 14px var(--sans); text-decoration: underline; cursor: pointer; }
   .note { display: flex; gap: 10px; align-items: flex-start; background: rgba(202,231,241,0.45); border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.5; margin-top: 16px; }
   .note b { font-weight: 700; }
@@ -165,13 +167,15 @@
       <h2 data-t="startTitle"></h2>
       <p class="sub" data-t="startSub"></p>
       <!-- Inside Instagram or Facebook, Google blocks sign-in (disallowed_useragent), so send people to their browser first. -->
+      <p class="already" id="already" hidden></p>
       <div class="iab" id="iab" hidden>
         <p class="t" data-t="iabTitle"></p>
         <p data-t="iabBody"></p>
         <button class="cta" id="iabOpen" type="button" data-t="iabOpen"></button>
-        <p class="steps" data-t="iabSteps"></p>
+        <p class="steps" id="iabSteps"></p>
         <button class="ghost" id="iabCopy" type="button" data-t="iabCopy"></button>
         <button class="linkbtn" id="iabAnyway" type="button" data-t="iabAnyway"></button>
+        <p class="steps" data-t="iabAlready"></p>
       </div>
       <div id="signin">
       <div class="gbtn" id="gbtn"></div>
@@ -284,7 +288,15 @@
       iabTitle: 'Open this page in your browser to sign up',
       iabBody: 'Google and Apple sign-in often fail inside Instagram or Facebook. Your browser is one tap away:',
       iabOpen: 'Open in my browser',
-      iabSteps: 'If nothing happens, tap the ⋯ menu at the top or bottom of the screen, then choose “Open in browser” (or “Open in Chrome” / “Open in Safari”).',
+      iabSteps: {
+        instagram: 'Or tap ⋯ at the top right of the screen, then “Open in external browser”.',
+        facebook: 'Or tap ⋯ (bottom or top right of the screen), then “Open in external browser”.',
+        android: 'Or tap ⋮ at the top right of the screen, then “Open in Chrome” or “Open in external browser”.'
+      },
+      iabNudge: 'It didn’t open by itself. We copied the link: open Safari or Chrome and paste it in the address bar. ',
+      iabAlready: 'Already signed up before? You’re all set: nothing more to do. We’ll message you on WhatsApp on launch day.',
+      already: function (u) { return '<b>You’re already signed up on this phone as @' + u + '.</b> Nothing more to do: we’ll message you on WhatsApp on launch day.'; },
+      doneTitleBack: function (u) { return 'You’re already signed up, @' + u + '!'; },
       iabCopy: 'Copy the link', iabAnyway: 'Try signing in here anyway',
       startNote: '<b>Use your Google or Apple account.</b> On launch day, open the app and tap the same button with the same account.',
       profileTitle: 'Create your account',
@@ -340,7 +352,15 @@
       iabTitle: 'افتح الصفحة دي في المتصفح عشان تسجّل',
       iabBody: 'تسجيل الدخول بحساب Google أو Apple غالبًا مش بيشتغل جوه إنستجرام أو فيسبوك. المتصفح على بُعد دوسة واحدة:',
       iabOpen: 'افتحها في المتصفح',
-      iabSteps: 'لو مفيش حاجة حصلت، دوس على علامة ⋯ فوق أو تحت في الشاشة، واختار «Open in browser» أو «فتح في المتصفح» (أو Chrome / Safari).',
+      iabSteps: {
+        instagram: 'أو دوس على ⋯ فوق على اليمين، واختار «Open in external browser» أو «فتح في متصفح خارجي».',
+        facebook: 'أو دوس على ⋯ (تحت أو فوق على اليمين)، واختار «Open in external browser» أو «فتح في متصفح خارجي».',
+        android: 'أو دوس على ⋮ فوق على اليمين، واختار «Open in Chrome» أو «فتح في متصفح خارجي».'
+      },
+      iabNudge: 'الصفحة ما اتفتحتش لوحدها. نسخنالك الرابط: افتح Safari أو Chrome والزقه في خانة العنوان. ',
+      iabAlready: 'سجّلت قبل كده؟ كده تمام ومش محتاج تعمل حاجة تاني. هنبعتلك على واتساب يوم الإطلاق.',
+      already: function (u) { return '<b>إنت مسجّل بالفعل على الموبايل ده باسم @' + u + '.</b> مش محتاج تعمل حاجة تاني: هنبعتلك على واتساب يوم الإطلاق.'; },
+      doneTitleBack: function (u) { return 'إنت مسجّل بالفعل يا @' + u + '!'; },
       iabCopy: 'انسخ الرابط', iabAnyway: 'جرّب تسجّل هنا برضه',
       startNote: '<b>استخدم حساب Google أو Apple بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس على نفس الزرار بنفس الحساب.',
       profileTitle: 'اعمل حسابك',
@@ -538,12 +558,19 @@
     if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
     var blocked = state.step === 'start' && inApp && !state.iabAnyway;
     $('iab').hidden = !blocked;
+    var steps = t('iabSteps');
+    $('iabSteps').textContent = (state.iabNudge ? t('iabNudge') : '') + (/Android/.test(ua) ? steps.android : steps[inApp] || steps.instagram);
+    $('iabSteps').classList.toggle('nudge', !!state.iabNudge);
+    var doneUser = store('tabkheen.doneUser');
+    $('already').hidden = !(state.step === 'start' && doneUser);
+    if (doneUser) $('already').innerHTML = t('already')(escapeHtml(doneUser));
     $('signin').hidden = blocked;
     if (blocked && !state.iabLogged) { state.iabLogged = true; logFunnel('inapp_browser_shown', { app: inApp }); }
     if (state.step === 'start' && !blocked) { renderGoogleButton(); renderAppleButton(); }
     if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
-      $('doneTitle').textContent = t('doneTitle')(state.profile.username);
+      $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
+      store('tabkheen.doneUser', state.profile.username);
       $('doneNote').innerHTML = t('doneNote')(escapeHtml(state.user && state.user.email || ''), providerName());
     }
   }
@@ -566,9 +593,23 @@
     u.searchParams.set('inapp', inApp);
     return u.toString();
   }
+  function copyText(text, ok, fallback) {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(ok, fallback || function () {});
+    else if (fallback) fallback();
+  }
   $('iabOpen').addEventListener('click', function () {
     var url = browserUrl();
     logFunnel('inapp_open_tapped', { app: inApp });
+    // Instagram and Facebook can silently ignore the jump. Copy the link first, and if the page is still showing
+    // a moment later, say so and point at the menu steps.
+    copyText(url, function () {});
+    setTimeout(function () {
+      if (document.visibilityState === 'visible') {
+        state.iabNudge = true; render();
+        logFunnel('inapp_open_failed', { app: inApp });
+        $('iabSteps').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 1500);
     if (/Android/.test(ua)) {
       // Chrome through an Android intent; without Chrome the page reloads here and the menu steps still apply.
       location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
@@ -581,8 +622,7 @@
   $('iabCopy').addEventListener('click', function () {
     var b = $('iabCopy'), url = browserUrl();
     function ok() { b.textContent = t('copied'); setTimeout(function () { b.textContent = t('iabCopy'); }, 2000); }
-    if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok, function () { prompt('', url); });
-    else prompt('', url);
+    copyText(url, ok, function () { prompt('', url); });
   });
   $('iabAnyway').addEventListener('click', function () { state.iabAnyway = true; logFunnel('inapp_try_anyway', { app: inApp }); render(); });
 
@@ -680,7 +720,7 @@
     saveSource(user.id);
     return sb.rpc('my_profile').then(function (res) {
       state.profile = res.data || null;
-      if (state.profile && state.profile.username) { state.step = 'done'; render(); return; }
+      if (state.profile && state.profile.username) { state.returning = true; state.step = 'done'; render(); return; }
       state.step = 'profile';
       var meta = user.user_metadata || {};
       if (!$('name').value) $('name').value = (state.profile && state.profile.display_name) || meta.full_name || meta.name || appleName || '';
@@ -908,7 +948,8 @@
   });
   document.querySelectorAll('[data-signout]').forEach(function (b) {
     b.addEventListener('click', function () {
-      sb.auth.signOut().then(function () { state.user = null; state.profile = null; state.step = 'start'; render(); });
+      try { localStorage.removeItem('tabkheen.doneUser'); } catch (e) { /* nothing stored */ }
+      sb.auth.signOut().then(function () { state.user = null; state.returning = false; state.profile = null; state.step = 'start'; render(); });
     });
   });
 
