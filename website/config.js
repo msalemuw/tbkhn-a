@@ -10,7 +10,7 @@ window.TABKHEEN = {
   // Apple sign-in on the website: the Services ID from the Apple Developer account. Empty hides the Apple button.
   appleServiceId: 'com.tabkheen.a.web',
   // Meta pixel ID from Events Manager, so ads can count sign-ups. Leave empty until the ads thread has one.
-  metaPixelId: '',
+  metaPixelId: '4494722924136714',
   // Shown at the bottom of the page. Use the domain address once Cloudflare Email Routing forwards it.
   contactEmail: 'help@tabkheen-a.com',
   // Social media links shown at the bottom of the page (full https:// links). Empty ones are hidden.
