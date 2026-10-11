@@ -102,6 +102,11 @@
   .ltr input { direction: ltr; text-align: left; }
   .hint { font-size: 13.5px; color: var(--muted); margin: 6px 2px 0; line-height: 1.45; }
   .hint.bad { color: var(--navy); font-weight: 600; }
+  .photo { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 6px; cursor: pointer; }
+  .photo .circle { width: 96px; height: 96px; border-radius: 50%; background: var(--light-blue) center / cover no-repeat; display: flex; align-items: center; justify-content: center; }
+  .photo .circle.has svg { display: none; }
+  .photo span { font-weight: 700; font-size: 14px; color: var(--navy); text-decoration: underline; }
+  .photo input { position: absolute; width: 1px; height: 1px; opacity: 0; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; direction: ltr; }
   .chips button { border: 1.5px solid var(--navy); background: none; color: var(--navy); border-radius: 999px; padding: 6px 12px; font: 600 14px var(--sans); cursor: pointer; }
   .loves { display: grid; gap: 8px; margin-top: 10px; }
@@ -189,6 +194,12 @@
       <h2 data-t="profileTitle"></h2>
       <p class="sub" id="signedInAs"></p>
       <form id="form" novalidate>
+        <label class="photo" for="photo">
+          <span class="circle" id="photoCircle"><svg width="32" height="32" viewBox="0 0 24 24" fill="#28303a" aria-hidden="true"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3zm7 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-3.2-5c0 1.77 1.43 3.2 3.2 3.2s3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2z"/></svg></span>
+          <span id="photoText" data-t="photoAdd"></span>
+          <input id="photo" type="file" accept="image/*">
+        </label>
+
         <label class="f" for="name"><span data-t="fName"></span> <span class="req">*</span></label>
         <input id="name" type="text" autocomplete="name" maxlength="60">
 
@@ -300,6 +311,7 @@
       startNote: '<b>Use your Google or Apple account.</b> On launch day, open the app and tap the same button with the same account.',
       profileTitle: 'Create your account',
       signedInAs: function (p) { return 'Signed in with ' + p + ' as '; },
+      photoAdd: 'Add a profile photo (optional)', photoChange: 'Change photo',
       fName: 'FULL NAME', fUsername: 'USERNAME', fWhatsapp: 'WHATSAPP NUMBER',
       whatsappHint: 'We’ll message you here the day the app opens. Only our team sees it.',
       secAbout: 'ABOUT YOU', lovesCooking: 'I love cooking', lovesEating: 'I love eating', lovesBoth: 'I love cooking and eating',
@@ -364,6 +376,7 @@
       startNote: '<b>استخدم حساب Google أو Apple بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس على نفس الزرار بنفس الحساب.',
       profileTitle: 'اعمل حسابك',
       signedInAs: function (p) { return 'داخل بحساب ' + p + ': '; },
+      photoAdd: 'ضيف صورتك (اختياري)', photoChange: 'غيّر الصورة',
       fName: 'الاسم بالكامل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الواتساب',
       whatsappHint: 'هنبعتلك عليه أول يوم التطبيق ينزل. فريقنا بس اللي يشوفه.',
       secAbout: 'عنك', lovesCooking: 'بحب الطبخ', lovesEating: 'بحب الأكل', lovesBoth: 'بحب الطبخ والأكل',
@@ -521,6 +534,12 @@
       },
       update: function (table, filter, row) {
         return call('/rest/v1/' + table + '?' + filter, { method: 'PATCH', body: row, headers: { Prefer: 'return=minimal' } });
+      },
+      // Photo upload to the app's public "media" bucket; each member may only write under their own folder.
+      upload: function (path, blob) {
+        return fetch(CFG.supabaseUrl + '/storage/v1/object/media/' + path, {
+          method: 'POST', body: blob, headers: { apikey: CFG.supabaseKey, Authorization: 'Bearer ' + (session && session.access_token), 'Content-Type': blob.type }
+        }).then(function (r) { return r.ok ? { error: null } : { error: { message: 'http ' + r.status } }; }, function (e) { return { error: { message: String(e) } }; });
       }
     };
   })();
@@ -853,6 +872,39 @@
 
   function fail(k, boxId) { var e = $(boxId || 'err'); e.textContent = t(k); e.classList.add('show'); }
 
+  // ---------- optional profile photo, like the app: a square crop, kept small ----------
+  var photoBlob = null;
+  $('photo').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var side = Math.min(img.naturalWidth, img.naturalHeight), out = Math.min(side, 640), c = document.createElement('canvas');
+      c.width = c.height = out;
+      c.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, out, out);
+      URL.revokeObjectURL(url);
+      c.toBlob(function (blob) {
+        if (!blob) return;
+        photoBlob = blob;
+        var circle = $('photoCircle');
+        circle.style.backgroundImage = 'url(' + URL.createObjectURL(blob) + ')';
+        circle.classList.add('has');
+        $('photoText').setAttribute('data-t', 'photoChange'); $('photoText').textContent = t('photoChange');
+      }, 'image/jpeg', 0.8);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); };
+    img.src = url;
+  });
+  // The photo is optional, so a failed upload never stops sign-up; it can be added later in the app.
+  function uploadAvatar(uid) {
+    if (!photoBlob) return Promise.resolve(null);
+    var path = uid + '/' + Date.now() + '.jpg';
+    return sb.upload(path, photoBlob).then(function (res) {
+      if (res.error) { logFunnel('profile_field_error', { field: 'photo_upload' }); return null; }
+      return path;
+    });
+  }
+
   $('form').addEventListener('submit', function (e) {
     e.preventDefault();
     $('err').classList.remove('show');
@@ -899,7 +951,9 @@
     }
 
     areaStep.then(requestOptional).then(function (area) {
-      return saveSource(uid).then(function (res) { return { area: area, sourceFailed: !!(res && res.error) }; });
+      return saveSource(uid).then(function (res) {
+        return uploadAvatar(uid).then(function (avatar) { return { area: area, sourceFailed: !!(res && res.error), avatar: avatar }; });
+      });
     }).then(function (step) {
       var area = step.area, row = {
         display_name: name, username: username, loves: state.loves, country_code: 'EG', governorate: gov, area: area.name,
@@ -908,6 +962,7 @@
         inviter_name: d && d.detail.kind === 'person' ? $('inviter').value.trim() || null : null,
         whatsapp: whatsapp, lang: lang
       };
+      if (step.avatar) row.avatar_path = step.avatar;
       if (step.sourceFailed) row.signup_source = source; // the first-touch save did not go through: keep this visit's
       return sb.update('profiles', 'id=eq.' + uid, row).then(function (res) {
         if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
