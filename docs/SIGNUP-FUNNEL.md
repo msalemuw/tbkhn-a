@@ -13,6 +13,8 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
    - `community_requested`: a member asked for a community that was not in the list (props: kind, country)
 8. `signup_completed`
 
+Website only: `inapp_browser_shown` (props: `app` instagram | facebook) when the page opens inside Instagram's or Facebook's own browser, where Google sign-in is blocked; `inapp_open_tapped` for the "Open in my browser" button; `inapp_try_anyway` when the visitor stays and signs in there. The browser link carries the ad tags plus `inapp`, saved in `profiles.signup_source` with `placement` (Meta's {{placement}}).
+
 Google/Apple sign-ups skip steps 3–5 (phone entry and code) at launch: **phone verification is on hold** (section 13, 2026-10-04). When it comes back it applies to new members who choose "Continue with phone", and later to verified-only Masters likes.
 
 ## Every event carries

@@ -71,6 +71,12 @@
           border: 0; border-radius: 999px; background: var(--navy); color: var(--white); font: 600 15px/1 'Hanken Grotesk', system-ui, sans-serif; cursor: pointer; direction: ltr; }
   .abtn svg { width: 18px; height: 18px; fill: currentColor; }
   .abtn[disabled] { opacity: .6; cursor: default; }
+  .iab { background: rgba(202,231,241,0.45); border-radius: 14px; padding: 14px; margin-top: 6px; }
+  .iab .t { font-weight: 700; font-size: 16px; margin: 0 0 6px; }
+  .iab p { margin: 0; font-size: 14.5px; line-height: 1.5; }
+  .iab .cta { margin-top: 12px; }
+  .iab .steps { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+  .linkbtn { display: block; margin: 12px auto 0; border: 0; background: none; color: var(--navy); font: 600 14px var(--sans); text-decoration: underline; cursor: pointer; }
   .note { display: flex; gap: 10px; align-items: flex-start; background: rgba(202,231,241,0.45); border-radius: 14px; padding: 12px; font-size: 14px; line-height: 1.5; margin-top: 16px; }
   .note b { font-weight: 700; }
   h3.sec { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; margin: 26px 0 2px; }
@@ -158,8 +164,19 @@
     <div class="card" id="stepStart">
       <h2 data-t="startTitle"></h2>
       <p class="sub" data-t="startSub"></p>
+      <!-- Inside Instagram or Facebook, Google blocks sign-in (disallowed_useragent), so send people to their browser first. -->
+      <div class="iab" id="iab" hidden>
+        <p class="t" data-t="iabTitle"></p>
+        <p data-t="iabBody"></p>
+        <button class="cta" id="iabOpen" type="button" data-t="iabOpen"></button>
+        <p class="steps" data-t="iabSteps"></p>
+        <button class="ghost" id="iabCopy" type="button" data-t="iabCopy"></button>
+        <button class="linkbtn" id="iabAnyway" type="button" data-t="iabAnyway"></button>
+      </div>
+      <div id="signin">
       <div class="gbtn" id="gbtn"></div>
       <button type="button" class="abtn" id="abtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg>Continue with Apple</button>
+      </div>
       <div class="note"><span>ⓘ</span><span data-t="startNote"></span></div>
       <div class="err" id="errStart" role="alert"></div>
     </div>
@@ -264,6 +281,11 @@
       pitch: 'The biggest communities get our focus first, and the most prizes.',
       startTitle: 'Create your account now',
       startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
+      iabTitle: 'Open this page in your browser to sign up',
+      iabBody: 'Google and Apple sign-in don’t work inside Instagram or Facebook. It takes one tap:',
+      iabOpen: 'Open in my browser',
+      iabSteps: 'If nothing happens, tap the ⋯ menu at the top or bottom of the screen, then choose “Open in browser” (or “Open in Chrome” / “Open in Safari”).',
+      iabCopy: 'Copy the link', iabAnyway: 'Try signing in here anyway',
       startNote: '<b>Use your Google or Apple account.</b> On launch day, open the app and tap the same button with the same account.',
       profileTitle: 'Create your account',
       signedInAs: function (p) { return 'Signed in with ' + p + ' as '; },
@@ -315,6 +337,11 @@
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
       startTitle: 'اعمل حسابك دلوقتي',
       startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
+      iabTitle: 'افتح الصفحة دي في المتصفح عشان تسجّل',
+      iabBody: 'تسجيل الدخول بحساب Google أو Apple مش بيشتغل جوه إنستجرام أو فيسبوك. هي دوسة واحدة:',
+      iabOpen: 'افتحها في المتصفح',
+      iabSteps: 'لو مفيش حاجة حصلت، دوس على علامة ⋯ فوق أو تحت في الشاشة، واختار «Open in browser» أو «فتح في المتصفح» (أو Chrome / Safari).',
+      iabCopy: 'انسخ الرابط', iabAnyway: 'جرّب تسجّل هنا برضه',
       startNote: '<b>استخدم حساب Google أو Apple بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس على نفس الزرار بنفس الحساب.',
       profileTitle: 'اعمل حسابك',
       signedInAs: function (p) { return 'داخل بحساب ' + p + ': '; },
@@ -412,9 +439,14 @@
 
   // Ad and invite details from the link, kept for the visit and saved with the account.
   var source = { via: 'web' };
-  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid'].forEach(function (k) {
+  // placement: where the ad showed (Meta's {{placement}}, e.g. Instagram_Stories); inapp: the page was first opened
+  // inside Instagram or Facebook and moved to the browser by the button below.
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'placement', 'inapp', 'fbclid'].forEach(function (k) {
     var v = params.get(k) || store('tabkheen.' + k); if (v) { source[k] = v.slice(0, 200); store('tabkheen.' + k, source[k]); }
   });
+  // Instagram's and Facebook's own browsers: Google refuses to sign in there, so the start step asks to switch.
+  var ua = navigator.userAgent || '';
+  var inApp = /Instagram/.test(ua) ? 'instagram' : /FBAN|FBAV|FB_IAB|FB4A|FBIOS|MessengerForiOS/.test(ua) ? 'facebook' : '';
   var ref = (params.get('ref') || store('tabkheen.ref') || '').toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
   if (ref) { source.ref = ref; store('tabkheen.ref', ref); }
 
@@ -501,7 +533,11 @@
     $('stepProfile').hidden = state.step !== 'profile';
     $('stepDone').hidden = state.step !== 'done';
     if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
-    if (state.step === 'start') { renderGoogleButton(); renderAppleButton(); }
+    var blocked = state.step === 'start' && inApp && !state.iabAnyway;
+    $('iab').hidden = !blocked;
+    $('signin').hidden = blocked;
+    if (blocked && !state.iabLogged) { state.iabLogged = true; logFunnel('inapp_browser_shown', { app: inApp }); }
+    if (state.step === 'start' && !blocked) { renderGoogleButton(); renderAppleButton(); }
     if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t('doneTitle')(state.profile.username);
@@ -518,6 +554,34 @@
   document.querySelectorAll('.lang button').forEach(function (b) {
     b.addEventListener('click', function () { lang = b.dataset.lang; store('tabkheen.lang', lang); render(); });
   });
+
+  // ---------- step 1: leaving Instagram / Facebook ----------
+  function browserUrl() {
+    // The browser has its own storage, so the ad and invite details travel in the link.
+    var u = new URL(location.href);
+    Object.keys(source).forEach(function (k) { if (k !== 'via') u.searchParams.set(k, source[k]); });
+    u.searchParams.set('inapp', inApp);
+    return u.toString();
+  }
+  $('iabOpen').addEventListener('click', function () {
+    var url = browserUrl();
+    logFunnel('inapp_open_tapped', { app: inApp });
+    if (/Android/.test(ua)) {
+      // Chrome through an Android intent; without Chrome the page reloads here and the menu steps still apply.
+      location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+    } else if (/iPhone|iPad|iPod/.test(ua)) {
+      location.href = 'x-safari-' + url; // Safari on iOS 17 and later; older phones use the menu steps
+    } else {
+      window.open(url, '_blank');
+    }
+  });
+  $('iabCopy').addEventListener('click', function () {
+    var b = $('iabCopy'), url = browserUrl();
+    function ok() { b.textContent = t('copied'); setTimeout(function () { b.textContent = t('iabCopy'); }, 2000); }
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(ok, function () { prompt('', url); });
+    else prompt('', url);
+  });
+  $('iabAnyway').addEventListener('click', function () { state.iabAnyway = true; logFunnel('inapp_try_anyway', { app: inApp }); render(); });
 
   // ---------- step 1: Google ----------
   function sha256Hex(text) {
