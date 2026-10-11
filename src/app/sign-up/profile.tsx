@@ -1,7 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BuildInfo } from '@/components/build-info';
@@ -12,6 +14,7 @@ import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
 import { HEARD, OTHER_DETAIL } from '@/lib/heard';
 import { formatPhone } from '@/lib/phone';
+import { uploadPhoto } from '@/lib/posts';
 import { type Country, fetchCountries, fetchRegions, type Region } from '@/lib/regions';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -54,6 +57,8 @@ function usernameState(u: string, taken: boolean | null): UsernameState {
 export default function ProfileStep() {
   const { session, refreshProfile } = useSession();
   // Google and Apple share the member's name, so it starts filled in.
+  // Optional profile photo (founder, 2026-10-11); the website sign-up has the same circle.
+  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [name, setName] = useState(() => String(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? ''));
   const [username, setUsername] = useState('');
   const [loves, setLoves] = useState<Loves | null>(null);
@@ -176,17 +181,32 @@ export default function ProfileStep() {
     setRequest(null);
   }
 
+  async function pickPhoto() {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
+  }
+
   async function onContinue() {
     if (!session || !canSubmit) return;
     setBusy(true);
     setError(null);
     const area = byId(areaId)!;
+    // The photo is optional, so a failed upload never blocks sign-up; it can be added later in Edit profile.
+    let avatarPath: string | null = null;
+    if (photo) {
+      try {
+        avatarPath = await uploadPhoto(session.user.id, photo.uri, photo.mimeType ?? 'image/jpeg');
+      } catch {
+        logFunnel('profile_field_error', { field: 'photo_upload' }, { userRef: session.user.id });
+      }
+    }
     const { error: saveError } = await supabase
       .from('profiles')
       .update({
         display_name: name.trim(),
         username,
         loves,
+        ...(avatarPath ? { avatar_path: avatarPath } : {}),
         country_code: countries.length ? country : undefined,
         governorate: gov?.trim(),
         area: area.name,
@@ -233,6 +253,17 @@ export default function ProfileStep() {
           <Text style={styles.required}>
             <Text style={{ color: colors.muted }}>*</Text> Required
           </Text>
+
+          <Pressable style={styles.photo} onPress={pickPhoto} accessibilityRole="button" accessibilityLabel={photo ? 'Change photo' : 'Add a profile photo'}>
+            {photo ? (
+              <Image source={{ uri: photo.uri }} style={styles.photoCircle} contentFit="cover" />
+            ) : (
+              <View style={[styles.photoCircle, styles.photoEmpty]}>
+                <MaterialIcons name="add-a-photo" size={30} color={colors.navy} />
+              </View>
+            )}
+            <Text style={styles.photoText}>{photo ? 'Change photo' : 'Add a profile photo (optional)'}</Text>
+          </Pressable>
 
           <View style={styles.group}>
             <Field label="FULL NAME" required>
@@ -468,6 +499,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   pad: { paddingHorizontal: 22, paddingBottom: 30 },
   required: { fontFamily: fonts.bold, fontSize: 12, color: colors.muted, marginTop: 14 },
+  photo: { alignItems: 'center', gap: 8, marginTop: 14 },
+  photoCircle: { width: 96, height: 96, borderRadius: 48 },
+  photoEmpty: { backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
+  photoText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, textDecorationLine: 'underline' },
   group: { gap: 12, marginTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
