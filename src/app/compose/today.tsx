@@ -131,7 +131,8 @@ export default function ComposeToday() {
 
   const allOn = communities.length > 0 && chosen.length === communities.length;
   const toggle = (id: string) => setChosen((x) => (x.includes(id) ? x.filter((c) => c !== id) : [...x, id]));
-  const addSpot = () => router.push({ pathname: '/location', params: { for: 'pickup' } });
+  // Tapping the pickup point opens the map, starting at the spot already picked (if any).
+  const addSpot = () => router.push({ pathname: '/location', params: point ? { for: 'pickup', at: `${point.lat},${point.lng}` } : { for: 'pickup' } });
   const point = points.find((p) => p.id === pointId);
 
   return (
@@ -213,18 +214,10 @@ export default function ComposeToday() {
             <SelectField
               label="PICKUP POINT"
               required
-              value={point?.label ?? 'Choose'}
-              onPress={() =>
-                setSheet({
-                  title: 'Pickup point',
-                  items: [
-                    ...points.map((p) => ({ label: p.label, selected: p.id === pointId, onPress: () => setPointId(p.id) })),
-                    { label: '+ New spot on the map', selected: false, onPress: addSpot },
-                  ],
-                })
-              }
+              value={point?.label ?? 'Choose on the map'}
+              onPress={addSpot}
             />
-            <Text style={[formStyles.hint, { color: colors.muted, marginTop: 0 }]}>Buyers see this before they reserve. Saved spots stay here by name for next time.</Text>
+            <Text style={[formStyles.hint, { color: colors.muted, marginTop: 0 }]}>Buyers see this before they reserve. Tap to set it on the map; it can differ from your home location.</Text>
           </View>
 
           <Text style={styles.section}>CUISINE TYPE</Text>
