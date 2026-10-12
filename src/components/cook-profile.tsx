@@ -32,13 +32,13 @@ type Tab = 'posts' | 'today' | 'reviews';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'posts', label: 'Posts' },
-  { key: 'today', label: "What's cooking today" },
+  { key: 'today', label: "Today's menu" },
   { key: 'reviews', label: 'Reviews' },
 ];
 
 /**
  * Profile from the design (flow 12): handle bar, photo, name, rating, bio, Follow and Message,
- * Communities / Followers / Following, then the tabs Posts (photo grid), Cooking today and Reviews.
+ * Communities / Followers / Following, then the tabs Posts (photo grid), Today's menu and Reviews.
  * Used for other cooks (with a back arrow) and for my own Profile tab (with my actions and a footer).
  * The rank line ("#1 in Mohandeseen") comes with the Masters, which is not in the launch build.
  */
@@ -194,7 +194,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
             ) : dishes.length ? (
               dishes.map((d) => <DishCard key={d.id} dish={d} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
             ) : (
-              <Text style={styles.empty}>Nothing cooking today.</Text>
+              <Text style={styles.empty}>Nothing on today’s menu.</Text>
             )}
           </View>
         ) : null}

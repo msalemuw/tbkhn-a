@@ -13,7 +13,7 @@ import { useSession } from '@/lib/session';
 import { supabaseConfigured } from '@/lib/supabase';
 
 /**
- * Today's menu (s53): every dish neighbors are cooking today, narrowed by community, cuisine or search.
+ * Today's menu (s53): every dish neighbors share on today's menu, narrowed by community, cuisine or search.
  * Starts showing everything; the "Menu filter" sheet (same format as the Home feed filter) narrows by community and cuisine.
  */
 export function DishList({ header, filters = true }: { header?: React.ReactElement; filters?: boolean }) {
@@ -115,7 +115,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
         ? ''
         : dishes.length
           ? 'Nothing matches today. Try another community or cuisine.'
-          : 'No one has posted what they’re cooking today yet.';
+          : 'Nothing on today’s menu yet.';
 
   return (
     <>

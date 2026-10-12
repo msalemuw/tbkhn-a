@@ -25,8 +25,8 @@ import {
 import { useSession } from '@/lib/session';
 import { endOfToday, readySlots } from '@/lib/slots';
 
-// Flow 9, screen s16: Today's cooking. One post carries dish, price, portions and pickup point;
-// it shows as a "taking orders" story until midnight.
+// Flow 9, screen s16: Today's menu. One post carries dish, price, portions and pickup point;
+// it shows as a "On today's menu" story until midnight.
 export default function ComposeToday() {
   const { session } = useSession();
   const uid = session?.user.id;
@@ -66,7 +66,7 @@ export default function ComposeToday() {
     return (
       <SafeAreaView style={styles.screen}>
         <View style={styles.center}>
-          <Text style={formStyles.sub}>Sign up to post what you’re cooking today.</Text>
+          <Text style={formStyles.sub}>Sign up to share today’s menu.</Text>
           <PrimaryButton label="Sign up" onPress={() => router.replace('/sign-up')} style={{ marginTop: 16, alignSelf: 'stretch' }} />
         </View>
       </SafeAreaView>
@@ -153,7 +153,7 @@ export default function ComposeToday() {
         <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
           <MaterialIcons name="close" size={26} color={colors.ink} />
         </Pressable>
-        <Text style={styles.topTitle}>Today’s cooking</Text>
+        <Text style={styles.topTitle}>Today’s menu</Text>
         <Text style={[styles.topPost, busy && { opacity: 0.4 }]} onPress={busy ? undefined : onPost}>
           Post
         </Text>
@@ -275,7 +275,7 @@ export default function ComposeToday() {
 
           <View style={styles.note}>
             <MaterialIcons name="history-toggle-off" size={19} color={colors.teal} />
-            <Text style={styles.noteText}>A “taking orders” story is created for you automatically and links to this post, so pickup and portions stay in one place. It ends at midnight.</Text>
+            <Text style={styles.noteText}>An “On today’s menu” story is created for you automatically and links to this post, so pickup and portions stay in one place. It ends at midnight.</Text>
           </View>
 
           {error ? <Text style={formStyles.error}>{error}</Text> : null}

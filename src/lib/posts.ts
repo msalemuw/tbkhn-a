@@ -47,7 +47,7 @@ export async function fetchTodaysDishes(): Promise<Dish[]> {
   return (data ?? []) as unknown as Dish[];
 }
 
-/** What one cook is still serving today (their profile's "What's cooking today" tab). */
+/** What one cook is still serving today (their profile's "Today's menu" tab). */
 export async function fetchDishesBy(cookId: string): Promise<Dish[]> {
   const { data, error } = await supabase
     .from('posts')

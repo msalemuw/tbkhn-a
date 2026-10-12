@@ -27,8 +27,8 @@ const KIND_ICON: Record<string, React.ComponentProps<typeof MaterialIcons>['name
   other: 'groups',
 };
 
-// Community page (design s19): cover, icon tile, name, Members / Cooks / Cooking today, Join and share,
-// top cooks, what is cooking today. The design has one top list; we have two automatic rankings, so two lists.
+// Community page (design s19): cover, icon tile, name, Members / Cooks / Today’s menu, Join and share,
+// top cooks, today’s menu. The design has one top list; we have two automatic rankings, so two lists.
 export default function CommunityScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
@@ -114,7 +114,7 @@ export default function CommunityScreen() {
         <View style={styles.stats}>
           <Stat n={members} label="Members" onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'members' } })} />
           <Stat n={data.cookIds.length} label="Cooks" onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'cooks' } })} />
-          <Stat n={data.today.length} label="Cooking today" onPress={() => router.push({ pathname: '/community-today/[id]', params: { id } })} />
+          <Stat n={data.today.length} label="Today’s menu" onPress={() => router.push({ pathname: '/community-today/[id]', params: { id } })} />
         </View>
 
         <View style={styles.btns}>
@@ -141,14 +141,14 @@ export default function CommunityScreen() {
         ) : null}
 
         <View style={[styles.pad, styles.todayHead]}>
-          <Text style={styles.section}>COOKING TODAY</Text>
+          <Text style={styles.section}>TODAY’S MENU</Text>
           <Text style={styles.gone}>Gone at midnight</Text>
         </View>
         <View style={[styles.pad, { gap: 12, marginTop: 9 }]}>
           {data.today.length ? (
             data.today.map((d) => <DishCard key={d.id} dish={d} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
           ) : (
-            <Text style={styles.empty}>No one in {info.name} is cooking today yet.</Text>
+            <Text style={styles.empty}>Nothing on today’s menu in {info.name} yet.</Text>
           )}
         </View>
       </ScrollView>

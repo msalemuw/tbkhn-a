@@ -1,7 +1,7 @@
 import { type Dish, fetchDishesBy, type Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
 
-// Cook profile (design flow 12): who they are, follow, signature dishes, what's cooking today, reviews.
+// Cook profile (design flow 12): who they are, follow, signature dishes, today's menu, reviews.
 
 export type CookProfile = Person & {
   bio: string | null;

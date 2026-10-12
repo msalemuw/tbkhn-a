@@ -8,7 +8,7 @@ import { canAct, dismissReports, fetchOpenReports, removePost, type ReportGroup,
 import { fmtAgo } from '@/lib/format';
 
 // Reports from "Report post" and a profile's "Report", grouped by post or member, most reported first.
-const KIND_LABEL: Record<string, string> = { cooking_today: 'Cooking today', story: 'Story', signature: 'Signature dish' };
+const KIND_LABEL: Record<string, string> = { cooking_today: 'Today’s menu', story: 'Story', signature: 'Signature dish' };
 
 export default function Reports() {
   const role = useStaffRole();

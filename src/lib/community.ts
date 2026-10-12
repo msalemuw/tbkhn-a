@@ -17,7 +17,7 @@ export type CommunityOverview = { info: CommunityInfo; members: number; cookIds:
 
 export const KIND_LABEL: Record<string, string> = { area: 'Area', compound: 'Compound', club: 'Club', sahel: 'Sahel', school: 'School', work: 'Workplace', other: 'Community' };
 
-/** Everything the community page shows: the community, its members, its cooks (who posted a dish or signature dish for it) and what is cooking today. */
+/** Everything the community page shows: the community, its members, its cooks (who posted a dish or signature dish for it) and today's menu. */
 export async function fetchCommunityOverview(id: string): Promise<CommunityOverview | null> {
   const [c, members, posts, dishes] = await Promise.all([
     supabase.from('communities').select('id, name, kind, governorate, area').eq('id', id).eq('status', 'approved').maybeSingle(),

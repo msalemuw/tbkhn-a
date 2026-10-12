@@ -23,7 +23,7 @@ import { fetchStories, loadSeen, type StoryGroup } from '@/lib/stories';
 import { supabaseConfigured } from '@/lib/supabase';
 
 // Screen s6: Home is the social feed (design flow 15): signature dishes from the communities and cooks you watch.
-// What people are cooking today, and ordering, live on the Menu tab.
+// Today’s menu and ordering live on the Menu tab.
 const NAVY = colors.navy;
 
 export default function Home() {
