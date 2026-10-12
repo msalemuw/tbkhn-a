@@ -41,7 +41,7 @@ const TABS: { key: Tab; label: string }[] = [
  * Used for other cooks (with a back arrow) and for my own Profile tab (with my actions and a footer).
  * The rank line ("#1 in Mohandeseen") comes with the Masters, which is not in the launch build.
  */
-export function CookProfileView({ id, onBack, actions, footer }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode }) {
+export function CookProfileView({ id, onBack, actions, footer, barRight, belowStats }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode; barRight?: ReactNode; belowStats?: ReactNode }) {
   const { session } = useSession();
   const here = useMyLocation();
   const [cook, setCook] = useState<CookProfile | null | undefined>(undefined);
@@ -112,7 +112,7 @@ export function CookProfileView({ id, onBack, actions, footer }: { id: string; o
       <View style={styles.bar}>
         {onBack ? <BarIcon name="arrow-back" label="Back" onPress={onBack} /> : <View style={styles.barSlot} />}
         <Text style={styles.handle}>{handle}</Text>
-        <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: `${personName(cook)} on tabkheen A (${handle})` }).catch(() => {})} />
+        {barRight ?? <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: `${personName(cook)} on tabkheen A (${handle})` }).catch(() => {})} />}
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.top}>
@@ -120,10 +120,10 @@ export function CookProfileView({ id, onBack, actions, footer }: { id: string; o
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.row}>
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
-              <MaterialIcons name="verified" size={19} color={colors.teal} />
+              {mine ? null : <MaterialIcons name="verified" size={19} color={colors.teal} />}
             </View>
             {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={b.kind} badge={b} />)}</View> : null}
-            {cook.area ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}
+            {cook.area && !mine ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}
             {stats?.rating != null ? (
               <Text style={styles.rating}>
                 <Text style={{ color: colors.yellow }}>★</Text> {stats.rating.toFixed(1)} <Text style={styles.muted}>({stats.reviews})</Text>
@@ -158,6 +158,8 @@ export function CookProfileView({ id, onBack, actions, footer }: { id: string; o
           <Stat value={stats ? String(stats.followers) : '–'} label="Followers" middle />
           <Stat value={stats ? String(stats.following) : '–'} label="Following" />
         </View>
+
+        {belowStats}
 
         <View style={styles.tabs}>
           {TABS.map((t) => (
