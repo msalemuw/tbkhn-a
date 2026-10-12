@@ -22,13 +22,13 @@ export async function fetchCommunityOverview(id: string): Promise<CommunityOverv
   const [c, members, posts, dishes] = await Promise.all([
     supabase.from('communities').select('id, name, kind, governorate, area').eq('id', id).eq('status', 'approved').maybeSingle(),
     supabase.from('community_members').select('user_id', { count: 'exact', head: true }).eq('community_id', id),
-    supabase.from('posts').select('author_id').eq('community_id', id).in('kind', ['cooking_today', 'signature']).limit(500),
+    supabase.from('posts').select('author_id').contains('community_ids', [id]).in('kind', ['cooking_today', 'signature']).limit(500),
     fetchTodaysDishes(),
   ]);
   if (c.error) throw c.error;
   if (!c.data) return null;
   const cookIds = [...new Set((posts.data ?? []).map((p) => p.author_id as string))];
-  return { info: c.data, members: members.count ?? 0, cookIds, today: dishes.filter((d) => d.community_id === id) };
+  return { info: c.data, members: members.count ?? 0, cookIds, today: dishes.filter((d) => d.community_ids.includes(id)) };
 }
 
 /** Members (joined) or cooks (posted a dish or signature dish for it) of a community, as people rows. */
@@ -39,7 +39,7 @@ export async function fetchCommunityPeopleList(id: string, kind: 'members' | 'co
           if (error) throw error;
           return (data ?? []).map((r) => r.user_id as string);
         })
-      : await supabase.from('posts').select('author_id').eq('community_id', id).in('kind', ['cooking_today', 'signature']).limit(500).then(({ data, error }) => {
+      : await supabase.from('posts').select('author_id').contains('community_ids', [id]).in('kind', ['cooking_today', 'signature']).limit(500).then(({ data, error }) => {
           if (error) throw error;
           return [...new Set((data ?? []).map((r) => r.author_id as string))];
         });

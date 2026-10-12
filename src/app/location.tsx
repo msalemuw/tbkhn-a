@@ -1,18 +1,22 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
 import type { LatLng } from '@/lib/format';
 import { getMyLocation, placeDetails, searchPlaces, usePlace } from '@/lib/location';
+import { addPickupPoint } from '@/lib/posts';
+import { useSession } from '@/lib/session';
 
 // Location picker laid out like Talabat's (familiar to everyone): round back arrow and a search pill on top,
 // a map you drag under a fixed pin that lifts while you drag, a tooltip over the pin, a round locate-me button,
 // and a bottom sheet with the area name, street and city, and a full-width Confirm. Pickup only, no delivery words.
 // The default is central Cairo until a position is known.
+// With ?for=pickup it saves a cook's pickup point instead (starting from the home location, which they can keep
+// or move), with an optional name; the home location is left as it is.
 const CAIRO = { latitude: 30.0444, longitude: 31.2357 };
 const DELTA = 0.01;
 
@@ -20,6 +24,11 @@ type Hit = LatLng & { name: string; line2: string };
 
 export default function LocationPicker() {
   const { place, setPlace } = usePlace();
+  const { for: purpose } = useLocalSearchParams<{ for?: string }>();
+  const pickup = purpose === 'pickup';
+  const { session } = useSession();
+  const [label, setLabel] = useState('');
+  const [saving, setSaving] = useState(false);
   const map = useRef<MapView>(null);
   const start = place ? { latitude: place.lat, longitude: place.lng } : CAIRO;
   const [center, setCenter] = useState(start);
@@ -82,9 +91,22 @@ export default function LocationPicker() {
     map.current?.animateToRegion({ latitude: h.lat, longitude: h.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
   }
 
-  function confirm() {
-    setPlace({ lat: center.latitude, lng: center.longitude, label: area });
-    router.back();
+  async function confirm() {
+    if (!pickup) {
+      setPlace({ lat: center.latitude, lng: center.longitude, label: area });
+      router.back();
+      return;
+    }
+    const uid = session?.user.id;
+    if (!uid) return;
+    setSaving(true);
+    try {
+      await addPickupPoint(uid, (label.trim() || area || 'My pickup spot').slice(0, 80), center.latitude, center.longitude);
+      router.back();
+    } catch {
+      setSaving(false);
+      Alert.alert('Not saved', 'We couldn’t save the pickup point. Check your connection and try again.');
+    }
   }
 
   const onRegion = (r: Region) => {
@@ -106,8 +128,8 @@ export default function LocationPicker() {
       <View pointerEvents="none" style={styles.pinWrap}>
         <Animated.View style={{ alignItems: 'center', transform: [{ translateY: lift }], marginBottom: 48 }}>
           <View style={styles.tip}>
-            <Text style={styles.tipTitle}>Pick up near here</Text>
-            <Text style={styles.tipSub}>Move the map to set your location</Text>
+            <Text style={styles.tipTitle}>{pickup ? 'Pickup point here' : 'Pick up near here'}</Text>
+            <Text style={styles.tipSub}>{pickup ? 'Move the map to where buyers collect' : 'Move the map to set your location'}</Text>
           </View>
           <View style={styles.tipArrow} />
           <MaterialIcons name="location-on" size={48} color={colors.teal} />
@@ -161,6 +183,7 @@ export default function LocationPicker() {
         {finding ? <ActivityIndicator color={colors.ink} /> : <MaterialIcons name="my-location" size={22} color={colors.ink} />}
       </Pressable>
 
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheetWrap} pointerEvents="box-none">
       <SafeAreaView edges={['bottom']} style={styles.sheet} onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}>
         <View style={styles.where}>
           <MaterialIcons name="location-on" size={26} color={colors.teal} />
@@ -169,10 +192,22 @@ export default function LocationPicker() {
             {line2 ? <Text style={styles.line2} numberOfLines={1}>{line2}</Text> : null}
           </View>
         </View>
-        <Pressable onPress={confirm} style={styles.confirm} accessibilityRole="button">
-          <Text style={styles.confirmText}>Confirm location</Text>
+        {pickup ? (
+          <TextInput
+            style={styles.name}
+            value={label}
+            onChangeText={setLabel}
+            maxLength={80}
+            placeholder={area ? `Name this spot (or keep “${area}”)` : 'Name this spot, example: Building 12 gate'}
+            placeholderTextColor={colors.muted}
+            accessibilityLabel="Name this pickup spot"
+          />
+        ) : null}
+        <Pressable onPress={saving ? undefined : confirm} style={[styles.confirm, saving && { opacity: 0.6 }]} accessibilityRole="button">
+          {saving ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.confirmText}>{pickup ? 'Save pickup point' : 'Confirm location'}</Text>}
         </Pressable>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -195,10 +230,12 @@ const styles = StyleSheet.create({
   hitSub: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted, marginTop: 1 },
   noHit: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, padding: 14 },
   locate: { position: 'absolute', right: 16, width: 46, height: 46, borderRadius: 23, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
-  sheet: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 18, gap: 16 },
+  sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  sheet: { backgroundColor: colors.white, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20, paddingTop: 18, gap: 16 },
   where: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   area: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   line2: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.muted, marginTop: 2 },
+  name: { borderWidth: 1.5, borderColor: colors.lightBlue, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
   confirm: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
   confirmText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.navy },
 });

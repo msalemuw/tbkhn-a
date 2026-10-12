@@ -11,6 +11,7 @@ export type FeedPost = {
   caption: string | null;
   media_path: string | null;
   community_id: string | null;
+  community_ids: string[];
   created_at: string;
   author: Person;
   community: { name: string } | null;
@@ -25,7 +26,7 @@ export type FeedPost = {
 };
 
 const POST_SELECT =
-  'id, author_id, caption, media_path, community_id, created_at,' +
+  'id, author_id, caption, media_path, community_id, community_ids, created_at,' +
   ' author:profiles!author_id(id, username, display_name, avatar_path),' +
   ' community:communities(name), likes(count), comments(count)';
 
