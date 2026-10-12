@@ -6,17 +6,17 @@ import MapView, { type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
-import type { LatLng } from '@/lib/format';
+import { distanceMeters, type LatLng } from '@/lib/format';
 import { getMyLocation, placeDetails, searchPlaces, usePlace } from '@/lib/location';
-import { addPickupPoint } from '@/lib/posts';
+import { addPickupPoint, fetchMyPickupPoints, rememberPickupPoint } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
 // Location picker laid out like Talabat's (familiar to everyone): round back arrow and a search pill on top,
 // a map you drag under a fixed pin that lifts while you drag, a tooltip over the pin, a round locate-me button,
 // and a bottom sheet with the area name, street and city, and a full-width Confirm. Pickup only, no delivery words.
 // The default is central Cairo until a position is known.
-// With ?for=pickup it saves a cook's pickup point instead (starting from the home location, which they can keep
-// or move), with an optional name; the home location is left as it is.
+// With ?for=pickup it picks a cook's pickup point instead: it starts at the spot already picked (?at=lat,lng) or the
+// home location, and Confirm saves it under the area name (reusing a saved spot within 25 m); home stays as it is.
 const CAIRO = { latitude: 30.0444, longitude: 31.2357 };
 const DELTA = 0.01;
 
@@ -24,15 +24,16 @@ type Hit = LatLng & { name: string; line2: string };
 
 export default function LocationPicker() {
   const { place, setPlace } = usePlace();
-  const { for: purpose } = useLocalSearchParams<{ for?: string }>();
+  const { for: purpose, at } = useLocalSearchParams<{ for?: string; at?: string }>();
   const pickup = purpose === 'pickup';
   const { session } = useSession();
-  const [label, setLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const map = useRef<MapView>(null);
-  const start = place ? { latitude: place.lat, longitude: place.lng } : CAIRO;
+  const [atLat, atLng] = (at ?? '').split(',').map(Number);
+  const start = Number.isFinite(atLat) && Number.isFinite(atLng) && at ? { latitude: atLat, longitude: atLng } : place ? { latitude: place.lat, longitude: place.lng } : CAIRO;
+  const [searchOpen, setSearchOpen] = useState(false);
   const [center, setCenter] = useState(start);
-  const [area, setArea] = useState(place?.label ?? '');
+  const [area, setArea] = useState(at ? '' : (place?.label ?? ''));
   const [line2, setLine2] = useState('');
   const [finding, setFinding] = useState(false);
   const [sheetH, setSheetH] = useState(190);
@@ -89,6 +90,7 @@ export default function LocationPicker() {
     Keyboard.dismiss();
     setText('');
     map.current?.animateToRegion({ latitude: h.lat, longitude: h.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
+    setSearchOpen(false);
   }
 
   async function confirm() {
@@ -101,7 +103,11 @@ export default function LocationPicker() {
     if (!uid) return;
     setSaving(true);
     try {
-      await addPickupPoint(uid, (label.trim() || area || 'My pickup spot').slice(0, 80), center.latitude, center.longitude);
+      const here = { lat: center.latitude, lng: center.longitude };
+      const saved = await fetchMyPickupPoints(uid);
+      const same = saved.find((p) => distanceMeters(here, p) < 25);
+      if (same) rememberPickupPoint(same.id);
+      else await addPickupPoint(uid, (area || line2 || 'My pickup spot').slice(0, 80), here.lat, here.lng);
       router.back();
     } catch {
       setSaving(false);
@@ -138,10 +144,18 @@ export default function LocationPicker() {
 
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
         <View style={styles.bar}>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back" style={styles.round}>
-            <MaterialIcons name="arrow-back" size={22} color={colors.ink} />
+          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close" style={styles.round}>
+            <MaterialIcons name="close" size={22} color={colors.ink} />
           </Pressable>
-          <View style={styles.search}>
+          <View style={styles.titleWrap}>
+            <Text style={styles.title} numberOfLines={1}>{pickup ? 'Pickup point' : 'Your location'}</Text>
+          </View>
+          <Pressable onPress={() => setSearchOpen((o) => !o)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Search for a place" style={styles.round}>
+            <MaterialIcons name={searchOpen ? 'expand-less' : 'search'} size={22} color={colors.ink} />
+          </Pressable>
+        </View>
+        {searchOpen ? (
+          <View style={[styles.search, { marginTop: 8, flex: 0 }]}>
             <MaterialIcons name="search" size={20} color={colors.muted} />
             <TextInput
               style={styles.input}
@@ -150,6 +164,7 @@ export default function LocationPicker() {
               placeholder="Search for area, street name…"
               placeholderTextColor={colors.muted}
               autoCorrect={false}
+              autoFocus
               returnKeyType="search"
               accessibilityLabel="Search for area or street name"
             />
@@ -159,8 +174,8 @@ export default function LocationPicker() {
               </Pressable>
             ) : null}
           </View>
-        </View>
-        {hits ? (
+        ) : null}
+        {searchOpen && hits ? (
           <View style={styles.hits}>
             {hits.length ? (
               hits.map((h, i) => (
@@ -192,19 +207,8 @@ export default function LocationPicker() {
             {line2 ? <Text style={styles.line2} numberOfLines={1}>{line2}</Text> : null}
           </View>
         </View>
-        {pickup ? (
-          <TextInput
-            style={styles.name}
-            value={label}
-            onChangeText={setLabel}
-            maxLength={80}
-            placeholder={area ? `Name this spot (or keep “${area}”)` : 'Name this spot, example: Building 12 gate'}
-            placeholderTextColor={colors.muted}
-            accessibilityLabel="Name this pickup spot"
-          />
-        ) : null}
         <Pressable onPress={saving ? undefined : confirm} style={[styles.confirm, saving && { opacity: 0.6 }]} accessibilityRole="button">
-          {saving ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.confirmText}>{pickup ? 'Save pickup point' : 'Confirm location'}</Text>}
+          {saving ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.confirmText}>{pickup ? 'Confirm pickup point' : 'Confirm location'}</Text>}
         </Pressable>
       </SafeAreaView>
       </KeyboardAvoidingView>
@@ -220,7 +224,9 @@ const styles = StyleSheet.create({
   tipSub: { fontFamily: fonts.medium, fontSize: 11, color: colors.white, opacity: 0.85, marginTop: 1 },
   tipArrow: { width: 0, height: 0, borderLeftWidth: 7, borderRightWidth: 7, borderTopWidth: 8, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: colors.navy, marginBottom: -2 },
   top: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16 },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 8 },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 16, marginHorizontal: -16, backgroundColor: colors.white, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
+  titleWrap: { flex: 1 },
+  title: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   round: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.white, borderRadius: 999, paddingHorizontal: 14, height: 42, shadowColor: colors.navy, shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
   input: { flex: 1, minWidth: 0, fontFamily: fonts.medium, fontSize: 14.5, color: colors.ink, padding: 0 },
@@ -235,7 +241,6 @@ const styles = StyleSheet.create({
   where: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   area: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   line2: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.muted, marginTop: 2 },
-  name: { borderWidth: 1.5, borderColor: colors.lightBlue, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontFamily: fonts.medium, fontSize: 15, color: colors.ink },
   confirm: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
   confirmText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.navy },
 });

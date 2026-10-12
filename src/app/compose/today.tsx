@@ -131,7 +131,8 @@ export default function ComposeToday() {
 
   const allOn = communities.length > 0 && chosen.length === communities.length;
   const toggle = (id: string) => setChosen((x) => (x.includes(id) ? x.filter((c) => c !== id) : [...x, id]));
-  const addSpot = () => router.push({ pathname: '/location', params: { for: 'pickup' } });
+  // Tapping the pickup point opens the map, starting at the spot already picked (if any).
+  const addSpot = () => router.push({ pathname: '/location', params: point ? { for: 'pickup', at: `${point.lat},${point.lng}` } : { for: 'pickup' } });
   const point = points.find((p) => p.id === pointId);
 
   return (
@@ -210,31 +211,13 @@ export default function ComposeToday() {
 
           <Text style={styles.section}>PICKUP POINT</Text>
           <View style={styles.group}>
-            {points.length ? (
-              <SelectField
-                label="PICKUP POINT"
-                required
-                value={point?.label ?? 'Choose'}
-                onPress={() =>
-                  setSheet({
-                    title: 'Pickup point',
-                    items: [
-                      ...points.map((p) => ({ label: p.label, selected: p.id === pointId, onPress: () => setPointId(p.id) })),
-                      { label: '+ New spot on the map', selected: false, onPress: addSpot },
-                    ],
-                  })
-                }
-              />
-            ) : null}
-            <Pressable style={styles.mapBtn} onPress={addSpot} accessibilityRole="button">
-              <MaterialIcons name="add-location-alt" size={22} color={colors.ink} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.mapBtnTitle}>{points.length ? 'Add another spot on the map' : 'Set your pickup spot on the map'}</Text>
-                <Text style={styles.mapBtnSub}>Search, use your location, or move the pin. It can be your home or anywhere else.</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
-            </Pressable>
-            <Text style={[formStyles.hint, { color: colors.muted, marginTop: 0 }]}>Buyers see this before they reserve. Saved spots stay here by name for next time.</Text>
+            <SelectField
+              label="PICKUP POINT"
+              required
+              value={point?.label ?? 'Choose on the map'}
+              onPress={addSpot}
+            />
+            <Text style={[formStyles.hint, { color: colors.muted, marginTop: 0 }]}>Buyers see this before they reserve. Tap to set it on the map; it can differ from your home location.</Text>
           </View>
 
           <Text style={styles.section}>CUISINE TYPE</Text>
@@ -300,9 +283,6 @@ const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   section: { fontFamily: fonts.extraBold, fontSize: 12, letterSpacing: 0.6, color: colors.ink, marginTop: 24 },
   sectionSub: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted, marginTop: 4 },
-  mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: colors.lightBlue, borderRadius: 14, backgroundColor: colors.white, padding: 14 },
-  mapBtnTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  mapBtnSub: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted, marginTop: 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
   switchLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },

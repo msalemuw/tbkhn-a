@@ -112,6 +112,9 @@ export async function addPickupPoint(userId: string, label: string, lat: number,
 
 // The map picker saves a new pickup point and goes back; the post form then selects it.
 let justAdded: string | null = null;
+export function rememberPickupPoint(id: string) {
+  justAdded = id;
+}
 export function takeNewPickupPoint(): string | null {
   const id = justAdded;
   justAdded = null;
