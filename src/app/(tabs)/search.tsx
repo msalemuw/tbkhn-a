@@ -22,6 +22,7 @@ import { fetchMyCommunities, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
+import { VerifiedTick } from '@/lib/verified';
 
 type Found = { q: string; people: FoundCook[]; communities: FoundCommunity[] };
 
@@ -194,7 +195,7 @@ export default function Search() {
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={styles.nameRow}>
                   <Text style={styles.name} numberOfLines={1}>{personName(p)}</Text>
-                  <MaterialIcons name="verified" size={15} color={colors.teal} />
+                  <VerifiedTick id={p.id} size={15} />
                 </View>
                 <Text style={styles.sub} numberOfLines={1}>{[p.username ? `@${p.username}` : null, p.area].filter(Boolean).join(' · ')}</Text>
                 {badges.get(p.id)?.[0] ? <RankBadge badge={badges.get(p.id)![0]} /> : null}

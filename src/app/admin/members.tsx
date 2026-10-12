@@ -4,11 +4,12 @@ import { FlatList, Text, TextInput, View } from 'react-native';
 
 import { AdminScreen, adminStyles, Card, ErrorLine, ReasonModal, SmallButton, useStaffRole } from '@/components/admin-ui';
 import { Field, formStyles } from '@/components/form';
-import { canAct, findMembers, type Member, setStaffRole, setSuspended, type StaffRole } from '@/lib/admin';
+import { canAct, findMembers, type Member, setStaffRole, setSuspended, setVerified, type StaffRole } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { refreshVerified } from '@/lib/verified';
 
-// Find a member by username, name, phone or email; suspend or lift it; the owner sets staff roles.
+// Find a member by username, name, phone or email; suspend or lift it; switch the verified tick; the owner sets staff roles.
 const ROLES: StaffRole[] = ['moderator', 'support', 'owner'];
 
 export default function Members() {
@@ -99,6 +100,13 @@ export default function Members() {
                     />
                   )
                 ) : null}
+              </View>
+              <View style={adminStyles.row}>
+                <SmallButton
+                  label={item.verified_at ? 'Verified: on (tap to turn off)' : 'Verified: off (tap to turn on)'}
+                  strong={!!item.verified_at}
+                  onPress={() => act(async () => { await setVerified(item.id, !item.verified_at); await refreshVerified(); })}
+                />
               </View>
               {role === 'owner' && !isMe && !item.suspended_at ? (
                 <View style={adminStyles.row}>

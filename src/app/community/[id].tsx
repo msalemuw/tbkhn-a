@@ -13,6 +13,7 @@ import { useMyLocation } from '@/lib/location';
 import { fetchMyCommunities, type Person, personName } from '@/lib/posts';
 import { fetchTop, type TopCook } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
+import { VerifiedTick } from '@/lib/verified';
 
 type Top = { service: TopCook[]; likes: TopCook[]; people: Map<string, Person> };
 
@@ -179,7 +180,7 @@ function TopList({ title, rows, people, loading, kind }: { title: string; rows?:
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.nameRow}>
                 <Text style={styles.rowName} numberOfLines={1}>{personName(person)}</Text>
-                <MaterialIcons name="verified" size={15} color={colors.teal} />
+                <VerifiedTick id={r.cook_id} size={15} />
               </View>
               <Text style={styles.rowSub} numberOfLines={1}>
                 {kind === 'service' ? (

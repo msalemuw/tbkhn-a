@@ -13,6 +13,7 @@ import { placeOrder } from '@/lib/orders';
 import { type Dish, fetchDish, mediaUrl, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { pickupSlots } from '@/lib/slots';
+import { VerifiedTick } from '@/lib/verified';
 
 // Flows 3 and 4, screen s57: Your order. Pick plates and pickup time, then send it to the cook.
 // Payment is InstaPay, person to person, after the cook accepts (section 13); no delivery.
@@ -91,7 +92,7 @@ export default function DishScreen() {
             <Pressable onPress={() => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } })} accessibilityRole="link" accessibilityLabel={`${cook}'s profile`}>
               <Text style={styles.cook}>{cook}</Text>
             </Pressable>
-            <MaterialIcons name="verified" size={16} color={colors.teal} />
+            <VerifiedTick id={dish.author_id} size={16} />
             {session && !mine ? (
               <Pressable
                 style={styles.msg}

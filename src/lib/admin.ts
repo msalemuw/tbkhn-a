@@ -57,6 +57,7 @@ export type Member = {
   posts: number;
   orders: number;
   open_reports: number;
+  verified_at: string | null;
 };
 
 export type AdminCommunity = { id: string; name: string; kind: string; governorate: string; area: string | null; members: number };
@@ -121,6 +122,7 @@ export const removePost = (postId: string, reason: string) => call('admin_remove
 export const findMembers = (query: string) => call<Member[]>('admin_find_members', { p_query: query });
 export const setSuspended = (userId: string, suspended: boolean, reason?: string) =>
   call('admin_set_suspended', { p_user_id: userId, p_suspended: suspended, p_reason: reason ?? null });
+export const setVerified = (userId: string, verified: boolean) => call('admin_set_verified', { p_user_id: userId, p_verified: verified });
 export const setStaffRole = (userId: string, role: StaffRole | null) => call('admin_set_staff_role', { p_user_id: userId, p_role: role });
 export const fetchCommunities = () => call<AdminCommunity[]>('admin_communities');
 export const postAnnouncement = (title: string, body: string, communityIds: string[] | null) =>
