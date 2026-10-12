@@ -140,3 +140,27 @@ export async function setMembership(me: string, communityId: string, join: boole
   const { error } = await q;
   if (error) throw error;
 }
+
+/** People who follow `id` ("followers") or whom `id` follows ("following"). */
+export async function fetchPeopleList(id: string, kind: 'followers' | 'following'): Promise<FoundCook[]> {
+  const [from, other] = kind === 'followers' ? (['followee_id', 'follower_id'] as const) : (['follower_id', 'followee_id'] as const);
+  const { data, error } = await supabase.from('follows').select(other).eq(from, id).limit(500);
+  if (error) throw error;
+  const ids = (data ?? []).map((r) => (r as Record<string, string>)[other]);
+  if (!ids.length) return [];
+  const { data: people, error: pe } = await supabase.from('profiles').select('id, username, display_name, avatar_path, area').in('id', ids);
+  if (pe) throw pe;
+  return people ?? [];
+}
+
+/** Approved communities `id` belongs to. */
+export async function fetchCommunitiesOf(id: string): Promise<FoundCommunity[]> {
+  const { data, error } = await supabase
+    .from('community_members')
+    .select('community:communities(id, name, kind, governorate, area, status)')
+    .eq('user_id', id);
+  if (error) throw error;
+  return ((data ?? []) as unknown as { community: (FoundCommunity & { status: string }) | null }[])
+    .flatMap((r) => (r.community && r.community.status === 'approved' ? [r.community] : []))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
