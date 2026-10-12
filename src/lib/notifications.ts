@@ -52,7 +52,7 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
     case 'payment_received':
       return { title: `${who} confirmed your payment`, sub: dish, icon: 'payments' };
     case 'cooking_today':
-      return { title: `${who} is cooking today`, sub: dish, icon: 'soup-kitchen' };
+      return { title: `${who} added to today’s menu`, sub: dish, icon: 'soup-kitchen' };
     default:
       return { title: 'Update from tabkheen A', icon: 'notifications' };
   }

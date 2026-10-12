@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
 
-// Stories (design flows 4 and 17): a photo for 24 hours, plus an automatic "Taking orders" story
-// for every dish a cook posts under "What you're cooking today" (it ends at midnight).
+// Stories (design flows 4 and 17): a photo for 24 hours, plus an automatic "On today's menu" story
+// for every dish a cook posts under "Today's menu" (it ends at midnight).
 
 export type StoryItem = {
   id: string;

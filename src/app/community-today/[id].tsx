@@ -10,7 +10,7 @@ import { fetchCommunityOverview } from '@/lib/community';
 import { useMyLocation } from '@/lib/location';
 import type { Dish } from '@/lib/posts';
 
-// What is cooking today in one community (opened from the "Cooking today" count), with the same dish cards as the Menu.
+// Today’s menu in one community (opened from the "Today’s menu" count), with the same dish cards as the Menu.
 export default function CommunityToday() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const here = useMyLocation();
@@ -35,7 +35,7 @@ export default function CommunityToday() {
           <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.title} numberOfLines={1}>Cooking today{name ? ` in ${name}` : ''}</Text>
+          <Text style={styles.title} numberOfLines={1}>Today’s menu{name ? ` in ${name}` : ''}</Text>
           <Text style={styles.sub}>Gone at midnight</Text>
         </View>
       </View>
@@ -48,7 +48,7 @@ export default function CommunityToday() {
           data={dishes}
           keyExtractor={(d) => d.id}
           contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 30, paddingTop: 12, gap: 12 }}
-          ListEmptyComponent={<Text style={styles.empty}>No one in {name || 'this community'} is cooking today yet.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>Nothing on today’s menu in {name || 'this community'} yet.</Text>}
           renderItem={({ item }) => <DishCard dish={item} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
         />
       )}

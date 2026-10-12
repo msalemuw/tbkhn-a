@@ -18,7 +18,7 @@ export type FeedPost = {
   comments: number;
   liked: boolean;
   rating: number | null;
-  /** The cook's live "cooking today" dish, if any: the small "See what's cooking today" notice. */
+  /** The cook's live today's menu dish, if any: the small "See today's menu" notice. */
   cookingDishId: string | null;
   /** One of the cook's pickup points, for the distance line. */
   spot: LatLng | null;

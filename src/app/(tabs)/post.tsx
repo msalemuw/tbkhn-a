@@ -11,7 +11,7 @@ type IconName = ComponentProps<typeof MaterialIcons>['name'];
 // Post sheet: "What do you want to share?" The first cooking-today post makes a member an eCook.
 // Story and signature post come in a later step.
 const OPTIONS: { title: string; note: string; icon: IconName; href?: Href }[] = [
-  { title: 'What you’re cooking today', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen', href: '/compose/today' },
+  { title: 'Today’s menu', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen', href: '/compose/today' },
   { title: 'Story', note: 'Just a moment · no price, no orders · stays 24 hours', icon: 'history-toggle-off', href: '/compose/story' },
   { title: 'Post', note: 'Signature dish on your profile · not for ordering', icon: 'grid-view', href: '/compose/signature' },
 ];

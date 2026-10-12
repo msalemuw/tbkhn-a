@@ -93,7 +93,7 @@ export default function Orders() {
         ListEmptyComponent={
           loading ? null : (
             <Text style={styles.empty}>
-              {!session ? 'Sign up to reserve plates from neighbors.' : tab === 'buyer' ? 'No orders yet. Find something in Today’s menu.' : 'No orders yet. Post what you’re cooking today and neighbors can reserve plates.'}
+              {!session ? 'Sign up to reserve plates from neighbors.' : tab === 'buyer' ? 'No orders yet. Find something in Today’s menu.' : 'No orders yet. Share today’s menu and neighbors can reserve plates.'}
             </Text>
           )
         }

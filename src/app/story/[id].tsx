@@ -18,7 +18,7 @@ import { fetchStories, markSeen, type StoryGroup } from '@/lib/stories';
 const STORY_MS = 5000;
 
 // Story viewer (design flows 4 and 17): tap to move on, progress bars on top, reply and heart below.
-// A "Taking orders" story carries the dish, its price and a Reserve button.
+// An "On today's menu" story carries the dish, its price and a Reserve button.
 export default function StoryViewer() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
@@ -160,7 +160,7 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
       <SafeAreaView style={[styles.bottom, { paddingBottom: keyboard ? keyboard + 8 : undefined }]} edges={keyboard ? [] : ['bottom']} pointerEvents="box-none">
         {order ? (
           <View style={styles.tagRow}>
-            <Text style={styles.tag}>TAKING ORDERS</Text>
+            <Text style={styles.tag}>ON TODAY’S MENU</Text>
           </View>
         ) : null}
         {order && item.dish_name ? (

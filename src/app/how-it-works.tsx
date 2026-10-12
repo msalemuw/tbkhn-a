@@ -14,12 +14,12 @@ const COPY = {
     intro: 'Cooks in your community (compound, club or office) share what they’re making. You reserve a plate and pick it up nearby.',
     steps: [
       ['groups', 'Join your communities', 'Pick your compound, club, school or workplace. You only see cooks who serve them.'],
-      ['restaurant', 'See what’s cooking today', 'Open the Menu tab to see today’s dishes from cooks in your communities. Each dish shows its price, the time it’s ready and where to pick it up.'],
+      ['restaurant', 'See today’s menu', 'Open the Menu tab to see today’s dishes from cooks in your communities. Each dish shows its price, the time it’s ready and where to pick it up.'],
       ['event-available', 'Reserve a plate', 'Tap a dish, reserve, and message the cook if you have questions.'],
       ['location-on', 'Pick up and enjoy', 'Collect at the community’s meeting point, then leave a review.'],
     ],
     cookHead: 'Want to cook?',
-    cook: 'Share what you’re cooking today so neighbors can order, and post your signature dishes on your profile.',
+    cook: 'Share today’s menu so neighbors can reserve plates, and post your signature dishes on your profile.',
     ok: 'Got it',
   },
   ar: {

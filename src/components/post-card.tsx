@@ -58,7 +58,7 @@ export function PostCard({
               onPress={() => router.push({ pathname: '/dish/[id]', params: { id: post.cookingDishId! } })}
               accessibilityRole="link">
               <MaterialIcons name="soup-kitchen" size={15} color={colors.ink} />
-              <Text style={styles.cookingText}>See what’s cooking today</Text>
+              <Text style={styles.cookingText}>See today’s menu</Text>
               <MaterialIcons name="chevron-right" size={16} color={colors.ink} />
             </Pressable>
           ) : null}

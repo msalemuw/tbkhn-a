@@ -103,7 +103,7 @@ export default function DishScreen() {
               </Pressable>
             ) : null}
           </View>
-          <Text style={styles.sub}>Cooking today{dish.community ? ` · ${dish.community.name}` : ''}</Text>
+          <Text style={styles.sub}>Today’s menu{dish.community ? ` · ${dish.community.name}` : ''}</Text>
 
           {posted ? (
             <View style={styles.note}>
