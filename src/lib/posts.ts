@@ -23,13 +23,15 @@ export type Dish = {
   expires_at: string;
   created_at: string;
   community_id: string | null;
+  /** Every community the dish is for (empty = public). */
+  community_ids: string[];
   author: Person;
   pickup_point: PickupPoint | null;
   community: { name: string } | null;
 };
 
 const DISH_SELECT =
-  'id, author_id, caption, media_path, dish_name, cuisine, main_ingredients, price_egp, portions_total, portions_left, ready_at, expires_at, created_at, community_id,' +
+  'id, author_id, caption, media_path, dish_name, cuisine, main_ingredients, price_egp, portions_total, portions_left, ready_at, expires_at, created_at, community_id, community_ids,' +
   ' author:profiles!author_id(id, username, display_name, avatar_path),' +
   ' pickup_point:pickup_points(id, label, lat, lng),' +
   ' community:communities(name)';
@@ -104,7 +106,16 @@ export async function addPickupPoint(userId: string, label: string, lat: number,
     .select('id, label, lat, lng')
     .single();
   if (error) throw error;
+  justAdded = data.id;
   return data;
+}
+
+// The map picker saves a new pickup point and goes back; the post form then selects it.
+let justAdded: string | null = null;
+export function takeNewPickupPoint(): string | null {
+  const id = justAdded;
+  justAdded = null;
+  return id;
 }
 
 export type NewDish = {
@@ -113,7 +124,8 @@ export type NewDish = {
   dishName: string;
   priceEgp: number;
   portions: number;
-  communityId: string;
+  /** Empty = public: anyone nearby sees it. */
+  communityIds: string[];
   pickupPointId: string;
   cuisine: string | null;
   ingredients: string[];
@@ -133,7 +145,8 @@ export async function postCookingToday(userId: string, d: NewDish): Promise<stri
       dish_name: d.dishName.trim(),
       price_egp: d.priceEgp,
       portions_total: d.portions,
-      community_id: d.communityId,
+      community_id: d.communityIds[0] ?? null,
+      community_ids: d.communityIds,
       pickup_point_id: d.pickupPointId,
       cuisine: d.cuisine,
       main_ingredients: d.ingredients,

@@ -87,13 +87,13 @@ export default function Home() {
     const list = posts.filter(
       (p) =>
         p.author_id === me ||
-        (p.community_id ? watching.communities.includes(p.community_id) : watching.nearby) ||
+        (p.community_ids.length ? p.community_ids.some((c) => watching.communities.includes(c)) : watching.nearby) ||
         (watching.following && following.includes(p.author_id)),
     );
     // Nearby: public posts come after the community and followed posts, closest cooks first, farther ones at the end.
     // Posts with no known pickup spot (or no known location for me) go last, so no public post is ever lost.
     if (!watching.nearby || !here) return list;
-    const isPublic = (p: FeedPost) => !p.community_id && p.author_id !== me && !(watching.following && following.includes(p.author_id));
+    const isPublic = (p: FeedPost) => !p.community_ids.length && p.author_id !== me && !(watching.following && following.includes(p.author_id));
     const dist = (p: FeedPost) => (p.spot ? distanceMeters(here, p.spot) : Infinity);
     return [...list.filter((p) => !isPublic(p)), ...list.filter(isPublic).sort((a, b) => dist(a) - dist(b))];
   }, [posts, watching, following, me, here]);

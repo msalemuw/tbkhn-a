@@ -56,7 +56,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
     const needle = q.trim().toLowerCase();
     const list = dishes.filter(
       (d) =>
-        (!session || (mineIds.has(d.community_id ?? '') ? chosen.has(d.community_id ?? '') : others)) &&
+        (!session || (d.community_ids.some((c) => mineIds.has(c)) ? d.community_ids.some((c) => chosen.has(c)) : others)) &&
         (!cuisines || (d.cuisine != null && cuisines.includes(d.cuisine))) &&
         (!needle || `${d.dish_name} ${d.author.display_name ?? ''} ${d.author.username ?? ''}`.toLowerCase().includes(needle)),
     );

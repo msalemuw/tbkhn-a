@@ -1,18 +1,16 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { Chip } from '@/components/chip';
 import { colors, fonts } from '@/constants/theme';
 import { fmtClock } from '@/lib/format';
-import { getMyLocation } from '@/lib/location';
 import {
-  addPickupPoint,
   CUISINES,
   fetchMyCommunities,
   fetchMyPickupPoints,
@@ -20,6 +18,7 @@ import {
   type MyCommunity,
   type PickupPoint,
   postCookingToday,
+  takeNewPickupPoint,
   uploadPhoto,
 } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -36,11 +35,9 @@ export default function ComposeToday() {
   const [price, setPrice] = useState('');
   const [portions, setPortions] = useState('');
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
-  const [communityId, setCommunityId] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
   const [points, setPoints] = useState<PickupPoint[]>([]);
   const [pointId, setPointId] = useState<string | null>(null);
-  const [newPointLabel, setNewPointLabel] = useState('');
-  const [addingPoint, setAddingPoint] = useState(false);
   const [cuisine, setCuisine] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [slots] = useState(() => readySlots());
@@ -50,17 +47,26 @@ export default function ComposeToday() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Every community the member joined starts selected; they can untick any, or all of them to post publicly.
   useEffect(() => {
     if (!uid) return;
     fetchMyCommunities(uid).then((c) => {
       setCommunities(c);
-      if (c.length === 1) setCommunityId(c[0].id);
-    });
-    fetchMyPickupPoints(uid).then((p) => {
-      setPoints(p);
-      if (p.length) setPointId(p[p.length - 1].id);
+      setChosen(c.map((x) => x.id));
     });
   }, [uid]);
+
+  // Saved pickup points, by name. Coming back from the map picker selects the spot just saved.
+  useFocusEffect(
+    useCallback(() => {
+      if (!uid) return;
+      fetchMyPickupPoints(uid).then((p) => {
+        setPoints(p);
+        const fresh = takeNewPickupPoint();
+        setPointId((cur) => fresh ?? (cur && p.some((x) => x.id === cur) ? cur : (p[p.length - 1]?.id ?? null)));
+      });
+    }, [uid]),
+  );
 
   if (!uid) {
     return (
@@ -83,33 +89,12 @@ export default function ComposeToday() {
     if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
   }
 
-  async function saveNewPoint() {
-    if (!newPointLabel.trim()) return;
-    setAddingPoint(true);
-    const here = await getMyLocation();
-    if (!here) {
-      setAddingPoint(false);
-      Alert.alert('Location needed', 'Allow location so neighbors can see how far your pickup point is. Stand at the pickup spot when you add it.');
-      return;
-    }
-    try {
-      const p = await addPickupPoint(uid!, newPointLabel.trim(), here.lat, here.lng);
-      setPoints((x) => [...x, p]);
-      setPointId(p.id);
-      setNewPointLabel('');
-    } catch {
-      setError('We couldn’t save the pickup point. Try again.');
-    }
-    setAddingPoint(false);
-  }
-
   const priceNum = Number(price);
   const portionsNum = Number(portions);
   const missing = [
     !dish.trim() && 'dish name',
     !(priceNum > 0) && 'price',
     !(portionsNum >= 1 && portionsNum <= 200) && 'portions',
-    !communityId && 'community',
     !pointId && 'pickup point',
     !readyAt && 'ready-by time',
   ].filter(Boolean) as string[];
@@ -129,7 +114,7 @@ export default function ComposeToday() {
         dishName: dish,
         priceEgp: priceNum,
         portions: Math.floor(portionsNum),
-        communityId: communityId!,
+        communityIds: chosen,
         pickupPointId: pointId!,
         cuisine,
         ingredients,
@@ -144,7 +129,9 @@ export default function ComposeToday() {
     }
   }
 
-  const community = communities.find((c) => c.id === communityId);
+  const allOn = communities.length > 0 && chosen.length === communities.length;
+  const toggle = (id: string) => setChosen((x) => (x.includes(id) ? x.filter((c) => c !== id) : [...x, id]));
+  const addSpot = () => router.push({ pathname: '/location', params: { for: 'pickup' } });
   const point = points.find((p) => p.id === pointId);
 
   return (
@@ -204,20 +191,22 @@ export default function ComposeToday() {
             </View>
           </View>
 
-          <Text style={styles.section}>SERVING COMMUNITY</Text>
-          <Text style={styles.sectionSub}>Pick the one community this batch is for.</Text>
-          <View style={styles.group}>
-            {communities.length ? (
-              <SelectField
-                label="COMMUNITY"
-                required
-                value={community?.name ?? 'Choose'}
-                onPress={() => setSheet({ title: 'Serving community', items: communities.map((c) => ({ label: c.name, selected: c.id === communityId, onPress: () => setCommunityId(c.id) })) })}
-              />
-            ) : (
-              <Text style={[formStyles.hint, { color: colors.muted }]}>Join a community from your profile first.</Text>
-            )}
-          </View>
+          <Text style={styles.section}>SERVING COMMUNITIES</Text>
+          <Text style={styles.sectionSub}>
+            {communities.length
+              ? chosen.length
+                ? 'Members of the communities you pick see it. Tap to add or remove.'
+                : 'No community picked: it’s public, anyone nearby can see it.'
+              : 'You haven’t joined a community yet, so it’s public: anyone nearby can see it.'}
+          </Text>
+          {communities.length ? (
+            <View style={styles.chips}>
+              {communities.length > 1 ? <Chip label="All my communities" on={allOn} onPress={() => setChosen(allOn ? [] : communities.map((c) => c.id))} /> : null}
+              {communities.map((c) => (
+                <Chip key={c.id} label={c.name} on={chosen.includes(c.id)} onPress={() => toggle(c.id)} />
+              ))}
+            </View>
+          ) : null}
 
           <Text style={styles.section}>PICKUP POINT</Text>
           <View style={styles.group}>
@@ -226,20 +215,26 @@ export default function ComposeToday() {
                 label="PICKUP POINT"
                 required
                 value={point?.label ?? 'Choose'}
-                onPress={() => setSheet({ title: 'Pickup point', items: points.map((p) => ({ label: p.label, selected: p.id === pointId, onPress: () => setPointId(p.id) })) })}
+                onPress={() =>
+                  setSheet({
+                    title: 'Pickup point',
+                    items: [
+                      ...points.map((p) => ({ label: p.label, selected: p.id === pointId, onPress: () => setPointId(p.id) })),
+                      { label: '+ New spot on the map', selected: false, onPress: addSpot },
+                    ],
+                  })
+                }
               />
             ) : null}
-            <Field label={points.length ? 'OR ADD A NEW ONE' : 'ADD YOUR PICKUP POINT'}>
-              <View style={styles.inline}>
-                <TextInput value={newPointLabel} onChangeText={setNewPointLabel} maxLength={80} placeholder="example: Building 12 gate" placeholderTextColor={colors.faint} style={[formStyles.input, { flex: 1 }]} />
-                <Text style={[formStyles.link, !newPointLabel.trim() && { opacity: 0.4 }]} onPress={saveNewPoint}>
-                  {addingPoint ? 'Saving…' : 'Use my location'}
-                </Text>
+            <Pressable style={styles.mapBtn} onPress={addSpot} accessibilityRole="button">
+              <MaterialIcons name="add-location-alt" size={22} color={colors.ink} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.mapBtnTitle}>{points.length ? 'Add another spot on the map' : 'Set your pickup spot on the map'}</Text>
+                <Text style={styles.mapBtnSub}>Search, use your location, or move the pin. It can be your home or anywhere else.</Text>
               </View>
-            </Field>
-            <Text style={[formStyles.hint, { color: colors.muted, marginTop: 0 }]}>
-              Buyers see this before they reserve. Only members of this community see the post. Add it while standing at the spot.
-            </Text>
+              <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+            </Pressable>
+            <Text style={[formStyles.hint, { color: colors.muted, marginTop: 0 }]}>Buyers see this before they reserve. Saved spots stay here by name for next time.</Text>
           </View>
 
           <Text style={styles.section}>CUISINE TYPE</Text>
@@ -305,6 +300,9 @@ const styles = StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   section: { fontFamily: fonts.extraBold, fontSize: 12, letterSpacing: 0.6, color: colors.ink, marginTop: 24 },
   sectionSub: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted, marginTop: 4 },
+  mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1.5, borderColor: colors.lightBlue, borderRadius: 14, backgroundColor: colors.white, padding: 14 },
+  mapBtnTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  mapBtnSub: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted, marginTop: 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
   switchLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
