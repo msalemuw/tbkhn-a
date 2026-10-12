@@ -42,6 +42,35 @@ export async function placeName(at: LatLng): Promise<string | null> {
   }
 }
 
+/** The area name (bold line) and "street, city" (second line) for a point; both empty when the geocoder has nothing. */
+export async function placeDetails(at: LatLng): Promise<{ area: string; line2: string }> {
+  try {
+    const [r] = await Location.reverseGeocodeAsync({ latitude: at.lat, longitude: at.lng });
+    if (!r) return { area: '', line2: '' };
+    const area = r.district || r.subregion || r.city || r.street || r.name || '';
+    const line2 = [r.street && r.street !== area ? r.street : null, r.city && r.city !== area ? r.city : r.region && r.region !== area ? r.region : null].filter(Boolean).join(', ');
+    return { area, line2 };
+  } catch {
+    return { area: '', line2: '' };
+  }
+}
+
+/** Places matching what the member typed ("Zamalek", "Road 9 Maadi"), as points with a short name. */
+export async function searchPlaces(text: string): Promise<(LatLng & { name: string; line2: string })[]> {
+  try {
+    const found = await Location.geocodeAsync(`${text}, Egypt`);
+    const top = found.slice(0, 5);
+    return await Promise.all(
+      top.map(async (f) => {
+        const d = await placeDetails({ lat: f.latitude, lng: f.longitude });
+        return { lat: f.latitude, lng: f.longitude, name: d.area || text, line2: d.line2 };
+      }),
+    );
+  } catch {
+    return [];
+  }
+}
+
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [place, setPlaceState] = useState<Place | null>(null);
   const [ready, setReady] = useState(false);
