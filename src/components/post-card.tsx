@@ -11,6 +11,7 @@ import type { FeedPost } from '@/lib/feed';
 import { distanceMeters, fmtAgo, fmtDist, type LatLng } from '@/lib/format';
 import { mediaUrl, personName } from '@/lib/posts';
 import type { Badge } from '@/lib/rankings';
+import { VerifiedTick } from '@/lib/verified';
 
 /** One signature-dish post in the Home feed (design s6): cook line, photo, caption, likes, comments, share. */
 export function PostCard({
@@ -45,7 +46,7 @@ export function PostCard({
         <View style={styles.nameCol}>
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>{personName(post.author)}</Text>
-            <MaterialIcons name="verified" size={16} color={colors.teal} />
+            <VerifiedTick id={post.author_id} size={16} />
           </View>
           {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
           <Text style={styles.meta} numberOfLines={1}>

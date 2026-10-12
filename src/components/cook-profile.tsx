@@ -26,6 +26,7 @@ import { useMyLocation } from '@/lib/location';
 import { type Dish, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
+import { VerifiedTick } from '@/lib/verified';
 
 type Tab = 'posts' | 'today' | 'reviews';
 
@@ -120,7 +121,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.row}>
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
-              {mine ? null : <MaterialIcons name="verified" size={19} color={colors.teal} />}
+              <VerifiedTick id={cook.id} size={19} />
             </View>
             {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={b.kind} badge={b} />)}</View> : null}
             {cook.area && !mine ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}

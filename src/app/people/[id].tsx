@@ -11,6 +11,7 @@ import { fetchCommunityPeopleList } from '@/lib/community';
 import { type FoundCook, fetchFollowedAmong, fetchPeopleList, setFollowing } from '@/lib/cooks';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
+import { VerifiedTick } from '@/lib/verified';
 
 // Followers / Following (counts on a profile) or Members / Cooks (counts on a community page): people rows
 // like Search, one list, with the people I follow first (marked Following) and everyone else after (Follow).
@@ -82,7 +83,7 @@ export default function PeopleList() {
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={styles.nameRow}>
                   <Text style={styles.name} numberOfLines={1}>{personName(item)}</Text>
-                  <MaterialIcons name="verified" size={15} color={colors.teal} />
+                  <VerifiedTick id={item.id} size={15} />
                 </View>
                 <Text style={styles.sub} numberOfLines={1}>{[item.username ? `@${item.username}` : null, item.area].filter(Boolean).join(' · ')}</Text>
               </View>
