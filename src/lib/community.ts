@@ -1,4 +1,5 @@
 import { type Dish, fetchTodaysDishes, type Person } from '@/lib/posts';
+import type { FoundCook } from '@/lib/cooks';
 import { supabase } from '@/lib/supabase';
 
 /** Name and photo for a set of members (profiles are readable by everyone). */
@@ -28,4 +29,32 @@ export async function fetchCommunityOverview(id: string): Promise<CommunityOverv
   if (!c.data) return null;
   const cookIds = [...new Set((posts.data ?? []).map((p) => p.author_id as string))];
   return { info: c.data, members: members.count ?? 0, cookIds, today: dishes.filter((d) => d.community_id === id) };
+}
+
+/** Members (joined) or cooks (posted a dish or signature dish for it) of a community, as people rows. */
+export async function fetchCommunityPeopleList(id: string, kind: 'members' | 'cooks'): Promise<FoundCook[]> {
+  const ids =
+    kind === 'members'
+      ? await supabase.from('community_members').select('user_id').eq('community_id', id).limit(1000).then(({ data, error }) => {
+          if (error) throw error;
+          return (data ?? []).map((r) => r.user_id as string);
+        })
+      : await supabase.from('posts').select('author_id').eq('community_id', id).in('kind', ['cooking_today', 'signature']).limit(500).then(({ data, error }) => {
+          if (error) throw error;
+          return [...new Set((data ?? []).map((r) => r.author_id as string))];
+        });
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from('profiles').select('id, username, display_name, avatar_path, area').in('id', ids);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** How many members each community has, for the communities list. */
+export async function fetchMemberCounts(ids: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (!ids.length) return out;
+  const { data, error } = await supabase.from('community_members').select('community_id').in('community_id', ids).limit(10000);
+  if (error) throw error;
+  for (const r of data ?? []) out.set(r.community_id as string, (out.get(r.community_id as string) ?? 0) + 1);
+  return out;
 }

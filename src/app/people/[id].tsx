@@ -7,15 +7,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/avatar';
 import { Pill } from '@/components/pill';
 import { colors, fonts } from '@/constants/theme';
+import { fetchCommunityPeopleList } from '@/lib/community';
 import { type FoundCook, fetchFollowedAmong, fetchPeopleList, setFollowing } from '@/lib/cooks';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
-// Followers or Following list (opened from the counts on a profile): people rows like Search,
-// with the people I follow first, so friends in common come on top.
+// Followers / Following (counts on a profile) or Members / Cooks (counts on a community page): people rows
+// like Search, one list, with the people I follow first (marked Following) and everyone else after (Follow).
+const TITLE = { followers: 'Followers', following: 'Following', members: 'Members', cooks: 'Cooks' } as const;
+type Mode = keyof typeof TITLE;
+
 export default function PeopleList() {
   const { id, kind } = useLocalSearchParams<{ id: string; kind?: string }>();
-  const mode = kind === 'following' ? 'following' : 'followers';
+  const mode: Mode = kind === 'following' || kind === 'members' || kind === 'cooks' ? kind : 'followers';
   const { session } = useSession();
   const me = session?.user.id ?? null;
   const [people, setPeople] = useState<FoundCook[] | null>(null);
@@ -25,7 +29,7 @@ export default function PeopleList() {
 
   useEffect(() => {
     (async () => {
-      const list = await fetchPeopleList(id, mode);
+      const list = mode === 'members' || mode === 'cooks' ? await fetchCommunityPeopleList(id, mode) : await fetchPeopleList(id, mode);
       const f = me ? await fetchFollowedAmong(me, list.map((p) => p.id)).catch(() => new Set<string>()) : new Set<string>();
       setFollowed(f);
       setPeople(list.sort((a, b) => Number(f.has(b.id)) - Number(f.has(a.id)) || personName(a).localeCompare(personName(b))));
@@ -55,7 +59,7 @@ export default function PeopleList() {
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
           <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
         </Pressable>
-        <Text style={styles.title}>{mode === 'following' ? 'Following' : 'Followers'}</Text>
+        <Text style={styles.title}>{TITLE[mode]}</Text>
       </View>
       <View style={styles.search}>
         <MaterialIcons name="search" size={21} color={colors.ink} />
@@ -71,7 +75,7 @@ export default function PeopleList() {
           keyExtractor={(p) => p.id}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 30 }}
-          ListEmptyComponent={<Text style={styles.empty}>{needle ? 'No one found.' : mode === 'following' ? 'Not following anyone yet.' : 'No followers yet.'}</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{needle ? 'No one found.' : mode === 'following' ? 'Not following anyone yet.' : mode === 'followers' ? 'No followers yet.' : mode === 'members' ? 'No members yet.' : 'No cooks yet.'}</Text>}
           renderItem={({ item }) => (
             <Pressable style={styles.row} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: item.id } })} accessibilityRole="button">
               <Avatar person={item} size={46} />

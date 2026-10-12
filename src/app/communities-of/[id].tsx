@@ -1,11 +1,12 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Pill } from '@/components/pill';
 import { colors, fonts } from '@/constants/theme';
+import { fetchMemberCounts } from '@/lib/community';
 import { fetchCommunitiesOf, type FoundCommunity, setMembership } from '@/lib/cooks';
 import { fetchMyCommunities } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -28,10 +29,18 @@ export default function CommunitiesOf() {
   const me = session?.user.id ?? null;
   const [list, setList] = useState<FoundCommunity[] | null>(null);
   const [joined, setJoined] = useState<Set<string>>(new Set());
+  const [counts, setCounts] = useState<Map<string, number>>(new Map());
+  const [q, setQ] = useState('');
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    fetchCommunitiesOf(id).then(setList, () => setFailed(true));
+    fetchCommunitiesOf(id).then(
+      (l) => {
+        setList(l);
+        fetchMemberCounts(l.map((c) => c.id)).then(setCounts, () => {});
+      },
+      () => setFailed(true),
+    );
   }, [id]);
   useEffect(() => {
     if (me) fetchMyCommunities(me).then((c) => setJoined(new Set(c.map((x) => x.id))), () => {});
@@ -59,16 +68,20 @@ export default function CommunitiesOf() {
         </Pressable>
         <Text style={styles.title}>Communities</Text>
       </View>
+      <View style={styles.search}>
+        <MaterialIcons name="search" size={21} color={colors.ink} />
+        <TextInput style={styles.input} value={q} onChangeText={setQ} placeholder="Search communities" placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} accessibilityLabel="Search communities" />
+      </View>
       {failed ? (
         <Text style={styles.empty}>We couldn’t load this list. Check your connection and try again.</Text>
       ) : list === null ? (
         <ActivityIndicator color={colors.teal} style={{ marginTop: 20 }} />
       ) : (
         <FlatList
-          data={list}
+          data={list.filter((c) => !q.trim() || c.name.toLowerCase().includes(q.trim().toLowerCase()))}
           keyExtractor={(c) => c.id}
           contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 30, paddingTop: 8 }}
-          ListEmptyComponent={<Text style={styles.empty}>No communities yet.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{q.trim() ? 'No community found.' : 'No communities yet.'}</Text>}
           renderItem={({ item: c }) => (
             <Pressable style={styles.row} onPress={() => router.push({ pathname: '/community/[id]', params: { id: c.id } })} accessibilityRole="button">
               <View style={styles.icon}>
@@ -76,7 +89,7 @@ export default function CommunitiesOf() {
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.name} numberOfLines={1}>{c.name}</Text>
-                <Text style={styles.sub} numberOfLines={1}>{[KIND_LABEL[c.kind] ?? 'Community', c.area && c.area !== c.name ? c.area : c.governorate].filter(Boolean).join(' · ')}</Text>
+                <Text style={styles.sub} numberOfLines={1}>{[KIND_LABEL[c.kind] ?? 'Community', c.area && c.area !== c.name ? c.area : c.governorate, counts.has(c.id) ? `${counts.get(c.id)} ${counts.get(c.id) === 1 ? 'member' : 'members'}` : null].filter(Boolean).join(' · ')}</Text>
               </View>
               <Pill label={joined.has(c.id) ? 'Joined' : 'Join'} on={!joined.has(c.id)} onPress={() => toggle(c.id)} />
             </Pressable>
@@ -91,6 +104,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 6 },
   title: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 16, paddingHorizontal: 15, paddingVertical: 11, marginHorizontal: 22, marginTop: 12 },
+  input: { flex: 1, minWidth: 0, fontFamily: fonts.medium, fontSize: 15, color: colors.ink, padding: 0 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },
   icon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },

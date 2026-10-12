@@ -111,9 +111,9 @@ export default function CommunityScreen() {
         </View>
 
         <View style={styles.stats}>
-          <Stat n={members} label="Members" />
-          <Stat n={data.cookIds.length} label="Cooks" />
-          <Stat n={data.today.length} label="Cooking today" />
+          <Stat n={members} label="Members" onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'members' } })} />
+          <Stat n={data.cookIds.length} label="Cooks" onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'cooks' } })} />
+          <Stat n={data.today.length} label="Cooking today" onPress={() => router.push({ pathname: '/community-today/[id]', params: { id } })} />
         </View>
 
         <View style={styles.btns}>
@@ -133,7 +133,7 @@ export default function CommunityScreen() {
         <TopList title={`TOP COOKS IN ${info.name.toUpperCase()}`} rows={top?.service} people={top?.people} loading={!top} kind="service" />
         <TopList title={`MOST LIKED IN ${info.name.toUpperCase()}`} rows={top?.likes} people={top?.people} loading={!top} kind="likes" />
         {data.cookIds.length ? (
-          <Pressable style={styles.seeAll} onPress={() => router.push({ pathname: '/community-cooks/[id]', params: { id } })} accessibilityRole="button">
+          <Pressable style={styles.seeAll} onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'cooks' } })} accessibilityRole="button">
             <Text style={styles.seeAllText}>See all {data.cookIds.length} cooks</Text>
             <MaterialIcons name="chevron-right" size={20} color={colors.ink} />
           </Pressable>
@@ -155,12 +155,12 @@ export default function CommunityScreen() {
   );
 }
 
-function Stat({ n, label }: { n: number; label: string }) {
+function Stat({ n, label, onPress }: { n: number; label: string; onPress: () => void }) {
   return (
-    <View style={{ alignItems: 'center' }}>
+    <Pressable style={{ alignItems: 'center' }} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${n} ${label}`}>
       <Text style={styles.statN}>{n}</Text>
       <Text style={styles.statL}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   cover: { height: 170, backgroundColor: colors.navy, overflow: 'hidden' },
   coverIcon: { position: 'absolute', right: 24, bottom: 18 },
   backBtn: { padding: 18, alignSelf: 'flex-start' },
-  tile: { width: 76, height: 76, borderRadius: 22, backgroundColor: colors.lightBlue, borderWidth: 3, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -38 },
+  tile: { zIndex: 1, width: 76, height: 76, borderRadius: 22, backgroundColor: colors.lightBlue, borderWidth: 3, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -38 },
   name: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.ink, textAlign: 'center' },
   sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 2 },
   stats: { flexDirection: 'row', justifyContent: 'center', gap: 26, marginTop: 14 },
