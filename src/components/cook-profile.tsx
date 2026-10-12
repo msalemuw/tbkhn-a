@@ -41,7 +41,7 @@ const TABS: { key: Tab; label: string }[] = [
  * Used for other cooks (with a back arrow) and for my own Profile tab (with my actions and a footer).
  * The rank line ("#1 in Mohandeseen") comes with the Masters, which is not in the launch build.
  */
-export function CookProfileView({ id, onBack, actions, footer, barRight, belowStats }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode; barRight?: ReactNode; belowStats?: ReactNode }) {
+export function CookProfileView({ id, onBack, actions, footer, barRight }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode; barRight?: ReactNode}) {
   const { session } = useSession();
   const here = useMyLocation();
   const [cook, setCook] = useState<CookProfile | null | undefined>(undefined);
@@ -154,12 +154,10 @@ export function CookProfileView({ id, onBack, actions, footer, barRight, belowSt
         )}
 
         <View style={styles.stats}>
-          <Stat value={stats ? String(stats.communities) : '–'} label="Communities" />
-          <Stat value={stats ? String(stats.followers) : '–'} label="Followers" middle />
-          <Stat value={stats ? String(stats.following) : '–'} label="Following" />
+          <Stat value={stats ? String(stats.communities) : '–'} label="Communities" onPress={() => router.push({ pathname: '/communities-of/[id]', params: { id } })} />
+          <Stat value={stats ? String(stats.followers) : '–'} label="Followers" middle onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'followers' } })} />
+          <Stat value={stats ? String(stats.following) : '–'} label="Following" onPress={() => router.push({ pathname: '/people/[id]', params: { id, kind: 'following' } })} />
         </View>
-
-        {belowStats}
 
         <View style={styles.tabs}>
           {TABS.map((t) => (
@@ -238,12 +236,12 @@ function BarIcon({ name, label, onPress }: { name: 'arrow-back' | 'ios-share'; l
   );
 }
 
-function Stat({ value, label, middle }: { value: string; label: string; middle?: boolean }) {
+function Stat({ value, label, middle, onPress }: { value: string; label: string; middle?: boolean; onPress: () => void }) {
   return (
-    <View style={[styles.stat, middle && styles.statMiddle]}>
+    <Pressable style={[styles.stat, middle && styles.statMiddle]} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${value} ${label}`}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
