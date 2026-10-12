@@ -3,7 +3,7 @@ import type { MyCommunity } from '@/lib/posts';
 
 export type Watching = { communities: string[]; nearby: boolean; following: boolean };
 
-/** Home "Feed filter" from the design: choose which communities, public posts and followed cooks fill the feed. */
+/** Home "Feed filter" from the design: choose which communities, nearby (public) posts and followed cooks fill the feed. */
 export function WatchingSheet({
   visible,
   mine,
@@ -24,7 +24,7 @@ export function WatchingSheet({
       label: 'COMMUNITIES',
       rows: [
         ...mine.map((c) => ({ key: c.id, icon: (c.kind === 'club' ? 'flag' : 'groups') as 'flag' | 'groups', label: c.name, on: value.communities.includes(c.id), onPress: () => toggle(c.id) })),
-        { key: 'public', icon: 'public' as const, label: 'Public', on: value.nearby, onPress: () => onChange({ ...value, nearby: !value.nearby }) },
+        { key: 'nearby', icon: 'near-me' as const, label: 'Nearby', on: value.nearby, onPress: () => onChange({ ...value, nearby: !value.nearby }) },
         { key: 'following', icon: 'person' as const, label: 'Following', on: value.following, onPress: () => onChange({ ...value, following: !value.following }) },
       ],
     },

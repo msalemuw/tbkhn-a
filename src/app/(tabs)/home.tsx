@@ -13,6 +13,7 @@ import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, reportPost, setLiked } from '@/lib/feed';
+import { distanceMeters } from '@/lib/format';
 import { useMyLocation, usePlace } from '@/lib/location';
 import { unreadMessageCount } from '@/lib/chat';
 import { unreadNotificationCount } from '@/lib/notifications';
@@ -83,13 +84,19 @@ export default function Home() {
   const all = !watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id)));
   const shown = useMemo(() => {
     if (!watching) return posts;
-    return posts.filter(
+    const list = posts.filter(
       (p) =>
         p.author_id === me ||
         (p.community_id ? watching.communities.includes(p.community_id) : watching.nearby) ||
         (watching.following && following.includes(p.author_id)),
     );
-  }, [posts, watching, following, me]);
+    // Nearby: public posts come after the community and followed posts, closest cooks first, farther ones at the end.
+    // Posts with no known pickup spot (or no known location for me) go last, so no public post is ever lost.
+    if (!watching.nearby || !here) return list;
+    const isPublic = (p: FeedPost) => !p.community_id && p.author_id !== me && !(watching.following && following.includes(p.author_id));
+    const dist = (p: FeedPost) => (p.spot ? distanceMeters(here, p.spot) : Infinity);
+    return [...list.filter((p) => !isPublic(p)), ...list.filter(isPublic).sort((a, b) => dist(a) - dist(b))];
+  }, [posts, watching, following, me, here]);
 
   const patch = (id: string, f: (p: FeedPost) => FeedPost) => setPosts((list) => list.map((p) => (p.id === id ? f(p) : p)));
 
