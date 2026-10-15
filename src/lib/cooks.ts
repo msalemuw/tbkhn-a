@@ -1,3 +1,4 @@
+import { distanceMeters, type LatLng } from '@/lib/format';
 import { dataChanged } from '@/lib/live';
 import { type Dish, fetchDishesBy, type Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
@@ -93,28 +94,55 @@ export async function setFollowing(me: string, cookId: string, follow: boolean):
 
 export type FoundCook = Person & { area: string | null };
 
-/** People search: by name or @handle. With no text, cooks who posted a signature dish most recently. */
-export async function searchCooks(text: string, me: string | null): Promise<FoundCook[]> {
+/** People search: by name or @handle. With no text: nearest first, then sellers, signature posters, newest members. */
+export async function searchCooks(text: string, me: string | null, here: LatLng | null = null): Promise<FoundCook[]> {
   const q = text.trim().replace(/^@/, '').replace(/[%,()*]/g, ' ').trim();
   const cols = 'id, username, display_name, avatar_path, area';
-  let query = supabase.from('profiles').select(cols).limit(20);
   if (q) {
-    query = query.or(`display_name.ilike.%${q}%,username.ilike.%${q}%`);
-  } else {
-    const { data: recent, error } = await supabase
-      .from('posts')
-      .select('author_id')
-      .eq('kind', 'signature')
-      .order('created_at', { ascending: false })
-      .limit(60);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(cols)
+      .or(`display_name.ilike.%${q}%,username.ilike.%${q}%`)
+      .limit(20);
     if (error) throw error;
-    const ids = [...new Set((recent ?? []).map((r) => r.author_id as string))].slice(0, 20);
-    if (!ids.length) return [];
-    query = query.in('id', ids);
+    return (data ?? []).filter((p) => p.id !== me);
   }
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data ?? []).filter((p) => p.id !== me);
+  // No search text: nearest cooks first (2 km bands), then sellers, signature posters and the newest members.
+  const [today, sig, newest] = await Promise.all([
+    supabase.from('posts').select('author_id').eq('kind', 'cooking_today').order('created_at', { ascending: false }).limit(60),
+    supabase.from('posts').select('author_id').eq('kind', 'signature').order('created_at', { ascending: false }).limit(60),
+    supabase.from('profiles').select(cols).order('created_at', { ascending: false }).limit(40),
+  ]);
+  if (today.error) throw today.error;
+  if (sig.error) throw sig.error;
+  if (newest.error) throw newest.error;
+  const sellers = new Set((today.data ?? []).map((r) => r.author_id as string));
+  const posters = new Set((sig.data ?? []).map((r) => r.author_id as string));
+  const ids = [...new Set([...sellers, ...posters, ...(newest.data ?? []).map((p) => p.id as string)])].filter((id) => id !== me);
+  if (!ids.length) return [];
+  const [profiles, points] = await Promise.all([
+    supabase.from('profiles').select(cols).in('id', ids),
+    here ? supabase.from('pickup_points').select('owner_id, lat, lng').in('owner_id', ids) : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (profiles.error) throw profiles.error;
+  if (points.error) throw points.error;
+  const near = new Map<string, number>();
+  for (const pt of points.data ?? []) {
+    const d = distanceMeters(here!, { lat: pt.lat as number, lng: pt.lng as number });
+    near.set(pt.owner_id as string, Math.min(near.get(pt.owner_id as string) ?? Infinity, d));
+  }
+  const rank = (id: string) => {
+    const band = near.has(id) ? Math.floor(near.get(id)! / 2000) : Infinity;
+    const tier = sellers.has(id) ? 0 : posters.has(id) ? 1 : 2;
+    return [band, tier, near.get(id) ?? Infinity];
+  };
+  return (profiles.data ?? [])
+    .sort((x, y) => {
+      const a = rank(x.id as string);
+      const b = rank(y.id as string);
+      return (a[0] === b[0] ? 0 : a[0] < b[0] ? -1 : 1) || a[1] - b[1] || (a[2] === b[2] ? 0 : a[2] < b[2] ? -1 : 1);
+    })
+    .slice(0, 20);
 }
 
 export async function fetchFollowedAmong(me: string, ids: string[]): Promise<Set<string>> {
