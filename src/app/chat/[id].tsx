@@ -112,7 +112,7 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => (router.canGoBack() ? router.back() : router.replace('/inbox'))} accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <Avatar person={partner} size={36} />
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
@@ -230,8 +230,8 @@ function OrderCard({ order, me, name, paying, onPay }: { order: Order; me: strin
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
-  name: { flex: 1, fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
+  name: { flex: 1, fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   order: { margin: 12, marginBottom: 0, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, padding: 12 },
   orderTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   orderTitle: { fontFamily: fonts.extraBold, fontSize: 14.5, color: colors.ink },

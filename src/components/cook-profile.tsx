@@ -232,7 +232,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
 function BarIcon({ name, label, onPress }: { name: 'arrow-back' | 'ios-share'; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} hitSlop={10} style={styles.barSlot} accessibilityRole="button" accessibilityLabel={label}>
-      <MaterialIcons name={name} size={24} color={colors.ink} />
+      <MaterialIcons name={name} size={28} color={colors.ink} />
     </Pressable>
   );
 }
@@ -249,9 +249,9 @@ function Stat({ value, label, middle, onPress }: { value: string; label: string;
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   center: { alignItems: 'center', justifyContent: 'center' },
-  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 4, paddingBottom: 2 },
-  barSlot: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  handle: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
+  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 6 },
+  barSlot: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  handle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 22, paddingTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { fontFamily: fonts.extraBold, fontSize: 21, color: colors.ink, flexShrink: 1 },

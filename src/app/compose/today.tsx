@@ -138,13 +138,13 @@ export default function ComposeToday() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.top}>
-        <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close">
-          <MaterialIcons name="close" size={26} color={colors.ink} />
+        <Pressable hitSlop={12} onPress={() => router.back()} accessibilityLabel="Close" style={styles.closeHit}>
+          <MaterialIcons name="close" size={28} color={colors.ink} />
         </Pressable>
         <Text style={styles.topTitle}>Today’s menu</Text>
-        <Text style={[styles.topPost, busy && { opacity: 0.4 }]} onPress={busy ? undefined : onPost}>
-          Post
-        </Text>
+        <Pressable style={[styles.postBtn, busy && { opacity: 0.4 }]} onPress={busy ? undefined : onPost} accessibilityRole="button" accessibilityLabel="Post">
+          <Text style={styles.postText}>Post</Text>
+        </Pressable>
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
@@ -268,9 +268,11 @@ export default function ComposeToday() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   center: { flex: 1, justifyContent: 'center', padding: 22 },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 10 },
-  topTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
-  topPost: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 12 },
+  topTitle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
+  closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
+  postBtn: { height: 44, minWidth: 84, borderRadius: 22, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.teal },
+  postText: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.navy },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, backgroundColor: colors.cream },
   photoEmpty: { flexDirection: 'row', gap: 12, aspectRatio: 2.2, borderRadius: 18, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center' },

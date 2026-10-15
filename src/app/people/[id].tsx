@@ -58,7 +58,7 @@ export default function PeopleList() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>{TITLE[mode]}</Text>
       </View>
@@ -98,8 +98,8 @@ export default function PeopleList() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 6 },
-  title: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 16 },
+  title: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   search: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 16, paddingHorizontal: 15, paddingVertical: 11, marginHorizontal: 22, marginVertical: 12 },
   input: { flex: 1, minWidth: 0, fontFamily: fonts.medium, fontSize: 15, color: colors.ink, padding: 0 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },
