@@ -18,9 +18,29 @@ function load(): Notifications | null {
   }
 }
 
+/** Opens the screen an alert points to. Never throws and waits a moment so the app is ready to navigate. */
 function open(data: unknown) {
-  const url = (data as { url?: string } | null)?.url;
-  if (url) router.push(url as never);
+  try {
+    const url = (data as { url?: string } | null)?.url;
+    if (url && url.startsWith('/')) {
+      setTimeout(() => {
+        try {
+          router.push(url as never);
+        } catch {
+          // A bad link must never close the app.
+        }
+      }, 800);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/** True for an alert tapped within the last two minutes, so an old tap is never replayed on every launch. */
+function isFresh(date: unknown): boolean {
+  if (typeof date !== 'number') return false;
+  const ms = date > 1e12 ? date : date * 1000;
+  return Date.now() - ms < 120_000;
 }
 
 let wired = false;
@@ -36,9 +56,18 @@ export async function registerForPush(): Promise<void> {
       N.setNotificationHandler({
         handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false }),
       });
-      N.addNotificationResponseReceivedListener((r) => open(r.notification.request.content.data));
+      N.addNotificationResponseReceivedListener((r) => {
+        try {
+          open(r.notification.request.content.data);
+        } catch {
+          // ignore
+        }
+      });
       const last = N.getLastNotificationResponse();
-      if (last) open(last.notification.request.content.data);
+      if (last) {
+        if (isFresh(last.notification.date)) open(last.notification.request.content.data);
+        N.clearLastNotificationResponse();
+      }
     }
     if (Platform.OS === 'android') {
       await N.setNotificationChannelAsync('default', { name: 'Orders and messages', importance: N.AndroidImportance.MAX });
