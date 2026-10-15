@@ -4,9 +4,10 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { colors } from '@/constants/theme';
+import { applyUpdateNow } from '@/lib/auto-update';
 import { LocationProvider } from '@/lib/location';
 import { SessionProvider } from '@/lib/session';
 
@@ -23,11 +24,18 @@ export default function RootLayout() {
     InstrumentSerif_400Regular_Italic,
   });
 
+  // Check for a new version while the splash screen is still showing.
+  const [updateChecked, setUpdateChecked] = useState(false);
   useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
+    applyUpdateNow().then(() => setUpdateChecked(true));
+  }, []);
 
-  if (!loaded && !error) return null;
+  const ready = (loaded || !!error) && updateChecked;
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
     <SessionProvider>
