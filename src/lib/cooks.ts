@@ -93,28 +93,45 @@ export async function setFollowing(me: string, cookId: string, follow: boolean):
 
 export type FoundCook = Person & { area: string | null };
 
-/** People search: by name or @handle. With no text, cooks who posted a signature dish most recently. */
+/** People search: by name or @handle. With no text, cooks with recent signature dishes, then the newest members. */
 export async function searchCooks(text: string, me: string | null): Promise<FoundCook[]> {
   const q = text.trim().replace(/^@/, '').replace(/[%,()*]/g, ' ').trim();
   const cols = 'id, username, display_name, avatar_path, area';
-  let query = supabase.from('profiles').select(cols).limit(20);
   if (q) {
-    query = query.or(`display_name.ilike.%${q}%,username.ilike.%${q}%`);
-  } else {
-    const { data: recent, error } = await supabase
-      .from('posts')
-      .select('author_id')
-      .eq('kind', 'signature')
-      .order('created_at', { ascending: false })
-      .limit(60);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(cols)
+      .or(`display_name.ilike.%${q}%,username.ilike.%${q}%`)
+      .limit(20);
     if (error) throw error;
-    const ids = [...new Set((recent ?? []).map((r) => r.author_id as string))].slice(0, 20);
-    if (!ids.length) return [];
-    query = query.in('id', ids);
+    return (data ?? []).filter((p) => p.id !== me);
   }
-  const { data, error } = await query;
+  // No search text: cooks with recent signature dishes first, then the newest members, so the list is never empty.
+  const { data: recent, error } = await supabase
+    .from('posts')
+    .select('author_id')
+    .eq('kind', 'signature')
+    .order('created_at', { ascending: false })
+    .limit(60);
   if (error) throw error;
-  return (data ?? []).filter((p) => p.id !== me);
+  const ids = [...new Set((recent ?? []).map((r) => r.author_id as string))].filter((id) => id !== me).slice(0, 20);
+  const first = ids.length ? await supabase.from('profiles').select(cols).in('id', ids) : { data: [], error: null };
+  if (first.error) throw first.error;
+  const byId = new Map((first.data ?? []).map((p) => [p.id as string, p]));
+  const people = ids.map((id) => byId.get(id)).filter((p): p is NonNullable<typeof p> => !!p);
+  if (people.length < 20) {
+    const { data: newest, error: e2 } = await supabase
+      .from('profiles')
+      .select(cols)
+      .order('created_at', { ascending: false })
+      .limit(40);
+    if (e2) throw e2;
+    for (const p of newest ?? []) {
+      if (people.length >= 20) break;
+      if (p.id !== me && !byId.has(p.id as string)) people.push(p);
+    }
+  }
+  return people;
 }
 
 export async function fetchFollowedAmong(me: string, ids: string[]): Promise<Set<string>> {
