@@ -32,3 +32,7 @@ $P -d tbkhn_test -f migrations/0011_web_signup.sql
 $P -d tbkhn_test -t -f tests/web_signup_test.sql | grep ok
 $P -d tbkhn_test -f migrations/0012_loves.sql
 $P -d tbkhn_test -t -f tests/loves_test.sql | grep ok
+$P -d tbkhn_test -f migrations/0013_verified.sql
+$P -d tbkhn_test -f migrations/0014_post_communities.sql
+$P -d tbkhn_test -f migrations/0015_delete_account.sql
+$P -d tbkhn_test -t -f tests/delete_account_test.sql | grep ok

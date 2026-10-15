@@ -1,18 +1,44 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useFetchedStaffRole } from '@/components/admin-ui';
 import { PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
+import { deleteMyAccount } from '@/lib/account';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
-// Settings, opened from the gear on my profile: orders, payment handle, admin (staff), log out.
+// Settings, opened from the gear on my profile: orders, payment handle, admin (staff), log out, delete my account.
 export default function Settings() {
   const { profile } = useSession();
   const staffRole = useFetchedStaffRole();
+  const [deleting, setDeleting] = useState(false);
+
+  // Required by Apple and Google: delete the account from inside the app, after one clear confirmation.
+  function confirmDelete() {
+    Alert.alert(
+      'Delete your account?',
+      'This permanently removes your profile, photos, posts, comments, messages and orders. You can’t undo it.',
+      [
+        { text: 'Keep my account', style: 'cancel' },
+        {
+          text: 'Delete my account',
+          style: 'destructive',
+          onPress: async () => {
+            if (!profile) return;
+            setDeleting(true);
+            const failure = await deleteMyAccount(profile.id);
+            setDeleting(false);
+            if (failure) return Alert.alert('We couldn’t delete your account', failure);
+            router.replace('/');
+          },
+        },
+      ],
+    );
+  }
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
@@ -33,6 +59,9 @@ export default function Settings() {
             router.replace('/');
           }}
         />
+        <Pressable onPress={confirmDelete} disabled={deleting} style={styles.delete} accessibilityRole="button" accessibilityLabel="Delete my account">
+          <Text style={styles.deleteText}>{deleting ? 'Deleting…' : 'Delete my account'}</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -55,5 +84,7 @@ const styles = StyleSheet.create({
   body: { padding: 22 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  delete: { alignItems: 'center', paddingVertical: 18, marginTop: 6 },
+  deleteText: { fontFamily: fonts.bold, fontSize: 14, color: colors.muted, textDecorationLine: 'underline' },
   insta: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, marginVertical: 18 },
 });
