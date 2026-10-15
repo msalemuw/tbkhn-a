@@ -1,4 +1,4 @@
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackHeader } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { fmtAgo, fmtClock } from '@/lib/format';
+import { useLive } from '@/lib/live';
 import { ACTIVE, fetchOrders, type Order, type OrderStatus } from '@/lib/orders';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -46,11 +47,7 @@ export default function Orders() {
     setLoading(false);
   }, [session, tab]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  useLive(load);
 
   const active = orders.filter((o) => ACTIVE.includes(o.status));
   const past = orders.filter((o) => !ACTIVE.includes(o.status));

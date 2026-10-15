@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 
+import { LiveAlerts } from '@/components/live-alerts';
 import { colors } from '@/constants/theme';
 import { applyUpdateNow } from '@/lib/auto-update';
 import { LocationProvider } from '@/lib/location';
@@ -68,6 +69,7 @@ export default function RootLayout() {
         <Stack.Screen name="inbox" />
         <Stack.Screen name="chat/[id]" />
       </Stack>
+      <LiveAlerts />
       </LocationProvider>
     </SessionProvider>
   );

@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { BackHeader } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { type Conversation, fetchConversations, fetchPeople } from '@/lib/chat';
 import { fmtAgo } from '@/lib/format';
+import { useLive } from '@/lib/live';
 import { describe, fetchNotifications, markNotificationsRead, type Notification } from '@/lib/notifications';
 import { type Person, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -44,11 +45,7 @@ export default function Inbox() {
     setLoading(false);
   }, [userId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  useLive(load);
 
   const unreadNotes = notes?.filter((n) => !n.read_at).length ?? 0;
   const unreadMsgs = convos?.reduce((s, c) => s + c.unread, 0) ?? 0;

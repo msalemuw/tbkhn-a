@@ -14,6 +14,7 @@ import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, reportPost, setLiked } from '@/lib/feed';
 import { distanceMeters } from '@/lib/format';
+import { useDataVersion } from '@/lib/live';
 import { useMyLocation, usePlace } from '@/lib/location';
 import { unreadMessageCount } from '@/lib/chat';
 import { unreadNotificationCount } from '@/lib/notifications';
@@ -44,6 +45,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
+  const dataVersion = useDataVersion();
   const load = useCallback(async () => {
     if (!supabaseConfigured) return setLoading(false);
     setLoading(true);
@@ -76,9 +78,16 @@ export default function Home() {
     useCallback(() => {
       setStatusBarStyle('light');
       load();
-      if (me) Promise.all([unreadMessageCount(), unreadNotificationCount()]).then(([m, n]) => setUnread(m + n), () => null);
       return () => setStatusBarStyle('dark');
-    }, [me, load]),
+    }, [load]),
+  );
+
+  // The unread dot follows new messages and notifications as they arrive.
+  useFocusEffect(
+    useCallback(() => {
+      if (me) Promise.all([unreadMessageCount(), unreadNotificationCount()]).then(([m, n]) => setUnread(m + n), () => null);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [me, dataVersion]),
   );
 
   const all = !watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id)));
