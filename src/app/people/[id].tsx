@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,7 +28,8 @@ export default function PeopleList() {
   const [q, setQ] = useState('');
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
+  // Reload when the screen comes back into view (not on every follow tap, which would reshuffle the list under the finger).
+  const load = useCallback(() => {
     (async () => {
       const list = mode === 'members' || mode === 'cooks' ? await fetchCommunityPeopleList(id, mode) : await fetchPeopleList(id, mode);
       const f = me ? await fetchFollowedAmong(me, list.map((p) => p.id)).catch(() => new Set<string>()) : new Set<string>();
@@ -36,6 +37,7 @@ export default function PeopleList() {
       setPeople(list.sort((a, b) => Number(f.has(b.id)) - Number(f.has(a.id)) || personName(a).localeCompare(personName(b))));
     })().catch(() => setFailed(true));
   }, [id, mode, me]);
+  useFocusEffect(load);
 
   async function toggle(pid: string) {
     if (!me) return router.push('/sign-up');

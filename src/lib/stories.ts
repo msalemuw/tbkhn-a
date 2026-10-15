@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Person } from '@/lib/posts';
@@ -64,6 +65,7 @@ export async function postStory(me: string, caption: string, mediaPath: string, 
     .select('id')
     .single();
   if (error) throw error;
+  dataChanged();
   return data.id;
 }
 

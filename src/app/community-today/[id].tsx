@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +8,7 @@ import { DishCard } from '@/components/dish-card';
 import { colors, fonts } from '@/constants/theme';
 import { fetchCommunityOverview } from '@/lib/community';
 import { useMyLocation } from '@/lib/location';
+import { useLive } from '@/lib/live';
 import type { Dish } from '@/lib/posts';
 
 // Today’s menu in one community (opened from the "Today’s menu" count), with the same dish cards as the Menu.
@@ -18,7 +19,7 @@ export default function CommunityToday() {
   const [dishes, setDishes] = useState<Dish[] | null>(null);
   const [failed, setFailed] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetchCommunityOverview(id).then(
       (d) => {
         setName(d?.info.name ?? '');
@@ -27,6 +28,7 @@ export default function CommunityToday() {
       () => setFailed(true),
     );
   }, [id]);
+  useLive(load);
 
   return (
     <SafeAreaView style={styles.screen}>

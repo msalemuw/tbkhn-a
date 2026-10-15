@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import { supabase } from '@/lib/supabase';
 
 // Cooking-today posts: the dish, price, portions and pickup point in one place (design flow 9).
@@ -160,6 +161,7 @@ export async function postCookingToday(userId: string, d: NewDish): Promise<stri
     .select('id')
     .single();
   if (error) throw error;
+  dataChanged();
   return data.id;
 }
 

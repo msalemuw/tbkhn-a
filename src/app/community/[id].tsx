@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { colors, fonts } from '@/constants/theme';
 import { type CommunityOverview, fetchCommunityOverview, fetchCommunityPeople, KIND_LABEL } from '@/lib/community';
 import { setMembership } from '@/lib/cooks';
 import { useMyLocation } from '@/lib/location';
+import { useLive } from '@/lib/live';
 import { fetchMyCommunities, type Person, personName } from '@/lib/posts';
 import { fetchTop, type TopCook } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
@@ -39,7 +40,7 @@ export default function CommunityScreen() {
   const [joined, setJoined] = useState(false);
   const [members, setMembers] = useState(0);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetchCommunityOverview(id).then(
       (d) => {
         setData(d);
@@ -52,11 +53,9 @@ export default function CommunityScreen() {
       const people = await fetchCommunityPeople([...t.service, ...t.likes].map((r) => r.cook_id));
       setTop({ ...t, people });
     })().catch(() => setTop({ service: [], likes: [], people: new Map() }));
-  }, [id]);
-
-  useEffect(() => {
     if (me) fetchMyCommunities(me).then((c) => setJoined(c.some((x) => x.id === id)), () => {});
-  }, [me, id]);
+  }, [id, me]);
+  useLive(load);
 
   async function onJoin() {
     if (!me) return router.push('/sign-up');
