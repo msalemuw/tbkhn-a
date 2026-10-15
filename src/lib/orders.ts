@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import type { Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
 
@@ -48,6 +49,7 @@ export async function placeOrder(postId: string, plates: number, pickupAt: numbe
     p_note: note,
   });
   if (error) throw new Error(friendly(error.message));
+  dataChanged();
   return data as { id: string };
 }
 
@@ -72,11 +74,13 @@ export async function fetchOrders(role: 'buyer' | 'cook', userId: string): Promi
 export async function setOrderStatus(id: string, status: OrderStatus, reason?: string) {
   const { error } = await supabase.rpc('set_reservation_status', { p_id: id, p_status: status, p_reason: reason ?? null });
   if (error) throw new Error(friendly(error.message));
+  dataChanged();
 }
 
 export async function setPayment(id: string, status: 'sent' | 'received') {
   const { error } = await supabase.rpc('set_payment_status', { p_id: id, p_status: status });
   if (error) throw new Error(friendly(error.message));
+  dataChanged();
 }
 
 /** The cook's InstaPay handle, visible only to the two people on the order. */
@@ -94,6 +98,7 @@ export async function submitReview(order: Order, rating: number, body: string) {
     body: body.trim() || null,
   });
   if (error) throw new Error(error.code === '23505' ? 'You already reviewed this order.' : 'We couldn’t send your review. Try again.');
+  dataChanged();
 }
 
 /** Database messages are written for developers; show members something they can act on. */

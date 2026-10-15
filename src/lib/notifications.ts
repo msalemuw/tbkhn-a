@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import type { ComponentProps } from 'react';
 import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
@@ -29,6 +30,7 @@ export async function unreadNotificationCount(): Promise<number> {
 
 export async function markNotificationsRead(userId: string) {
   await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', userId).is('read_at', null);
+  dataChanged();
 }
 
 /** Title, optional second line and icon for one notification; `who` is the other person's name. */

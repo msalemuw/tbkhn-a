@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import { type Dish, fetchDishesBy, type Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
 
@@ -87,6 +88,7 @@ export async function setFollowing(me: string, cookId: string, follow: boolean):
     : supabase.from('follows').delete().eq('follower_id', me).eq('followee_id', cookId);
   const { error } = await q;
   if (error) throw error;
+  dataChanged();
 }
 
 export type FoundCook = Person & { area: string | null };
@@ -139,6 +141,7 @@ export async function setMembership(me: string, communityId: string, join: boole
     : supabase.from('community_members').delete().eq('community_id', communityId).eq('user_id', me);
   const { error } = await q;
   if (error) throw error;
+  dataChanged();
 }
 
 /** People who follow `id` ("followers") or whom `id` follows ("following"). */

@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import type { LatLng } from '@/lib/format';
 import type { Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
@@ -84,6 +85,7 @@ export async function setLiked(me: string, postId: string, liked: boolean): Prom
     : supabase.from('likes').delete().eq('post_id', postId).eq('user_id', me);
   const { error } = await q;
   if (error && error.code !== '23505') throw error;
+  dataChanged();
 }
 
 export type Comment = { id: string; body: string; created_at: string; author: Person };
@@ -102,6 +104,7 @@ export async function fetchComments(postId: string): Promise<Comment[]> {
 export async function addComment(me: string, postId: string, body: string): Promise<void> {
   const { error } = await supabase.from('comments').insert({ post_id: postId, author_id: me, body: body.trim() });
   if (error) throw error;
+  dataChanged();
 }
 
 /** A signature dish: a photo and caption that stay on the cook's profile. */
@@ -112,6 +115,7 @@ export async function postSignature(me: string, caption: string, mediaPath: stri
     .select('id')
     .single();
   if (error) throw error;
+  dataChanged();
   return data.id;
 }
 
@@ -129,4 +133,5 @@ export async function reportPost(me: string, postId: string): Promise<void> {
 export async function deletePost(postId: string): Promise<void> {
   const { error } = await supabase.from('posts').delete().eq('id', postId);
   if (error) throw error;
+  dataChanged();
 }

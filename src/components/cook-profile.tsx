@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,6 +26,7 @@ import { useMyLocation } from '@/lib/location';
 import { type Dish, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
+import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
 
 type Tab = 'posts' | 'today' | 'reviews';
@@ -65,12 +66,11 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
     fetchSignatures(id).then(setPosts, () => setPosts([]));
     fetchReviews(id).then(setReviews, () => setReviews([]));
     fetchBadges([id]).then((m) => setBadges(m.get(id) ?? []), () => {});
-  }, [id]);
-
-  useEffect(load, [load]);
-  useEffect(() => {
     if (me && !mine) isFollowing(me, id).then(setFollowingState, () => {});
-  }, [me, mine, id]);
+  }, [id, me, mine]);
+
+  // Counts, posts and reviews reload when anything changes in the app (a follow, an order, a review...) and when this screen comes back into view.
+  useLive(load);
 
   async function onFollow() {
     if (!me) return router.push('/sign-up');

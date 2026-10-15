@@ -1,3 +1,4 @@
+import { dataChanged } from '@/lib/live';
 import { type Order, ORDER_SELECT } from '@/lib/orders';
 import type { Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
@@ -78,11 +79,13 @@ export async function sendMessage(me: string, partner: string, body: string, res
     .select('*')
     .single();
   if (error) throw new Error(error.code === '42501' ? 'You can’t message this member.' : 'Your message didn’t send. Try again.');
+  dataChanged();
   return data as Message;
 }
 
 export async function markRead(me: string, partner: string) {
   await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('sender_id', partner).eq('recipient_id', me).is('read_at', null);
+  dataChanged();
 }
 
 /** The newest order between two people that still needs something (shown at the top of the chat). */

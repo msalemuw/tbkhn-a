@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +9,7 @@ import { BackHeader, formStyles, PickerSheet, PrimaryButton, type SheetItem } fr
 import { colors, fonts } from '@/constants/theme';
 import { distanceMeters, fmtClock, fmtDist, fmtReady } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
+import { useLive } from '@/lib/live';
 import { placeOrder } from '@/lib/orders';
 import { type Dish, fetchDish, mediaUrl, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -30,9 +31,10 @@ export default function DishScreen() {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetchDish(id).then(setDish, () => setDish(null));
   }, [id]);
+  useLive(load);
 
   // Pickup choices and "Ready now" move with the clock.
   useEffect(() => {
