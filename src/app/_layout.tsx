@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 
 import { LiveAlerts } from '@/components/live-alerts';
+import { PushSetup } from '@/components/push-setup';
 import { colors } from '@/constants/theme';
 import { applyUpdateNow } from '@/lib/auto-update';
 import { LocationProvider } from '@/lib/location';
@@ -70,6 +71,7 @@ export default function RootLayout() {
         <Stack.Screen name="chat/[id]" />
       </Stack>
       <LiveAlerts />
+      <PushSetup />
       </LocationProvider>
     </SessionProvider>
   );
