@@ -85,7 +85,6 @@ export async function sendMessage(me: string, partner: string, body: string, res
 
 export async function markRead(me: string, partner: string) {
   await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('sender_id', partner).eq('recipient_id', me).is('read_at', null);
-  dataChanged();
 }
 
 /** The newest order between two people that still needs something (shown at the top of the chat). */
