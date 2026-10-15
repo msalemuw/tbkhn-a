@@ -18,6 +18,7 @@ import {
   setFollowing,
   setMembership,
 } from '@/lib/cooks';
+import { usePlace } from '@/lib/location';
 import { fetchMyCommunities, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
@@ -49,6 +50,7 @@ const KIND_ICON: Record<string, React.ComponentProps<typeof MaterialIcons>['name
 export default function Search() {
   const { session, profile } = useSession();
   const me = session?.user.id ?? null;
+  const { place } = usePlace();
   const [text, setText] = useState('');
   const [found, setFound] = useState<Found | null>(null);
   const [failed, setFailed] = useState(false);
@@ -69,7 +71,7 @@ export default function Search() {
     let live = true;
     const t = setTimeout(
       () => {
-        Promise.all([searchCooks(text, me), searchCommunities(text)])
+        Promise.all([searchCooks(text, me, place), searchCommunities(text)])
           .then(async ([people, communities]) => {
             const f = me ? await fetchFollowedAmong(me, people.map((p) => p.id)).catch(() => new Set<string>()) : new Set<string>();
             if (!live) return;
@@ -86,7 +88,7 @@ export default function Search() {
       live = false;
       clearTimeout(t);
     };
-  }, [text, me]);
+  }, [text, me, place]);
 
   const loading = !failed && found?.q !== text;
 
