@@ -43,7 +43,7 @@ export default function Settings() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>Settings</Text>
       </View>
@@ -79,8 +79,8 @@ function Row({ icon, label, onPress }: { icon: React.ComponentProps<typeof Mater
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 6 },
-  title: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.ink },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 16 },
+  title: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   body: { padding: 22 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.ink },

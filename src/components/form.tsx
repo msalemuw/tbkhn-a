@@ -29,7 +29,7 @@ export function BackHeader({ title, onBack }: { title?: string; onBack?: () => v
   return (
     <View style={styles.header}>
       <Pressable hitSlop={12} onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))}>
-        <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+        <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
       </Pressable>
       {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
     </View>
@@ -231,8 +231,8 @@ export const formStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 6 },
-  headerTitle: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 16 },
+  headerTitle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   primary: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
   primaryOff: { opacity: 0.45 },
   primaryText: { fontFamily: fonts.extraBold, fontSize: 15.5, color: colors.navy },

@@ -32,7 +32,7 @@ export default function CommunityToday() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.title} numberOfLines={1}>Today’s menu{name ? ` in ${name}` : ''}</Text>
@@ -58,8 +58,8 @@ export default function CommunityToday() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 6 },
-  title: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 16 },
+  title: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 1 },
   empty: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center', padding: 22 },
 });

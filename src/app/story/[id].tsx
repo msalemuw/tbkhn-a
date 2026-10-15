@@ -11,11 +11,15 @@ import { colors, fonts } from '@/constants/theme';
 import { sendMessage } from '@/lib/chat';
 import { setLiked } from '@/lib/feed';
 import { fmtAgo, fmtReady } from '@/lib/format';
+import { useOverlayInsets } from '@/lib/insets';
 import { mediaUrl, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { fetchStories, markSeen, type StoryGroup } from '@/lib/stories';
 
 const STORY_MS = 5000;
+
+// Close goes back, or to Home when the story was opened with nothing behind it.
+const closeStory = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
 // Story viewer (design flows 4 and 17): tap to move on, progress bars on top, reply and heart below.
 // An "On today's menu" story carries the dish, its price and a Reserve button.
@@ -49,7 +53,7 @@ export default function StoryViewer() {
     return (
       <SafeAreaView style={[styles.screen, styles.center]}>
         <Text style={styles.empty}>This story has ended.</Text>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+        <Pressable onPress={closeStory} style={styles.closeBtn}>
           <Text style={styles.closeText}>Close</Text>
         </Pressable>
       </SafeAreaView>
@@ -67,7 +71,7 @@ export default function StoryViewer() {
         else if (gi < groups.length - 1) {
           setGi(gi + 1);
           setIi(0);
-        } else router.back();
+        } else closeStory();
       }}
       onPrev={() => {
         if (ii > 0) setIi(ii - 1);
@@ -84,6 +88,7 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
   const item = group.items[index];
   const mine = group.author.id === me;
   const keyboard = useKeyboardHeight();
+  const insets = useOverlayInsets();
   const [progress] = useState(() => new Animated.Value(0));
   const [paused, setPaused] = useState(false);
   const [draft, setDraft] = useState('');
@@ -134,7 +139,7 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
         <Pressable style={styles.tapPrev} onPress={onPrev} accessibilityLabel="Previous" />
         <Pressable style={styles.tapNext} onPress={onNext} accessibilityLabel="Next" />
       </View>
-      <SafeAreaView style={styles.top} edges={['top']} pointerEvents="box-none">
+      <View style={[styles.top, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
         <View style={styles.bars}>
           {group.items.map((it, i) => (
             <View key={it.id} style={styles.bar}>
@@ -152,12 +157,12 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
               <Text style={styles.whoWhen}>{fmtAgo(Date.parse(item.created_at))}</Text>
             </View>
           </Pressable>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityLabel="Close">
-            <MaterialIcons name="close" size={26} color={colors.white} />
+          <Pressable onPress={closeStory} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeHit}>
+            <MaterialIcons name="close" size={28} color={colors.white} />
           </Pressable>
         </View>
-      </SafeAreaView>
-      <SafeAreaView style={[styles.bottom, { paddingBottom: keyboard ? keyboard + 8 : undefined }]} edges={keyboard ? [] : ['bottom']} pointerEvents="box-none">
+      </View>
+      <View style={[styles.bottom, { paddingBottom: keyboard ? keyboard + 8 : insets.bottom + 16 }]} pointerEvents="box-none">
         {order ? (
           <View style={styles.tagRow}>
             <Text style={styles.tag}>ON TODAY’S MENU</Text>
@@ -204,7 +209,7 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
             ) : null}
           </View>
         )}
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -224,10 +229,11 @@ const styles = StyleSheet.create({
   bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,.3)', overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: colors.white, borderRadius: 2 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
   who: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   whoName: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.white },
   whoWhen: { fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,.8)' },
-  bottom: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16, paddingBottom: 12, gap: 6 },
+  bottom: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 16, gap: 6 },
   tagRow: { flexDirection: 'row' },
   tag: { fontFamily: fonts.extraBold, fontSize: 11, letterSpacing: 0.8, color: colors.navy, backgroundColor: colors.yellow, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },
   caption: { fontFamily: fonts.extraBold, fontSize: 20, lineHeight: 26, color: colors.white },

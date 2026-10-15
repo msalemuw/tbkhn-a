@@ -50,7 +50,7 @@ export default function HowItWorks() {
     <SafeAreaView style={styles.screen}>
       <View style={[styles.bar, { flexDirection: dir }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name={rtl ? 'arrow-forward' : 'arrow-back'} size={24} color={colors.ink} />
+          <MaterialIcons name={rtl ? 'arrow-forward' : 'arrow-back'} size={28} color={colors.ink} />
         </Pressable>
         <Text style={styles.barTitle}>{t.title}</Text>
       </View>
@@ -84,8 +84,8 @@ export default function HowItWorks() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 20 },
-  bar: { alignItems: 'center', gap: 12, paddingVertical: 10 },
-  barTitle: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
+  bar: { alignItems: 'center', gap: 12, paddingTop: 16, paddingBottom: 10 },
+  barTitle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   body: { gap: 16, paddingBottom: 16 },
   head: { fontFamily: fonts.serif, fontSize: 30, lineHeight: 33, color: colors.ink },
   intro: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 21, color: colors.muted },

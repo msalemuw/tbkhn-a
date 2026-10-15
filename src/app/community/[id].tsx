@@ -82,7 +82,7 @@ export default function CommunityScreen() {
     return (
       <SafeAreaView style={styles.screen}>
         <Pressable onPress={back} hitSlop={10} style={{ padding: 18 }} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <Text style={[styles.sub, { marginTop: 10, textAlign: 'center' }]}>We couldn’t find this community.</Text>
       </SafeAreaView>
@@ -99,7 +99,7 @@ export default function CommunityScreen() {
           <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={120} color="rgba(255,255,255,0.08)" style={styles.coverIcon} />
           <SafeAreaView edges={['top']}>
             <Pressable onPress={back} hitSlop={10} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back">
-              <MaterialIcons name="arrow-back" size={24} color={colors.white} />
+              <MaterialIcons name="arrow-back" size={28} color={colors.white} />
             </Pressable>
           </SafeAreaView>
         </View>
