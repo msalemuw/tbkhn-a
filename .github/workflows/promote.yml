@@ -1,0 +1,36 @@
+# Sends the newest tested update to REAL users (channel "production"), to a share of them first.
+# Only the repository owner can start it, from the Actions tab: "Promote update" > "Run workflow".
+name: Promote update
+on:
+  workflow_dispatch:
+    inputs:
+      percentage:
+        description: Share of real users who get it now (1-100). Use a small number first, then run again with 100.
+        default: '10'
+        required: true
+jobs:
+  promote:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Make sure the real-user branch and channel exist
+        run: |
+          eas branch:create production --non-interactive || true
+          eas channel:create production --branch production --non-interactive || true
+      - name: Find the newest tested update
+        id: latest
+        run: |
+          eas update:list --branch preview --limit 1 --json --non-interactive > latest.json
+          GROUP=$(jq -r '.currentPage[0].group // empty' latest.json)
+          if [ -z "$GROUP" ]; then echo "No tested update found"; cat latest.json; exit 1; fi
+          echo "group=$GROUP" >> "$GITHUB_OUTPUT"
+      - name: Send it to real users
+        run: eas update:republish --group "${{ steps.latest.outputs.group }}" --destination-branch production --rollout-percentage "${{ inputs.percentage }}" --force-end-active-rollout --message "Promoted from test" --non-interactive

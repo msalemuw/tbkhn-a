@@ -1,0 +1,23 @@
+# Takes real users back to the update before the newest one. Only the repository owner can start it.
+name: Roll back real users
+on:
+  workflow_dispatch:
+jobs:
+  rollback:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Roll back
+        run: |
+          eas update:list --branch production --limit 1 --json --non-interactive > latest.json
+          GROUP=$(jq -r '.currentPage[0].group // empty' latest.json)
+          if [ -z "$GROUP" ]; then echo "Nothing to roll back"; exit 1; fi
+          eas update:rollback "$GROUP" --force-end-active-rollout --message "Rolled back" --non-interactive
