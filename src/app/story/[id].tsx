@@ -2,14 +2,14 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { sendMessage } from '@/lib/chat';
-import { setLiked } from '@/lib/feed';
+import { deletePost, setLiked } from '@/lib/feed';
 import { fmtAgo, fmtReady } from '@/lib/format';
 import { useOverlayInsets } from '@/lib/insets';
 import { mediaUrl, personName } from '@/lib/posts';
@@ -59,6 +59,20 @@ export default function StoryViewer() {
       </SafeAreaView>
     );
   }
+  // A deleted story leaves the viewer; when it was the last one, the viewer closes.
+  function removeItem(itemId: string) {
+    const next = groups!.map((g) => ({ ...g, items: g.items.filter((i) => i.id !== itemId) })).filter((g) => g.items.length);
+    if (!next.length) return closeStory();
+    setGroups(next);
+    const here = next.findIndex((g) => g.author.id === group.author.id);
+    if (here === -1) {
+      setGi(Math.min(gi, next.length - 1));
+      setIi(0);
+    } else {
+      setGi(here);
+      setIi(Math.min(ii, next[here].items.length - 1));
+    }
+  }
   // One viewer per story: the key restarts the timer and the reply box each time.
   return (
     <Viewer
@@ -66,6 +80,7 @@ export default function StoryViewer() {
       group={group}
       index={Math.min(ii, group.items.length - 1)}
       me={me}
+      onDeleted={removeItem}
       onNext={() => {
         if (ii < group.items.length - 1) setIi(ii + 1);
         else if (gi < groups.length - 1) {
@@ -84,7 +99,7 @@ export default function StoryViewer() {
   );
 }
 
-function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index: number; me: string | null; onNext: () => void; onPrev: () => void }) {
+function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryGroup; index: number; me: string | null; onNext: () => void; onPrev: () => void; onDeleted: (id: string) => void }) {
   const item = group.items[index];
   const mine = group.author.id === me;
   const keyboard = useKeyboardHeight();
@@ -119,6 +134,26 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
       setLikedState(!next);
     }
   }, [liked, me, item.id]);
+
+  // Your own photo stories can be deleted; "Today's menu" stories follow the dish and end at midnight.
+  function confirmDelete() {
+    setPaused(true);
+    Alert.alert('Delete this story?', 'It will disappear for everyone.', [
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          deletePost(item.id).then(
+            () => onDeleted(item.id),
+            () => {
+              setPaused(false);
+              Alert.alert('We couldn’t delete the story', 'Check your connection and try again.');
+            },
+          ),
+      },
+      { text: 'Cancel', style: 'cancel', onPress: () => setPaused(false) },
+    ]);
+  }
 
   async function reply() {
     if (!me) return router.push('/sign-up');
@@ -157,9 +192,16 @@ function Viewer({ group, index, me, onNext, onPrev }: { group: StoryGroup; index
               <Text style={styles.whoWhen}>{fmtAgo(Date.parse(item.created_at))}</Text>
             </View>
           </Pressable>
-          <Pressable onPress={closeStory} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeHit}>
-            <MaterialIcons name="close" size={28} color={colors.white} />
-          </Pressable>
+          <View style={styles.headActions}>
+            {mine && !order ? (
+              <Pressable onPress={confirmDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete story" style={styles.closeHit}>
+                <MaterialIcons name="delete-outline" size={26} color={colors.white} />
+              </Pressable>
+            ) : null}
+            <Pressable onPress={closeStory} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeHit}>
+              <MaterialIcons name="close" size={28} color={colors.white} />
+            </Pressable>
+          </View>
         </View>
       </View>
       <View style={[styles.bottom, { paddingBottom: keyboard ? keyboard + 8 : insets.bottom + 16 }]} pointerEvents="box-none">
@@ -229,6 +271,7 @@ const styles = StyleSheet.create({
   bar: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,.3)', overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: colors.white, borderRadius: 2 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headActions: { flexDirection: 'row', alignItems: 'center' },
   closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
   who: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   whoName: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.white },

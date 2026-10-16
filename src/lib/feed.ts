@@ -45,7 +45,23 @@ export async function fetchFeed(me: string | null): Promise<FeedPost[]> {
     .order('created_at', { ascending: false })
     .limit(60);
   if (error) throw error;
-  const rows = (data ?? []) as unknown as Row[];
+  return enrich((data ?? []) as unknown as Row[], me);
+}
+
+/** One cook's signature posts, newest first (the post screen opened from a profile). */
+export async function fetchPostsBy(me: string | null, authorId: string): Promise<FeedPost[]> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(POST_SELECT)
+    .eq('kind', 'signature')
+    .eq('author_id', authorId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return enrich((data ?? []) as unknown as Row[], me);
+}
+
+async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const authors = [...new Set(rows.map((r) => r.author_id))];
@@ -77,17 +93,6 @@ export async function fetchFeed(me: string | null): Promise<FeedPost[]> {
       spot: spotBy.get(r.author_id) ?? null,
     };
   });
-}
-
-/** Live distance in metres (rounded up to whole km by the server) from `from` to each person with a recent position. */
-/** One signature post with its counts and whether the member liked it (the post screen). Null when it no longer exists. */
-export async function fetchPost(me: string | null, id: string): Promise<FeedPost | null> {
-  const { data, error } = await supabase.from('posts').select(POST_SELECT).eq('id', id).eq('kind', 'signature').maybeSingle();
-  if (error) throw error;
-  if (!data) return null;
-  const r = data as unknown as Row;
-  const mine = me ? await supabase.from('likes').select('post_id').eq('user_id', me).eq('post_id', id).maybeSingle() : null;
-  return { ...r, likes: r.likes?.[0]?.count ?? 0, comments: r.comments?.[0]?.count ?? 0, liked: !!mine?.data, rating: null, cookingDishId: null, spot: null };
 }
 
 export async function fetchLiveDistances(ids: string[], from: LatLng): Promise<Map<string, number>> {
@@ -148,6 +153,12 @@ export async function fetchFollowing(me: string): Promise<string[]> {
 export async function reportPost(me: string, postId: string): Promise<void> {
   const { error } = await supabase.from('reports').insert({ reporter_id: me, post_id: postId });
   if (error) throw error;
+}
+
+export async function updateCaption(postId: string, caption: string): Promise<void> {
+  const { error } = await supabase.from('posts').update({ caption: caption.trim() || null }).eq('id', postId);
+  if (error) throw error;
+  dataChanged();
 }
 
 export async function deletePost(postId: string): Promise<void> {
