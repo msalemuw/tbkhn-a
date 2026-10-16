@@ -37,7 +37,7 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
   }
 }
 
-async function send(userId: string, msg: { title: string; body?: string; url: string }) {
+async function send(userId: string, msg: { title: string; body?: string; url: string; sound?: string }) {
   const { data: tokens, error } = await admin.from('push_tokens').select('token').eq('user_id', userId);
   if (error) console.log('could not read push_tokens:', JSON.stringify(error));
   if (!tokens?.length) {
@@ -47,7 +47,7 @@ async function send(userId: string, msg: { title: string; body?: string; url: st
   const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: 'default', data: { url: msg.url } }))),
+    body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: msg.sound ?? 'default', data: { url: msg.url } }))),
   });
   const json = await res.json().catch(() => null);
   // Visible in Edge Functions > send-push > Logs: what Expo answered, and later what Apple answered.
@@ -85,7 +85,11 @@ Deno.serve(async (req) => {
         .from('notifications').update({ pushed_at: new Date().toISOString() })
         .eq('id', record.id).is('pushed_at', null).select('id').maybeSingle();
       if (!claimed) return new Response('already sent');
-      await send(record.user_id, wording(record, await nameOf(record.payload?.from)));
+      // New orders ring with their own loud sound (bundled in app builds made after it was added; older builds fall back to the default).
+      await send(record.user_id, {
+        ...wording(record, await nameOf(record.payload?.from)),
+        sound: record.kind === 'order_new' ? 'new-order.wav' : undefined,
+      });
     } else if (table === 'messages') {
       await send(record.recipient_id, {
         title: await nameOf(record.sender_id),
