@@ -16,15 +16,19 @@ import { supabaseConfigured } from '@/lib/supabase';
  * Today's menu (s53): every dish neighbors share on today's menu, narrowed by community, cuisine or search.
  * Starts showing everything; the "Menu filter" sheet (same format as the Home feed filter) narrows by community and cuisine.
  */
+const NEARBY = 'nearby';
+/** How close a pickup point must be to the eater to count as "Nearby". */
+const NEARBY_METERS = 10_000;
+
 export function DishList({ header, filters = true }: { header?: React.ReactElement; filters?: boolean }) {
   const { session } = useSession();
   const here = useMyLocation();
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [mine, setMine] = useState<MyCommunity[]>([]);
-  // null = nothing chosen yet, which means everything shows. Once chosen, the sets are what the member ticked.
-  const [communities, setCommunities] = useState<string[] | null>(null);
-  const [others, setOthers] = useState(true);
-  const [cuisines, setCuisines] = useState<string[] | null>(null);
+  // What the member ticked. Nothing ticked in a section means no limit for that section, so one tick is enough.
+  // Places: 'nearby' or a community id (a dish shows if it matches any ticked place). Cuisines: any ticked cuisine.
+  const [places, setPlaces] = useState<string[]>([]);
+  const [cuisines, setCuisines] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
@@ -51,13 +55,14 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
   );
 
   const shown = useMemo(() => {
-    const mineIds = new Set(mine.map((c) => c.id));
-    const chosen = new Set(communities ?? mine.map((c) => c.id));
     const needle = q.trim().toLowerCase();
+    // Nearby is the one place filter based on distance: the dish's pickup point against where the eater is now.
+    // Without a known location it can't narrow anything, so it lets every dish through.
+    const near = (d: Dish) => !here || (d.pickup_point != null && distanceMeters(here, d.pickup_point) <= NEARBY_METERS);
     const list = dishes.filter(
       (d) =>
-        (!session || (d.community_ids.some((c) => mineIds.has(c)) ? d.community_ids.some((c) => chosen.has(c)) : others)) &&
-        (!cuisines || (d.cuisine != null && cuisines.includes(d.cuisine))) &&
+        (!places.length || places.some((p) => (p === NEARBY ? near(d) : d.community_ids.includes(p)))) &&
+        (!cuisines.length || (d.cuisine != null && cuisines.includes(d.cuisine))) &&
         (!needle || `${d.dish_name} ${d.author.display_name ?? ''} ${d.author.username ?? ''}`.toLowerCase().includes(needle)),
     );
     // Nearest first once we know where the member is; otherwise newest first.
@@ -66,29 +71,27 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       return [...list].sort((a, b) => dist(a) - dist(b));
     }
     return list;
-  }, [dishes, mine, communities, others, cuisines, q, here, session]);
+  }, [dishes, places, cuisines, q, here]);
 
   const cuisineOptions = CUISINES.filter((c) => dishes.some((d) => d.cuisine === c));
-  const allShown = !cuisines && (!session || (others && (communities === null || mine.every((c) => communities.includes(c.id)))));
-  const toggleIn = (list: string[] | null, all: string[], id: string) => {
-    const cur = list ?? all;
-    return cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-  };
+  const allShown = !places.length && !cuisines.length;
+  const toggleIn = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
   const sections = [
-    ...(session
+    {
+      label: 'LOCATION',
+      rows: [{ key: NEARBY, icon: 'near-me' as const, label: 'Nearby', on: places.includes(NEARBY), onPress: () => setPlaces(toggleIn(places, NEARBY)) }],
+    },
+    ...(session && mine.length
       ? [
           {
             label: 'COMMUNITIES',
-            rows: [
-              ...mine.map((c) => ({
-                key: c.id,
-                icon: (c.kind === 'club' ? 'flag' : 'groups') as 'flag' | 'groups',
-                label: c.name,
-                on: (communities ?? mine.map((m) => m.id)).includes(c.id),
-                onPress: () => setCommunities(toggleIn(communities, mine.map((m) => m.id), c.id)),
-              })),
-              { key: 'others', icon: 'near-me' as const, label: 'Nearby', on: others, onPress: () => setOthers(!others) },
-            ],
+            rows: mine.map((c) => ({
+              key: c.id,
+              icon: (c.kind === 'club' ? 'flag' : 'groups') as 'flag' | 'groups',
+              label: c.name,
+              on: places.includes(c.id),
+              onPress: () => setPlaces(toggleIn(places, c.id)),
+            })),
           },
         ]
       : []),
@@ -98,11 +101,8 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
         key: c,
         icon: 'restaurant' as const,
         label: c,
-        on: (cuisines ?? cuisineOptions).includes(c),
-        onPress: () => {
-          const next = toggleIn(cuisines, cuisineOptions, c);
-          setCuisines(next.length === cuisineOptions.length ? null : next);
-        },
+        on: cuisines.includes(c),
+        onPress: () => setCuisines(toggleIn(cuisines, c)),
       })),
     },
   ];
@@ -114,7 +114,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       : loading
         ? ''
         : dishes.length
-          ? 'Nothing matches today. Try another community or cuisine.'
+          ? 'Nothing matches today. Try another place or cuisine.'
           : 'Nothing on today’s menu yet.';
 
   return (
@@ -142,7 +142,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       }
       ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
     />
-      <FilterSheet visible={filterOpen} title="Menu filter" sub="Choose which dishes show on today’s menu." sections={sections} onClose={() => setFilterOpen(false)} />
+      <FilterSheet visible={filterOpen} title="Menu filter" sub="Tick what you want to see. Nothing ticked shows everything." sections={sections} onClose={() => setFilterOpen(false)} />
     </>
   );
 }

@@ -29,6 +29,7 @@ Rules:
 - Recompute whenever the user's location changes ("Use current location", area change).
 - Never store a distance string; store coordinates for each pickup point (`lat`, `lng`) and the user's last known position.
 - Sort/filter by distance ("Watching: Nearby", Menu filters) must use the same computed value.
+- Menu filter "Nearby" keeps a dish when its pickup point is within `NEARBY_METERS` (10 km, `src/components/dish-list.tsx`) of the member's current location; with no known location it does not narrow the list.
 
 ## In the prototype
 
