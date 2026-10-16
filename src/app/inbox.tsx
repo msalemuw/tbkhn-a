@@ -124,7 +124,9 @@ export default function Inbox() {
               ? { pathname: '/order/[id]' as const, params: { id: item.payload.reservation_id } }
               : item.payload.post_id
                 ? { pathname: '/dish/[id]' as const, params: { id: item.payload.post_id } }
-                : null;
+                : item.payload.profile_id
+                  ? { pathname: '/cook/[id]' as const, params: { id: item.payload.profile_id } }
+                  : null;
             return (
               <Pressable style={styles.row} onPress={target ? () => router.push(target) : undefined} accessibilityRole={target ? 'button' : undefined}>
                 <View style={styles.noteIcon}>

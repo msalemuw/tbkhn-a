@@ -7,7 +7,7 @@ import { colors, fonts } from '@/constants/theme';
 import { fetchPeople } from '@/lib/chat';
 import { useOverlayInsets } from '@/lib/insets';
 import { dataChanged } from '@/lib/live';
-import { describe, type Notification } from '@/lib/notifications';
+import { describe, notificationPath, type Notification } from '@/lib/notifications';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -49,8 +49,7 @@ export function LiveAlerts() {
         const from = n.payload?.from;
         const people = from ? await fetchPeople([from]).catch(() => new Map()) : new Map();
         const d = describe(n, personName(from ? people.get(from) : null) || 'Someone');
-        const to = n.payload?.reservation_id ? `/order/${n.payload.reservation_id}` : '/inbox';
-        show({ ...d, to });
+        show({ ...d, to: notificationPath(n) });
         dataChanged();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${me}` }, async (p) => {
