@@ -39,13 +39,33 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
 
 async function send(userId: string, msg: { title: string; body?: string; url: string }) {
   const { data: tokens } = await admin.from('push_tokens').select('token').eq('user_id', userId);
-  if (!tokens?.length) return;
+  if (!tokens?.length) {
+    console.log('no phone registered for', userId);
+    return;
+  }
   const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: 'default', data: { url: msg.url } }))),
   });
   const json = await res.json().catch(() => null);
+  // Visible in Edge Functions > send-push > Logs: what Expo answered, and later what Apple answered.
+  console.log('tickets', userId, JSON.stringify(json));
+  const ids = (json?.data ?? []).map((r: Row) => r?.id).filter(Boolean);
+  if (ids.length) {
+    // Apple's answer only exists a few seconds later, so it is fetched after the reply has been sent.
+    (globalThis as any).EdgeRuntime?.waitUntil(
+      (async () => {
+        await new Promise((r) => setTimeout(r, 15000));
+        const rr = await fetch('https://exp.host/--/api/v2/push/getReceipts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ ids }),
+        });
+        console.log('receipts', JSON.stringify(await rr.json().catch(() => null)));
+      })(),
+    );
+  }
   // Forget phones that no longer have the app.
   const dead = (json?.data ?? [])
     .map((r: Row, i: number) => (r?.details?.error === 'DeviceNotRegistered' ? tokens[i].token : null))
