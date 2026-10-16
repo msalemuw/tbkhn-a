@@ -42,30 +42,64 @@ export async function placeName(at: LatLng): Promise<string | null> {
   }
 }
 
-/** The area name (bold line) and "street, city" (second line) for a point; both empty when the geocoder has nothing. */
-export async function placeDetails(at: LatLng): Promise<{ area: string; line2: string }> {
+/** The area name (bold line) and "street, city" (second line) for a point; both empty when the geocoder has nothing. `country` is the ISO code ("EG"). */
+export async function placeDetails(at: LatLng): Promise<{ area: string; line2: string; country: string }> {
   try {
     const [r] = await Location.reverseGeocodeAsync({ latitude: at.lat, longitude: at.lng });
-    if (!r) return { area: '', line2: '' };
+    if (!r) return { area: '', line2: '', country: '' };
     const area = r.district || r.subregion || r.city || r.street || r.name || '';
     const line2 = [r.street && r.street !== area ? r.street : null, r.city && r.city !== area ? r.city : r.region && r.region !== area ? r.region : null].filter(Boolean).join(', ');
-    return { area, line2 };
+    return { area, line2, country: r.isoCountryCode ?? '' };
   } catch {
-    return { area: '', line2: '' };
+    return { area: '', line2: '', country: '' };
   }
 }
 
-/** Places matching what the member typed ("Zamalek", "Road 9 Maadi"), as points with a short name. */
-export async function searchPlaces(text: string): Promise<(LatLng & { name: string; line2: string })[]> {
+export type PlaceHit = { name: string; line2: string; id?: string; lat?: number; lng?: number };
+
+/** A random id that groups one typing-and-picking run, so the places service bills it as one session. */
+export function newSearchSession(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/**
+ * Places matching what the member typed ("Zamalek", "Lebanon Square"), Egypt only, closest to `near` first.
+ * Uses Google Places through the `places` function; if that is not reachable, falls back to the phone's own lookup.
+ */
+export async function searchPlaces(text: string, near: LatLng | null, session: string): Promise<PlaceHit[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('places', { body: { action: 'search', q: text, lat: near?.lat, lng: near?.lng, session } });
+    if (!error && Array.isArray(data?.hits)) return data.hits as PlaceHit[];
+  } catch {
+    // fall through to the phone's lookup
+  }
+  return searchPlacesOnPhone(text);
+}
+
+/** The point of a chosen suggestion (suggestions from the places service only carry an id until picked). */
+export async function resolvePlace(hit: PlaceHit, session: string): Promise<LatLng | null> {
+  if (hit.lat != null && hit.lng != null) return { lat: hit.lat, lng: hit.lng };
+  if (!hit.id) return null;
+  try {
+    const { data, error } = await supabase.functions.invoke('places', { body: { action: 'pick', id: hit.id, session } });
+    if (!error && Number.isFinite(data?.lat) && Number.isFinite(data?.lng)) return { lat: data.lat, lng: data.lng };
+  } catch {
+    // no point
+  }
+  return null;
+}
+
+/** The phone's own lookup: few suggestions, but needs no service. Egypt only: tabkheen A is pickup in Egypt. */
+async function searchPlacesOnPhone(text: string): Promise<PlaceHit[]> {
   try {
     const found = await Location.geocodeAsync(`${text}, Egypt`);
-    const top = found.slice(0, 5);
-    return await Promise.all(
-      top.map(async (f) => {
+    const named = await Promise.all(
+      found.slice(0, 8).map(async (f) => {
         const d = await placeDetails({ lat: f.latitude, lng: f.longitude });
-        return { lat: f.latitude, lng: f.longitude, name: d.area || text, line2: d.line2 };
+        return { lat: f.latitude, lng: f.longitude, name: d.area || text, line2: d.line2, country: d.country };
       }),
     );
+    return named.filter((h) => h.country === 'EG').slice(0, 5);
   } catch {
     return [];
   }
