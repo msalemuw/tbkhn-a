@@ -42,30 +42,30 @@ export async function placeName(at: LatLng): Promise<string | null> {
   }
 }
 
-/** The area name (bold line) and "street, city" (second line) for a point; both empty when the geocoder has nothing. */
-export async function placeDetails(at: LatLng): Promise<{ area: string; line2: string }> {
+/** The area name (bold line) and "street, city" (second line) for a point; both empty when the geocoder has nothing. `country` is the ISO code ("EG"). */
+export async function placeDetails(at: LatLng): Promise<{ area: string; line2: string; country: string }> {
   try {
     const [r] = await Location.reverseGeocodeAsync({ latitude: at.lat, longitude: at.lng });
-    if (!r) return { area: '', line2: '' };
+    if (!r) return { area: '', line2: '', country: '' };
     const area = r.district || r.subregion || r.city || r.street || r.name || '';
     const line2 = [r.street && r.street !== area ? r.street : null, r.city && r.city !== area ? r.city : r.region && r.region !== area ? r.region : null].filter(Boolean).join(', ');
-    return { area, line2 };
+    return { area, line2, country: r.isoCountryCode ?? '' };
   } catch {
-    return { area: '', line2: '' };
+    return { area: '', line2: '', country: '' };
   }
 }
 
-/** Places matching what the member typed ("Zamalek", "Road 9 Maadi"), as points with a short name. */
+/** Places matching what the member typed ("Zamalek", "Road 9 Maadi"), as points with a short name. Egypt only: tabkheen A is pickup in Egypt. */
 export async function searchPlaces(text: string): Promise<(LatLng & { name: string; line2: string })[]> {
   try {
     const found = await Location.geocodeAsync(`${text}, Egypt`);
-    const top = found.slice(0, 5);
-    return await Promise.all(
-      top.map(async (f) => {
+    const named = await Promise.all(
+      found.slice(0, 8).map(async (f) => {
         const d = await placeDetails({ lat: f.latitude, lng: f.longitude });
-        return { lat: f.latitude, lng: f.longitude, name: d.area || text, line2: d.line2 };
+        return { lat: f.latitude, lng: f.longitude, name: d.area || text, line2: d.line2, country: d.country };
       }),
     );
+    return named.filter((h) => h.country === 'EG').slice(0, 5);
   } catch {
     return [];
   }
