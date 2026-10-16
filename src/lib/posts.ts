@@ -111,6 +111,12 @@ export async function addPickupPoint(userId: string, label: string, lat: number,
   return data;
 }
 
+/** The cook gives the pickup spot a name buyers understand ("Building 5, front gate"). Live dishes at that spot show it too. */
+export async function renamePickupPoint(id: string, label: string): Promise<void> {
+  const { error } = await supabase.from('pickup_points').update({ label }).eq('id', id);
+  if (error) throw error;
+}
+
 // The map picker saves a new pickup point and goes back; the post form then selects it.
 let justAdded: string | null = null;
 export function rememberPickupPoint(id: string) {
