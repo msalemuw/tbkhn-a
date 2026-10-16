@@ -20,17 +20,35 @@ export function StoriesRow({
   onOpen: (authorId: string) => void;
   onAdd: () => void;
 }) {
+  const mine = groups.find((g) => g.author.id === me);
+  const others = groups.filter((g) => g.author.id !== me);
+  const mineUnseen = mine?.items.some((i) => !seen.includes(i.id));
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-      <Pressable style={styles.item} onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add a story">
-        <View style={[styles.ring, styles.addRing]}>
-          <MaterialIcons name="add" size={28} color={colors.teal} />
+      {mine ? (
+        <View style={styles.item}>
+          <Pressable onPress={() => onOpen(mine.author.id)} accessibilityRole="button" accessibilityLabel="Your story">
+            <View style={[styles.ring, mineUnseen ? styles.unseen : styles.seen]}>
+              <View style={styles.inner}>
+                <Avatar person={mine.author} size={52} />
+              </View>
+            </View>
+          </Pressable>
+          <Pressable style={styles.plus} onPress={onAdd} hitSlop={6} accessibilityRole="button" accessibilityLabel="Add a story">
+            <MaterialIcons name="add" size={14} color={colors.navy} />
+          </Pressable>
+          <Text style={styles.name} numberOfLines={1}>Your story</Text>
         </View>
-        <Text style={styles.name}>Add</Text>
-      </Pressable>
-      {groups.map((g) => {
+      ) : (
+        <Pressable style={styles.item} onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add a story">
+          <View style={[styles.ring, styles.addRing]}>
+            <MaterialIcons name="add" size={28} color={colors.teal} />
+          </View>
+          <Text style={styles.name}>Add</Text>
+        </Pressable>
+      )}
+      {others.map((g) => {
         const unseen = g.items.some((i) => !seen.includes(i.id));
-        const own = g.author.id === me;
         return (
           <Pressable key={g.author.id} style={styles.item} onPress={() => onOpen(g.author.id)} accessibilityRole="button" accessibilityLabel={`${personName(g.author)}'s story`}>
             <View style={[styles.ring, unseen ? styles.unseen : styles.seen]}>
@@ -38,7 +56,7 @@ export function StoriesRow({
                 <Avatar person={g.author} size={52} />
               </View>
             </View>
-            <Text style={styles.name} numberOfLines={1}>{own ? 'Your story' : personName(g.author).split(' ')[0]}</Text>
+            <Text style={styles.name} numberOfLines={1}>{personName(g.author).split(' ')[0]}</Text>
           </Pressable>
         );
       })}
@@ -54,5 +72,6 @@ const styles = StyleSheet.create({
   unseen: { borderColor: colors.yellow },
   seen: { borderColor: 'rgba(255,255,255,.35)' },
   inner: { borderRadius: 27, overflow: 'hidden' },
+  plus: { position: 'absolute', top: 42, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.navy },
   name: { fontFamily: fonts.bold, fontSize: 11, color: colors.white, maxWidth: 66, textAlign: 'center' },
 });

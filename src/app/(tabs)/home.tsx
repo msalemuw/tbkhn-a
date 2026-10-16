@@ -92,12 +92,13 @@ export default function Home() {
 
   const all = !watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id)));
   const shown = useMemo(() => {
-    if (!watching) return posts;
+    if (!watching) return posts.filter((p) => p.author_id !== me);
+    // Home is for other cooks' posts; the member's own live on their Profile.
     const list = posts.filter(
       (p) =>
-        p.author_id === me ||
-        (p.community_ids.length ? p.community_ids.some((c) => watching.communities.includes(c)) : watching.nearby) ||
-        (watching.following && following.includes(p.author_id)),
+        p.author_id !== me &&
+        ((p.community_ids.length ? p.community_ids.some((c) => watching.communities.includes(c)) : watching.nearby) ||
+          (watching.following && following.includes(p.author_id))),
     );
     // Nearby: public posts come after the community and followed posts, closest cooks first, farther ones at the end.
     // Posts with no known pickup spot (or no known location for me) go last, so no public post is ever lost.

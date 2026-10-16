@@ -34,7 +34,7 @@ export function PostCard({
   const [open, setOpen] = useState(false);
   const photo = mediaUrl(post.media_path);
   const dist = here && post.spot ? fmtDist(distanceMeters(here, post.spot)) : null;
-  const meta = ['Signature dish', dist ? `${dist} away` : fmtAgo(Date.parse(post.created_at))].join(' · ');
+  const meta = ['Signature dish', dist ? `Pickup ${dist} away` : fmtAgo(Date.parse(post.created_at))].join(' · ');
   const long = (post.caption?.length ?? 0) > 90;
 
   return (
@@ -44,10 +44,10 @@ export function PostCard({
           <Avatar person={post.author} size={42} />
         </Pressable>
         <View style={styles.nameCol}>
-          <View style={styles.nameRow}>
+          <Pressable style={styles.nameRow} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: post.author_id } })} accessibilityRole="link" accessibilityLabel={`${personName(post.author)}'s profile`}>
             <Text style={styles.name} numberOfLines={1}>{personName(post.author)}</Text>
             <VerifiedTick id={post.author_id} size={16} />
-          </View>
+          </Pressable>
           {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
           <Text style={styles.meta} numberOfLines={1}>
             {post.rating != null ? `★ ${post.rating.toFixed(1)} · ` : ''}
