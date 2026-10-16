@@ -33,6 +33,9 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
     case 'payment_sent': return { title: `${who} sent the InstaPay payment`, body: `${dish} · confirm it arrived`, url };
     case 'payment_received': return { title: `${who} confirmed your payment`, body: dish, url };
     case 'cooking_today': return { title: `${who} added to today’s menu`, body: dish, url: p.post_id ? `/dish/${p.post_id}` : '/inbox' };
+    case 'post_liked': return { title: `${who} liked your post`, body: p.dish, url: p.post_id ? `/dish/${p.post_id}` : p.profile_id ? `/cook/${p.profile_id}` : '/inbox' };
+    case 'post_commented': return { title: `${who} commented on your post`, body: p.text, url: p.post_id ? `/dish/${p.post_id}` : p.profile_id ? `/cook/${p.profile_id}` : '/inbox' };
+    case 'new_follower': return { title: `${who} started following you`, url: p.profile_id ? `/cook/${p.profile_id}` : '/inbox' };
     default: return { title: 'Update from tabkheen A', url };
   }
 }

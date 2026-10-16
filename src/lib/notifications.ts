@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; from?: string; dish?: string; plates?: number };
+  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string };
   created_at: string;
   read_at: string | null;
 };
@@ -53,7 +53,21 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: `${who} confirmed your payment`, sub: dish, icon: 'payments' };
     case 'cooking_today':
       return { title: `${who} added to today’s menu`, sub: dish, icon: 'soup-kitchen' };
+    case 'post_liked':
+      return { title: `${who} liked your post`, sub: n.payload.dish, icon: 'favorite' };
+    case 'post_commented':
+      return { title: `${who} commented on your post`, sub: n.payload.text, icon: 'chat-bubble' };
+    case 'new_follower':
+      return { title: `${who} started following you`, icon: 'person-add' };
     default:
       return { title: 'Update from tabkheen A', icon: 'notifications' };
   }
+}
+
+/** Where tapping a notification goes: the order, the dish page, or the person's profile. */
+export function notificationPath(n: Notification): string {
+  if (n.payload.reservation_id) return `/order/${n.payload.reservation_id}`;
+  if (n.payload.post_id) return `/dish/${n.payload.post_id}`;
+  if (n.payload.profile_id) return `/cook/${n.payload.profile_id}`;
+  return '/inbox';
 }
