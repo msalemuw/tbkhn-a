@@ -1,5 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, fonts } from '@/constants/theme';
@@ -24,7 +25,13 @@ export function DishCard({ dish, here, onPress }: { dish: Dish; here: LatLng | n
       )}
       <View style={{ flex: 1, gap: 3 }}>
         <Text style={styles.cook} numberOfLines={1}>
-          {personName(dish.author)}
+          <Text
+            onPress={() => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } })}
+            accessibilityRole="link"
+            accessibilityLabel={`${personName(dish.author)}'s profile`}
+          >
+            {personName(dish.author)}
+          </Text>
           {dist ? <Text style={styles.muted}> · {dist}</Text> : null}
         </Text>
         <Text style={styles.dish} numberOfLines={2}>{dish.dish_name}</Text>

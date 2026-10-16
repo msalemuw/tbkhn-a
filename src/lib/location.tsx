@@ -40,11 +40,18 @@ let lastReport = 0;
 export async function reportMyPosition(): Promise<LatLng | null> {
   const pos = await getMyLocation();
   if (pos && Date.now() - lastReport > 120_000) {
-    lastReport = Date.now();
-    supabase.auth.getSession().then(({ data }) => {
-      const id = data.session?.user.id;
-      if (id) supabase.from('profiles').update({ last_lat: pos.lat, last_lng: pos.lng }).eq('id', id).then(() => {}, () => {});
-    });
+    const { data } = await supabase.auth.getSession();
+    const id = data.session?.user.id;
+    if (id) {
+      lastReport = Date.now();
+      // report_position stamps "when" on every call, so a phone that has not moved still counts as live.
+      const { error } = await supabase.rpc('report_position', { p_lat: pos.lat, p_lng: pos.lng });
+      if (error) {
+        // Older database without report_position: plain update (stamps only when the point changed).
+        const { error: e2 } = await supabase.from('profiles').update({ last_lat: pos.lat, last_lng: pos.lng }).eq('id', id);
+        if (e2) lastReport = 0;
+      }
+    }
   }
   return pos;
 }
