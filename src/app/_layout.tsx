@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { LiveAlerts } from '@/components/live-alerts';
+import { PositionReporter } from '@/components/position-reporter';
 import { PushSetup } from '@/components/push-setup';
 import { colors } from '@/constants/theme';
 import { applyUpdateNow } from '@/lib/auto-update';
@@ -93,6 +94,7 @@ export default function RootLayout() {
       </Stack>
       <LiveAlerts />
       <PushSetup />
+      <PositionReporter />
       </LocationProvider>
     </SessionProvider>
   );

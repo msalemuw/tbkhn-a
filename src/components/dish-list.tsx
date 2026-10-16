@@ -38,7 +38,9 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
     if (!supabaseConfigured) return setLoading(false);
     setLoading(true);
     try {
-      setDishes(await fetchTodaysDishes());
+      // Your own dishes live on your profile ("Today's menu" tab); this list is what other members offer.
+      const me = session?.user.id;
+      setDishes((await fetchTodaysDishes()).filter((d) => d.author_id !== me));
       if (session) setMine(await fetchMyCommunities(session.user.id));
       setFailed(false);
     } catch {
