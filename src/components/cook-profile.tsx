@@ -176,9 +176,9 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
               {posts.map((p) => {
                 const uri = mediaUrl(p.media_path);
                 return (
-                  <View key={p.id} style={styles.cell}>
-                    {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel={p.caption ?? 'Signature dish'} /> : <Text style={styles.cellText} numberOfLines={5}>{p.caption}</Text>}
-                  </View>
+                  <Pressable key={p.id} style={styles.cell} onPress={() => router.push({ pathname: '/post/[id]', params: { id: p.id } })} accessibilityRole="button" accessibilityLabel={p.caption ?? 'Signature dish'}>
+                    {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Text style={styles.cellText} numberOfLines={5}>{p.caption}</Text>}
+                  </Pressable>
                 );
               })}
             </View>
