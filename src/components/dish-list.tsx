@@ -87,7 +87,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
                 on: (communities ?? mine.map((m) => m.id)).includes(c.id),
                 onPress: () => setCommunities(toggleIn(communities, mine.map((m) => m.id), c.id)),
               })),
-              { key: 'others', icon: 'public' as const, label: 'Other communities', on: others, onPress: () => setOthers(!others) },
+              { key: 'others', icon: 'near-me' as const, label: 'Nearby', on: others, onPress: () => setOthers(!others) },
             ],
           },
         ]
