@@ -55,9 +55,9 @@ export async function registerForPush(): Promise<void> {
   try {
     if (!wired) {
       wired = true;
-      // The in-app banner covers the app being open, so the system shows nothing in the foreground.
+      // While the app is open the in-app banner (LiveAlerts) shows the alert, so the system only adds the sound.
       N.setNotificationHandler({
-        handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: false, shouldPlaySound: false, shouldSetBadge: false }),
+        handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: false, shouldPlaySound: true, shouldSetBadge: false }),
       });
       N.addNotificationResponseReceivedListener((r) => {
         try {
