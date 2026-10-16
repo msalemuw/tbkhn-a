@@ -83,6 +83,7 @@ export default function RootLayout() {
         <Stack.Screen name="location" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pickup-map" options={{ presentation: 'modal' }} />
         <Stack.Screen name="cook/[id]" />
+        <Stack.Screen name="post/[id]" />
         <Stack.Screen name="community/[id]" />
         <Stack.Screen name="community-today/[id]" />
         <Stack.Screen name="people/[id]" />

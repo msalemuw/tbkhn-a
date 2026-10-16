@@ -80,6 +80,16 @@ export async function fetchFeed(me: string | null): Promise<FeedPost[]> {
 }
 
 /** Live distance in metres (rounded up to whole km by the server) from `from` to each person with a recent position. */
+/** One signature post with its counts and whether the member liked it (the post screen). Null when it no longer exists. */
+export async function fetchPost(me: string | null, id: string): Promise<FeedPost | null> {
+  const { data, error } = await supabase.from('posts').select(POST_SELECT).eq('id', id).eq('kind', 'signature').maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const r = data as unknown as Row;
+  const mine = me ? await supabase.from('likes').select('post_id').eq('user_id', me).eq('post_id', id).maybeSingle() : null;
+  return { ...r, likes: r.likes?.[0]?.count ?? 0, comments: r.comments?.[0]?.count ?? 0, liked: !!mine?.data, rating: null, cookingDishId: null, spot: null };
+}
+
 export async function fetchLiveDistances(ids: string[], from: LatLng): Promise<Map<string, number>> {
   const out = new Map<string, number>();
   if (!ids.length) return out;
