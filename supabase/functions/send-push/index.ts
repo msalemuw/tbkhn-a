@@ -38,7 +38,8 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
 }
 
 async function send(userId: string, msg: { title: string; body?: string; url: string }) {
-  const { data: tokens } = await admin.from('push_tokens').select('token').eq('user_id', userId);
+  const { data: tokens, error } = await admin.from('push_tokens').select('token').eq('user_id', userId);
+  if (error) console.log('could not read push_tokens:', JSON.stringify(error));
   if (!tokens?.length) {
     console.log('no phone registered for', userId);
     return;
