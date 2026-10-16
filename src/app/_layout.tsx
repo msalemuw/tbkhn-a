@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 
 import { LiveAlerts } from '@/components/live-alerts';
 import { PushSetup } from '@/components/push-setup';
@@ -14,6 +15,25 @@ import { LocationProvider } from '@/lib/location';
 import { SessionProvider } from '@/lib/session';
 
 SplashScreen.preventAutoHideAsync();
+
+// Safety net: an unexpected error shows its message once instead of silently closing the app, so it can be reported and fixed.
+let reported = false;
+if (!__DEV__) {
+  try {
+    ErrorUtils.setGlobalHandler((error, isFatal) => {
+      if (reported) return;
+      reported = true;
+      const text = `${isFatal ? 'FATAL ' : ''}${error?.name ?? 'Error'}: ${error?.message ?? String(error)}\n${(error?.stack ?? '').split('\n').slice(0, 6).join('\n')}`;
+      try {
+        Alert.alert('Something went wrong', text.slice(0, 900));
+      } catch {
+        // nothing more to do
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
