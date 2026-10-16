@@ -6,8 +6,8 @@ import MapView, { type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
-import { distanceMeters, type LatLng } from '@/lib/format';
-import { getMyLocation, placeDetails, searchPlaces, usePlace } from '@/lib/location';
+import { distanceMeters } from '@/lib/format';
+import { getMyLocation, newSearchSession, type PlaceHit, placeDetails, resolvePlace, searchPlaces, usePlace } from '@/lib/location';
 import { addPickupPoint, fetchMyPickupPoints, rememberPickupPoint, renamePickupPoint } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
@@ -19,8 +19,6 @@ import { useSession } from '@/lib/session';
 // home location, and Confirm saves it under the area name (reusing a saved spot within 25 m); home stays as it is.
 const CAIRO = { latitude: 30.0444, longitude: 31.2357 };
 const DELTA = 0.01;
-
-type Hit = LatLng & { name: string; line2: string };
 
 export default function LocationPicker() {
   const { place, setPlace } = usePlace();
@@ -40,8 +38,15 @@ export default function LocationPicker() {
   const [text, setText] = useState('');
   // Pickup mode: the cook names the spot buyers will see. Re-picking a saved spot starts from its current name.
   const [spotName, setSpotName] = useState('');
-  const [found, setFound] = useState<{ q: string; list: Hit[] } | null>(null);
+  const [found, setFound] = useState<{ q: string; list: PlaceHit[] } | null>(null);
+  const searchSession = useRef(newSearchSession());
+  const centerRef = useRef(start);
   const [lift] = useState(() => new Animated.Value(0));
+
+  // The search favours places near the pin; it reads the pin through a ref so typing isn't restarted when the map moves.
+  useEffect(() => {
+    centerRef.current = center;
+  }, [center]);
 
   // Name the spot under the pin once the map stops moving.
   useEffect(() => {
@@ -82,7 +87,8 @@ export default function LocationPicker() {
     if (q.length < 3) return;
     let live = true;
     const t = setTimeout(() => {
-      searchPlaces(q).then((list) => live && setFound({ q, list }));
+      const c = centerRef.current;
+      searchPlaces(q, { lat: c.latitude, lng: c.longitude }, searchSession.current).then((list) => live && setFound({ q, list }));
     }, 450);
     return () => {
       live = false;
@@ -105,10 +111,16 @@ export default function LocationPicker() {
     map.current?.animateToRegion({ latitude: gps.lat, longitude: gps.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
   }
 
-  function pick(h: Hit) {
+  async function pick(h: PlaceHit) {
     Keyboard.dismiss();
+    const at = await resolvePlace(h, searchSession.current);
+    searchSession.current = newSearchSession();
+    if (!at) {
+      Alert.alert('Couldn’t open that place', 'Try another suggestion, or move the map to the spot.');
+      return;
+    }
     setText('');
-    map.current?.animateToRegion({ latitude: h.lat, longitude: h.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
+    map.current?.animateToRegion({ latitude: at.lat, longitude: at.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
     setSearchOpen(false);
   }
 
@@ -205,7 +217,7 @@ export default function LocationPicker() {
           <View style={styles.hits}>
             {hits.length ? (
               hits.map((h, i) => (
-                <Pressable key={`${h.lat},${h.lng},${i}`} style={styles.hit} onPress={() => pick(h)} accessibilityRole="button">
+                <Pressable key={`${h.id ?? `${h.lat},${h.lng}`},${i}`} style={styles.hit} onPress={() => pick(h)} accessibilityRole="button">
                   <MaterialIcons name="place" size={20} color={colors.ink} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.hitName} numberOfLines={1}>{h.name}</Text>

@@ -55,8 +55,42 @@ export async function placeDetails(at: LatLng): Promise<{ area: string; line2: s
   }
 }
 
-/** Places matching what the member typed ("Zamalek", "Road 9 Maadi"), as points with a short name. Egypt only: tabkheen A is pickup in Egypt. */
-export async function searchPlaces(text: string): Promise<(LatLng & { name: string; line2: string })[]> {
+export type PlaceHit = { name: string; line2: string; id?: string; lat?: number; lng?: number };
+
+/** A random id that groups one typing-and-picking run, so the places service bills it as one session. */
+export function newSearchSession(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/**
+ * Places matching what the member typed ("Zamalek", "Lebanon Square"), Egypt only, closest to `near` first.
+ * Uses Google Places through the `places` function; if that is not reachable, falls back to the phone's own lookup.
+ */
+export async function searchPlaces(text: string, near: LatLng | null, session: string): Promise<PlaceHit[]> {
+  try {
+    const { data, error } = await supabase.functions.invoke('places', { body: { action: 'search', q: text, lat: near?.lat, lng: near?.lng, session } });
+    if (!error && Array.isArray(data?.hits)) return data.hits as PlaceHit[];
+  } catch {
+    // fall through to the phone's lookup
+  }
+  return searchPlacesOnPhone(text);
+}
+
+/** The point of a chosen suggestion (suggestions from the places service only carry an id until picked). */
+export async function resolvePlace(hit: PlaceHit, session: string): Promise<LatLng | null> {
+  if (hit.lat != null && hit.lng != null) return { lat: hit.lat, lng: hit.lng };
+  if (!hit.id) return null;
+  try {
+    const { data, error } = await supabase.functions.invoke('places', { body: { action: 'pick', id: hit.id, session } });
+    if (!error && Number.isFinite(data?.lat) && Number.isFinite(data?.lng)) return { lat: data.lat, lng: data.lng };
+  } catch {
+    // no point
+  }
+  return null;
+}
+
+/** The phone's own lookup: few suggestions, but needs no service. Egypt only: tabkheen A is pickup in Egypt. */
+async function searchPlacesOnPhone(text: string): Promise<PlaceHit[]> {
   try {
     const found = await Location.geocodeAsync(`${text}, Egypt`);
     const named = await Promise.all(
