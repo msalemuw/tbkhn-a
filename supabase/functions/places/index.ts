@@ -11,6 +11,25 @@ const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE
 const KEY = Deno.env.get('GOOGLE_PLACES_KEY');
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
+// Daily caps (UTC day) on paid Google requests, per member and for everyone together. Over the cap the app falls
+// back to the phone's own lookup. Raise these when real traffic needs it; at 800 searches a day a month stays near
+// Google's free 10,000 plus a few dollars.
+const CAPS = { search: { perMember: 150, total: 800 }, pick: { perMember: 100, total: 800 } };
+
+async function underCap(uid: string, kind: 'search' | 'pick') {
+  const { data, error } = await admin.rpc('places_allow', {
+    p_uid: uid,
+    p_kind: kind,
+    p_user_cap: CAPS[kind].perMember,
+    p_total_cap: CAPS[kind].total,
+  });
+  if (error) {
+    console.log('places_allow failed', JSON.stringify(error));
+    return false; // if the counter is unreachable, do not spend
+  }
+  return data === true;
+}
+
 function reply(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }
@@ -30,6 +49,7 @@ Deno.serve(async (req) => {
     if (body.action === 'search') {
       const q = String(body.q ?? '').trim().slice(0, 120);
       if (q.length < 2) return reply({ hits: [] });
+      if (!(await underCap(auth.user.id, 'search'))) return reply({ error: 'daily limit reached' }, 429);
       const payload: Record<string, unknown> = { input: q, includedRegionCodes: ['eg'], languageCode: 'en' };
       if (session) payload.sessionToken = session;
       if (Number.isFinite(body.lat) && Number.isFinite(body.lng)) {
@@ -60,6 +80,7 @@ Deno.serve(async (req) => {
     if (body.action === 'pick') {
       const id = String(body.id ?? '');
       if (!/^[\w-]{10,200}$/.test(id)) return reply({ error: 'bad id' }, 400);
+      if (!(await underCap(auth.user.id, 'pick'))) return reply({ error: 'daily limit reached' }, 429);
       const url = new URL(`https://places.googleapis.com/v1/places/${id}`);
       if (session) url.searchParams.set('sessionToken', session);
       const res = await fetch(url, { headers: { 'X-Goog-Api-Key': KEY, 'X-Goog-FieldMask': 'location' } });
