@@ -1,3 +1,4 @@
+import { requireOptionalNativeModule } from 'expo';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { router } from 'expo-router';
@@ -10,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 type Notifications = typeof import('expo-notifications');
 
 function load(): Notifications | null {
+  // A failed require() reports a fatal error to the app even inside try/catch, so the native part is checked first.
+  if (!requireOptionalNativeModule('ExpoPushTokenManager')) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('expo-notifications') as Notifications;
