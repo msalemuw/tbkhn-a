@@ -12,10 +12,10 @@ import { type Badge, fetchBadges } from '@/lib/rankings';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts } from '@/constants/theme';
-import { deletePost, type FeedPost, fetchFeed, fetchFollowing, reportPost, setLiked } from '@/lib/feed';
+import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked } from '@/lib/feed';
 import { distanceMeters } from '@/lib/format';
 import { useDataVersion } from '@/lib/live';
-import { useMyLocation, usePlace } from '@/lib/location';
+import { reportMyPosition, useMyLocation, usePlace } from '@/lib/location';
 import { unreadMessageCount } from '@/lib/chat';
 import { unreadNotificationCount } from '@/lib/notifications';
 import { fetchMyCommunities, type MyCommunity, personName } from '@/lib/posts';
@@ -41,6 +41,7 @@ export default function Home() {
   const [watching, setWatching] = useState<Watching | null>(null);
   const [watchOpen, setWatchOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [meters, setMeters] = useState<Map<string, number>>(new Map());
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -60,6 +61,10 @@ export default function Home() {
       setPosts(feed);
       // Rank badges are a nicety: the feed shows without them if they fail to load.
       fetchBadges(feed.map((p) => p.author_id)).then(setBadges, () => {});
+      // Live distance to each cook: my GPS now against their last known position. A nicety too.
+      reportMyPosition()
+        .then((pos) => (pos ? fetchLiveDistances(feed.map((p) => p.author_id), pos) : new Map<string, number>()))
+        .then(setMeters, () => {});
       setStories(groups);
       setSeen(seenIds);
       setMine(communities);
@@ -92,20 +97,21 @@ export default function Home() {
 
   const all = !watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id)));
   const shown = useMemo(() => {
-    if (!watching) return posts;
+    if (!watching) return posts.filter((p) => p.author_id !== me);
+    // Home is for other cooks' posts; the member's own live on their Profile.
     const list = posts.filter(
       (p) =>
-        p.author_id === me ||
-        (p.community_ids.length ? p.community_ids.some((c) => watching.communities.includes(c)) : watching.nearby) ||
-        (watching.following && following.includes(p.author_id)),
+        p.author_id !== me &&
+        ((p.community_ids.length ? p.community_ids.some((c) => watching.communities.includes(c)) : watching.nearby) ||
+          (watching.following && following.includes(p.author_id))),
     );
     // Nearby: public posts come after the community and followed posts, closest cooks first, farther ones at the end.
     // Posts with no known pickup spot (or no known location for me) go last, so no public post is ever lost.
     if (!watching.nearby || !here) return list;
     const isPublic = (p: FeedPost) => !p.community_ids.length && p.author_id !== me && !(watching.following && following.includes(p.author_id));
-    const dist = (p: FeedPost) => (p.spot ? distanceMeters(here, p.spot) : Infinity);
+    const dist = (p: FeedPost) => meters.get(p.author_id) ?? (p.spot ? distanceMeters(here, p.spot) : Infinity);
     return [...list.filter((p) => !isPublic(p)), ...list.filter(isPublic).sort((a, b) => dist(a) - dist(b))];
-  }, [posts, watching, following, me, here]);
+  }, [posts, watching, following, me, here, meters]);
 
   const patch = (id: string, f: (p: FeedPost) => FeedPost) => setPosts((list) => list.map((p) => (p.id === id ? f(p) : p)));
 
@@ -177,7 +183,7 @@ export default function Home() {
           <PostCard
             post={item}
             badges={badges.get(item.author_id)}
-            here={here}
+            meters={meters.get(item.author_id) ?? null}
             onLike={() => onLike(item)}
             onComments={() => setCommentsFor(item.id)}
             onShare={() => onShare(item)}

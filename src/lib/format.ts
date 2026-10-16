@@ -55,6 +55,11 @@ export function fmtDist(meters: number): string {
   return `${(meters / 1000).toFixed(1)} km`;
 }
 
+/** A live distance between two members, already rounded up to whole km by the server: "Less than 1 km away", "52 km away". */
+export function fmtLive(meters: number): string {
+  return meters <= 1000 ? 'Less than 1 km away' : `${Math.round(meters / 1000)} km away`;
+}
+
 /** Cook-level distance: the nearest of the cook's active pickup points. */
 export function nearestDistance(user: LatLng, pickupPoints: LatLng[]): number | null {
   if (pickupPoints.length === 0) return null;
