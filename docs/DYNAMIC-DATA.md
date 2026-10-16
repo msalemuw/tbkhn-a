@@ -22,6 +22,7 @@ Rules:
 | What the UI shows | Source of truth | Format |
 | --- | --- | --- |
 | "1.2 km away" on posts, Menu offers, search, cook cards | haversine between the **user's current location** (GPS, or the area chosen in "Choose your location") and the **cook's pickup point** for that post | `< 950 m` → nearest 50 m (`350 m`) · else one decimal km (`1.2 km`) |
+| Home feed posts (signature dishes) | **live** distance between the member and the cook: the member's GPS now vs the cook's last known position (`profiles.last_lat/last_lng`, refreshed when they open the app). Computed by `people_distance()` on the server, rounded **up to whole km**, only for positions under 2 days old; coordinates are never exposed | `Less than 1 km away` · `52 km away` · no distance (shows time ago) when either position is unknown |
 | Cook-level distance (feed header) | **nearest** of the cook's active pickup points | same |
 | Own posts | no distance shown | — |
 

@@ -31,6 +31,24 @@ export async function getMyLocation(): Promise<LatLng | null> {
   }
 }
 
+let lastReport = 0;
+
+/**
+ * The member's current GPS position, also saved as their last known position (at most every 2 minutes) so other
+ * members' feeds can show a live distance. Null when permission is denied or the position is unavailable.
+ */
+export async function reportMyPosition(): Promise<LatLng | null> {
+  const pos = await getMyLocation();
+  if (pos && Date.now() - lastReport > 120_000) {
+    lastReport = Date.now();
+    supabase.auth.getSession().then(({ data }) => {
+      const id = data.session?.user.id;
+      if (id) supabase.from('profiles').update({ last_lat: pos.lat, last_lng: pos.lng }).eq('id', id).then(() => {}, () => {});
+    });
+  }
+  return pos;
+}
+
 /** A short place name for a point ("Sheikh Zayed"), or null when the geocoder has none. */
 export async function placeName(at: LatLng): Promise<string | null> {
   try {

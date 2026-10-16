@@ -79,6 +79,16 @@ export async function fetchFeed(me: string | null): Promise<FeedPost[]> {
   });
 }
 
+/** Live distance in metres (rounded up to whole km by the server) from `from` to each person with a recent position. */
+export async function fetchLiveDistances(ids: string[], from: LatLng): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (!ids.length) return out;
+  const { data, error } = await supabase.rpc('people_distance', { p_ids: [...new Set(ids)], p_lat: from.lat, p_lng: from.lng });
+  if (error) throw error;
+  for (const r of (data ?? []) as { id: string; meters: number }[]) out.set(r.id, r.meters);
+  return out;
+}
+
 export async function setLiked(me: string, postId: string, liked: boolean): Promise<void> {
   const q = liked
     ? supabase.from('likes').insert({ post_id: postId, user_id: me })

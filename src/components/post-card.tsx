@@ -8,7 +8,7 @@ import { Avatar } from '@/components/avatar';
 import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts } from '@/constants/theme';
 import type { FeedPost } from '@/lib/feed';
-import { distanceMeters, fmtAgo, fmtDist, type LatLng } from '@/lib/format';
+import { fmtAgo, fmtLive } from '@/lib/format';
 import { mediaUrl, personName } from '@/lib/posts';
 import type { Badge } from '@/lib/rankings';
 import { VerifiedTick } from '@/lib/verified';
@@ -17,7 +17,7 @@ import { VerifiedTick } from '@/lib/verified';
 export function PostCard({
   post,
   badges,
-  here,
+  meters,
   onLike,
   onComments,
   onShare,
@@ -25,7 +25,8 @@ export function PostCard({
 }: {
   post: FeedPost;
   badges?: Badge[];
-  here: LatLng | null;
+  /** Live distance to the cook in metres, when both positions are known. */
+  meters: number | null;
   onLike: () => void;
   onComments: () => void;
   onShare: () => void;
@@ -33,8 +34,7 @@ export function PostCard({
 }) {
   const [open, setOpen] = useState(false);
   const photo = mediaUrl(post.media_path);
-  const dist = here && post.spot ? fmtDist(distanceMeters(here, post.spot)) : null;
-  const meta = ['Signature dish', dist ? `Pickup ${dist} away` : fmtAgo(Date.parse(post.created_at))].join(' · ');
+  const meta = ['Signature dish', meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at))].join(' · ');
   const long = (post.caption?.length ?? 0) > 90;
 
   return (
