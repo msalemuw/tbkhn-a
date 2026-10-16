@@ -61,7 +61,10 @@
       "reactCompiler": true
     },
     "ios": {
-      "bundleIdentifier": "com.tabkheen.a"
+      "bundleIdentifier": "com.tabkheen.a",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "extra": {
       "eas": {
