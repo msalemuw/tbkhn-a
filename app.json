@@ -23,7 +23,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/new-order.wav"
+          ]
+        }
+      ],
       [
         "expo-splash-screen",
         {
