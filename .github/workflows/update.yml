@@ -1,4 +1,5 @@
-# Sends every change merged to main to the installed iPhone app over the internet (Expo EAS Update).
+# Sends every change merged to main to the TEST phones (channel "preview") over the internet (Expo EAS Update).
+# Real users get an update only when the owner runs "Promote update" from the Actions tab.
 name: Update the app
 on:
   push:
