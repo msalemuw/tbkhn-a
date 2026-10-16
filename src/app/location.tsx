@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, fonts } from '@/constants/theme';
 import { distanceMeters, type LatLng } from '@/lib/format';
 import { getMyLocation, placeDetails, searchPlaces, usePlace } from '@/lib/location';
-import { addPickupPoint, fetchMyPickupPoints, rememberPickupPoint } from '@/lib/posts';
+import { addPickupPoint, fetchMyPickupPoints, rememberPickupPoint, renamePickupPoint } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
 // Location picker laid out like Talabat's (familiar to everyone): round back arrow and a search pill on top,
@@ -38,6 +38,8 @@ export default function LocationPicker() {
   const [finding, setFinding] = useState(false);
   const [sheetH, setSheetH] = useState(190);
   const [text, setText] = useState('');
+  // Pickup mode: the cook names the spot buyers will see. Re-picking a saved spot starts from its current name.
+  const [spotName, setSpotName] = useState('');
   const [found, setFound] = useState<{ q: string; list: Hit[] } | null>(null);
   const [lift] = useState(() => new Animated.Value(0));
 
@@ -56,6 +58,23 @@ export default function LocationPicker() {
       clearTimeout(t);
     };
   }, [center]);
+
+  // Pickup mode: if the map starts on a saved spot, show its name so the cook can fix it.
+  useEffect(() => {
+    const uid = session?.user.id;
+    if (!pickup || !uid || !at) return;
+    let live = true;
+    fetchMyPickupPoints(uid).then((saved) => {
+      const same = saved.find((p) => distanceMeters({ lat: atLat, lng: atLng }, p) < 25);
+      if (live && same) {
+        setSpotName(same.label);
+      }
+    }, () => null);
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickup, session?.user.id, at]);
 
   // Search suggestions as the member types.
   const q = text.trim();
@@ -101,13 +120,20 @@ export default function LocationPicker() {
     }
     const uid = session?.user.id;
     if (!uid) return;
+    const name = spotName.trim().slice(0, 80);
+    if (name.length < 2) {
+      Alert.alert('Name your pickup spot', 'Type a name buyers will recognise, like “Building 5, front gate”.');
+      return;
+    }
     setSaving(true);
     try {
       const here = { lat: center.latitude, lng: center.longitude };
       const saved = await fetchMyPickupPoints(uid);
       const same = saved.find((p) => distanceMeters(here, p) < 25);
-      if (same) rememberPickupPoint(same.id);
-      else await addPickupPoint(uid, (area || line2 || 'My pickup spot').slice(0, 80), here.lat, here.lng);
+      if (same) {
+        if (same.label !== name) await renamePickupPoint(same.id, name);
+        rememberPickupPoint(same.id);
+      } else await addPickupPoint(uid, name, here.lat, here.lng);
       router.back();
     } catch {
       setSaving(false);
@@ -207,6 +233,17 @@ export default function LocationPicker() {
             {line2 ? <Text style={styles.line2} numberOfLines={1}>{line2}</Text> : null}
           </View>
         </View>
+        {pickup ? (
+          <TextInput
+            style={styles.nameInput}
+            value={spotName}
+            onChangeText={setSpotName}
+            maxLength={80}
+            placeholder="Name this spot, e.g. Building 5, front gate"
+            placeholderTextColor={colors.faint}
+            accessibilityLabel="Pickup spot name"
+          />
+        ) : null}
         <Pressable onPress={saving ? undefined : confirm} style={[styles.confirm, saving && { opacity: 0.6 }]} accessibilityRole="button">
           {saving ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.confirmText}>{pickup ? 'Confirm pickup point' : 'Confirm location'}</Text>}
         </Pressable>
@@ -241,6 +278,7 @@ const styles = StyleSheet.create({
   where: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   area: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   line2: { fontFamily: fonts.medium, fontSize: 13.5, color: colors.muted, marginTop: 2 },
+  nameInput: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.ink, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
   confirm: { backgroundColor: colors.teal, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 12 },
   confirmText: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.navy },
 });

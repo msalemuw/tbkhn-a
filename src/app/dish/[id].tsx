@@ -142,13 +142,19 @@ export default function DishScreen() {
 
           <Text style={styles.section}>PICKUP</Text>
           <View style={styles.box}>
-            <View style={styles.line}>
+            <Pressable
+              style={styles.line}
+              disabled={!pp}
+              onPress={() => pp && router.push({ pathname: '/pickup-map', params: { lat: String(pp.lat), lng: String(pp.lng), label: pp.label } })}
+              accessibilityRole="button"
+              accessibilityLabel="See the pickup spot on the map">
               <MaterialIcons name="location-on" size={19} color={colors.teal} />
               <Text style={styles.lineText}>
                 {pp?.label ?? 'Ask the cook'}
                 {here && pp ? <Text style={styles.muted}> · {fmtDist(distanceMeters(here, pp))} away</Text> : null}
               </Text>
-            </View>
+              {pp ? <Text style={styles.mapLink}>Map</Text> : null}
+            </Pressable>
             <Pressable
               style={styles.line}
               disabled={mine || closed}
@@ -229,6 +235,7 @@ const styles = StyleSheet.create({
   qty: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink, minWidth: 18, textAlign: 'center' },
   box: { backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+  mapLink: { fontFamily: fonts.extraBold, fontSize: 13, color: colors.teal },
   lineText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.ink, lineHeight: 19 },
   noteInput: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 10 },
