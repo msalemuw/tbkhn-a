@@ -35,9 +35,10 @@ export default function EditProfile() {
     let avatarPath: string | undefined;
     try {
       if (photo) avatarPath = await uploadPhoto(session.user.id, photo.uri, photo.mimeType ?? 'image/jpeg');
-    } catch {
+    } catch (e) {
       setBusy(false);
-      setError('We couldn’t upload your photo. Check your connection and try again.');
+      // The reason is shown so a repeated failure can be reported and fixed.
+      setError(`We couldn’t upload your photo (${e instanceof Error ? e.message : 'unknown error'}). Check your connection and try again.`);
       return;
     }
     const { error: saveError } = await supabase
