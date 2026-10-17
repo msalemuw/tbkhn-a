@@ -73,14 +73,29 @@ export function mediaUrl(path: string | null): string | null {
   return path ? supabase.storage.from('media').getPublicUrl(path).data.publicUrl : null;
 }
 
-/** Uploads a picked photo to media/<user id>/..., the only folder the user may write to. */
+/**
+ * Uploads a picked photo to media/<user id>/..., the only folder the user may write to.
+ * Always stored as JPEG, PNG or WebP (an iPhone photo can report "image/heic", which the storage service may refuse).
+ * Retries once on a failure; the thrown error says which step failed so it can be shown and fixed.
+ */
 export async function uploadPhoto(userId: string, uri: string, mimeType = 'image/jpeg'): Promise<string> {
-  const ext = mimeType === 'image/png' ? 'png' : 'jpg';
+  const type = mimeType === 'image/png' || mimeType === 'image/webp' ? mimeType : 'image/jpeg';
+  const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
   const path = `${userId}/${Date.now()}.${ext}`;
-  const body = await (await fetch(uri)).arrayBuffer();
-  const { error } = await supabase.storage.from('media').upload(path, body, { contentType: mimeType });
-  if (error) throw error;
-  return path;
+  let body: ArrayBuffer;
+  try {
+    body = await (await fetch(uri)).arrayBuffer();
+  } catch (e) {
+    throw new Error(`could not read the photo: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  let lastError = '';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { error } = await supabase.storage.from('media').upload(path, body, { contentType: type, upsert: true });
+    if (!error) return path;
+    lastError = error.message;
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  throw new Error(lastError);
 }
 
 export type MyCommunity = { id: string; name: string; kind: string };
