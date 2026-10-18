@@ -22,7 +22,9 @@ async function nameOf(id?: string): Promise<string> {
 function wording(n: Row, who: string): { title: string; body?: string; url: string } {
   const p = n.payload ?? {};
   const dish = p.dish ?? 'your dish';
-  const url = p.reservation_id ? `/order/${p.reservation_id}` : '/inbox';
+  // Plain /inbox opens Messages; every alert that is not a chat message must land on the Notifications tab.
+  const inbox = '/inbox?tab=notifications';
+  const url = p.reservation_id ? `/order/${p.reservation_id}` : inbox;
   switch (n.kind) {
     case 'order_new': return { title: `${who} ordered ${p.plates ?? 1} × ${dish}`, body: 'Accept or decline it', url };
     case 'order_accepted': return { title: `${who} accepted your order`, body: dish, url };
@@ -32,10 +34,13 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
     case 'review_request': return { title: `How was your order from ${who}?`, body: 'Tap to leave a review', url };
     case 'payment_sent': return { title: `${who} sent the InstaPay payment`, body: `${dish} · confirm it arrived`, url };
     case 'payment_received': return { title: `${who} confirmed your payment`, body: dish, url };
-    case 'cooking_today': return { title: `${who} added to today’s menu`, body: dish, url: p.post_id ? `/dish/${p.post_id}` : '/inbox' };
-    case 'post_liked': return { title: `${who} liked your post`, body: p.dish, url: p.post_id ? `/dish/${p.post_id}` : p.profile_id ? `/cook/${p.profile_id}` : '/inbox' };
-    case 'post_commented': return { title: `${who} commented on your post`, body: p.text, url: p.post_id ? `/dish/${p.post_id}` : p.profile_id ? `/cook/${p.profile_id}` : '/inbox' };
-    case 'new_follower': return { title: `${who} started following you`, url: p.profile_id ? `/cook/${p.profile_id}` : '/inbox' };
+    case 'cooking_today': return { title: `${who} added to today’s menu`, body: dish, url: p.post_id ? `/dish/${p.post_id}` : inbox };
+    case 'post_liked': return { title: `${who} liked your post`, body: p.dish, url: p.post_id ? `/dish/${p.post_id}` : p.profile_id ? `/cook/${p.profile_id}` : inbox };
+    case 'post_commented': return { title: `${who} commented on your post`, body: p.text, url: p.post_id ? `/dish/${p.post_id}` : p.profile_id ? `/cook/${p.profile_id}` : inbox };
+    case 'new_follower': return { title: `${who} started following you`, url: p.profile_id ? `/cook/${p.profile_id}` : inbox };
+    case 'community_approved': return { title: `Your community “${p.name ?? 'request'}” was approved`, body: 'Tap to see it in Notifications', url: inbox };
+    case 'community_rejected': return { title: `Your community request “${p.name ?? ''}” wasn’t approved`, body: p.note, url: inbox };
+    case 'post_removed': return { title: 'One of your posts was removed', body: p.reason, url: inbox };
     default: return { title: 'Update from tabkheen A', url };
   }
 }

@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string };
+  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; name?: string; note?: string; reason?: string };
   created_at: string;
   read_at: string | null;
 };
@@ -59,15 +59,25 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: `${who} commented on your post`, sub: n.payload.text, icon: 'chat-bubble' };
     case 'new_follower':
       return { title: `${who} started following you`, icon: 'person-add' };
+    case 'community_approved':
+      return { title: `Your community “${n.payload.name ?? 'request'}” was approved`, sub: 'Tap to open it', icon: 'groups' };
+    case 'community_rejected':
+      return { title: `Your community request “${n.payload.name ?? ''}” wasn’t approved`, sub: n.payload.note, icon: 'groups' };
+    case 'post_removed':
+      return { title: 'One of your posts was removed', sub: n.payload.reason, icon: 'report' };
     default:
       return { title: 'Update from tabkheen A', icon: 'notifications' };
   }
 }
 
-/** Where tapping a notification goes: the order, the dish page, or the person's profile. */
+/** The Notifications tab of the inbox (the plain `/inbox` opens Messages). */
+export const NOTIFICATIONS_PATH = '/inbox?tab=notifications';
+
+/** Where tapping a notification goes: the order, the dish page, the person's profile, or the Notifications list. */
 export function notificationPath(n: Notification): string {
+  if (n.kind === 'post_removed' || n.kind.startsWith('community_')) return NOTIFICATIONS_PATH;
   if (n.payload.reservation_id) return `/order/${n.payload.reservation_id}`;
   if (n.payload.post_id) return `/dish/${n.payload.post_id}`;
   if (n.payload.profile_id) return `/cook/${n.payload.profile_id}`;
-  return '/inbox';
+  return NOTIFICATIONS_PATH;
 }

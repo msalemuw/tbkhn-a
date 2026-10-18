@@ -120,7 +120,11 @@ export default function Inbox() {
           refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
           renderItem={({ item }) => {
             const d = describe(item, personName(people.get(item.payload.from ?? '')));
-            const target = item.payload.reservation_id
+            const target = item.kind === 'post_removed' || item.kind === 'community_rejected'
+              ? null
+              : item.kind === 'community_approved' && item.payload.community_id
+                ? { pathname: '/community/[id]' as const, params: { id: item.payload.community_id } }
+                : item.payload.reservation_id
               ? { pathname: '/order/[id]' as const, params: { id: item.payload.reservation_id } }
               : item.payload.post_id
                 ? { pathname: '/dish/[id]' as const, params: { id: item.payload.post_id } }
