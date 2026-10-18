@@ -15,6 +15,10 @@ npx expo start
 2. **Authentication > Sign In / Providers > Phone**: turn it on and connect Twilio (WhatsApp codes first, SMS as the fallback). While testing, add test numbers with a fixed code there.
 3. Copy `.env.example` to `.env` and fill in the project URL and **publishable** key. Never put the secret (service_role) key in the app.
 
+## Web admin (tabkheen-a.com/admin)
+
+The same staff area on a computer, with charts and downloads. It is a static page in `website/admin/`, deployed with the website, and sign-in is the same Google account the app uses. It calls the same `admin_*` database functions, so the staff rules are enforced in the database, not in the page. Overview shows members, a day-by-day chart (sign-ups, posts, orders) and a breakdown of members by governorate, area, how they heard, what they love or sign-up source. Members, Orders and Referrals have search and CSV downloads; the full members and orders downloads are owner only and are written to the action log. Run `supabase/migrations/0023_admin_web_data.sql` first. The page is marked noindex and not cached (`website/_headers`).
+
 ## Admin panel
 
 Staff use the same app: **Profile > Admin** appears only for staff accounts. Roles: **owner** (everything, including adding staff), **moderator** (community requests, reports, removing posts, suspending members, announcements) and **support** (look up members, orders and referrals, and read the queues). **Orders** shows each order's steps with who did them and why; **Referrals** counts finished sign-ups by their "How did you hear" answer, per week and per community.
