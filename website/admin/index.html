@@ -232,7 +232,7 @@
     return new Promise(function (resolve) {
       var dlg = $('ask'), text = $('askText'), go = $('askGo');
       $('askTitle').textContent = title;
-      text.value = ''; text.placeholder = opts.optional ? 'Note (optional)' : 'Reason (required, kept in the log)';
+      text.value = opts.initial || ''; text.placeholder = opts.optional ? 'Note (optional)' : 'Reason (required, kept in the log)';
       showErr($('askErr'), '');
       function done(v) { go.onclick = null; $('askCancel').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
       go.textContent = opts.action || 'Confirm';
@@ -314,24 +314,51 @@
     ]);
   }
 
-  // Community requests: approve, or reject with a reason the requester receives
+  // Community requests: each shows look-alike communities (to catch duplicates); below them, every approved community
+  var KIND = { area: 'Area', compound: 'Compound', club: 'Club', sahel: 'Sahel', school: 'School', work: 'Work', other: 'Other' };
+  function placeLine(c) { return [c.area, c.governorate].filter(Boolean).join(', '); }
   function viewCommunities(v) {
-    function load() {
-      return rpc('admin_community_requests').then(function (rows) {
-        counts.communities = rows.length; renderTabs();
-        v.innerHTML = '<h2>Community requests</h2>' + (rows.length ? rows.map(function (c) {
-          return '<div class="card"><b dir="auto">' + esc(c.name) + '</b> <span class="tag">' + esc(c.kind) + '</span>' +
-            '<div class="muted">' + esc([c.area, c.governorate].filter(Boolean).join(', ')) + ' · asked by ' + esc(who(c.requester_username, c.requester_name)) + ' · ' + esc(when(c.created_at)) + '</div>' +
-            (canAct() ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-ok="' + esc(c.id) + '">Approve</button><button class="btn" data-no="' + esc(c.id) + '" data-name="' + esc(c.name) + '">Reject…</button></div>' : '') + '</div>';
+    var reqs = [], dir = [], filter = '';
+    v.innerHTML = '<h2>Community requests</h2><div id="creqs"></div>' +
+      '<div class="row" style="margin-top:24px"><h2 class="grow" id="dirTitle">Existing communities</h2><input type="text" id="dirq" placeholder="Search existing communities" autocomplete="off"></div>' +
+      '<div class="card"><div class="tablewrap" id="dirlist"></div></div>';
+    function drawReqs() {
+      var dups = reqs.filter(function (c) { return (c.look_alikes || []).length; }).length;
+      $('creqs').innerHTML = (dups ? '<div class="card" style="background:#fff8e0;border-color:var(--yellow)"><b>' + dups + ' of ' + reqs.length + ' look like a community that already exists.</b> Check them before approving.</div>' : '') +
+        (reqs.length ? reqs.map(function (c, i) {
+          var la = c.look_alikes || [];
+          return '<div class="card"' + (la.length ? ' style="border-color:var(--yellow)"' : '') + '><b dir="auto">' + esc(c.name) + '</b> <span class="tag">' + esc(KIND[c.kind] || c.kind) + '</span>' +
+            '<div class="muted">' + esc(placeLine(c)) + ' · asked by ' + esc(who(c.requester_username, c.requester_name)) + ' · ' + esc(when(c.created_at)) + '</div>' +
+            (la.length ? '<div style="margin-top:10px;padding:10px 12px;background:#fff8e0;border-radius:12px"><b>⚠ Possible duplicate. Similar communities:</b>' + la.map(function (m) {
+              return '<div dir="auto" style="margin-top:6px"><b>' + esc(m.name) + '</b> <span class="muted">· ' + (m.status === 'approved' ? 'already exists, ' + m.members + ' member' + (m.members === 1 ? '' : 's') : 'another request waiting') +
+                ' · ' + esc(KIND[m.kind] || m.kind) + ' · ' + esc(placeLine(m)) + (m.same_governorate ? ' (same governorate)' : '') + ' · ' + Math.round(m.score * 100) + '% alike</span></div>';
+            }).join('') + '</div>' : '') +
+            (canAct() ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-ok="' + i + '">Approve</button><button class="btn" data-no="' + i + '">Reject…</button></div>' : '') + '</div>';
         }).join('') : '<p class="muted">No requests waiting.</p>');
+    }
+    function drawDir() {
+      var q = filter.toLowerCase(), rows = dir.filter(function (c) { return !q || (c.name + ' ' + (c.area || '') + ' ' + c.governorate).toLowerCase().indexOf(q) >= 0; });
+      $('dirTitle').textContent = 'Existing communities (' + dir.length + ')';
+      $('dirlist').innerHTML = rows.length ? '<table><tr><th>Name</th><th>Type</th><th>Where</th><th>Members</th></tr>' + rows.map(function (c) {
+        return '<tr><td dir="auto"><b>' + esc(c.name) + '</b></td><td>' + esc(KIND[c.kind] || c.kind) + '</td><td>' + esc(placeLine(c)) + '</td><td>' + c.members + '</td></tr>';
+      }).join('') + '</table>' : '<p class="muted">No communities match.</p>';
+    }
+    function load() {
+      return Promise.all([rpc('admin_community_requests_checked'), rpc('admin_community_directory')]).then(function (r) {
+        reqs = r[0]; dir = r[1]; counts.communities = reqs.length; renderTabs(); drawReqs(); drawDir();
       });
     }
-    v.onclick = function (e) {
+    $('dirq').oninput = function () { filter = this.value.trim(); drawDir(); };
+    $('creqs').onclick = function (e) {
       var ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]');
-      if (ok) rpc('admin_review_community', { p_id: ok.getAttribute('data-ok'), p_status: 'approved', p_note: null }).then(load).catch(fail);
-      if (no) ask('Reject ' + no.getAttribute('data-name') + '?', { action: 'Reject' }).then(function (note) {
-        if (note) return rpc('admin_review_community', { p_id: no.getAttribute('data-no'), p_status: 'rejected', p_note: note }).then(load);
-      }).catch(fail);
+      if (ok) { var c = reqs[ok.getAttribute('data-ok')]; rpc('admin_review_community', { p_id: c.id, p_status: 'approved', p_note: null }).then(load).catch(fail); }
+      if (no) {
+        var r = reqs[no.getAttribute('data-no')], top = (r.look_alikes || []).filter(function (m) { return m.status === 'approved'; })[0];
+        // When it duplicates an existing community, start the reason with that, so the requester knows where to go.
+        ask('Reject ' + r.name + '?', { action: 'Reject', initial: top ? 'A community called “' + top.name + '” already exists. You can find and join it from Search.' : '' }).then(function (note) {
+          if (note) return rpc('admin_review_community', { p_id: r.id, p_status: 'rejected', p_note: note }).then(load);
+        }).catch(fail);
+      }
     };
     return load();
   }
