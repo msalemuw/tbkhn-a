@@ -38,3 +38,5 @@ $P -d tbkhn_test -f migrations/0015_delete_account.sql
 $P -d tbkhn_test -t -f tests/delete_account_test.sql | grep ok
 $P -d tbkhn_test -f migrations/0023_admin_web_data.sql
 $P -d tbkhn_test -f tests/admin_web_data_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0024_admin_community_duplicates.sql
+$P -d tbkhn_test -f tests/admin_community_duplicates_test.sql | tail -1
