@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { postStory } from '@/lib/stories';
-import { fetchMyCommunities, type MyCommunity, uploadPhoto } from '@/lib/posts';
+import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
 // A food story: a photo and a few words that stay up for 24 hours. No price, no orders.
@@ -47,8 +47,8 @@ export default function ComposeStory() {
       const path = await uploadPhoto(uid, photo.uri, photo.mimeType ?? 'image/jpeg');
       await postStory(uid, caption, path, communityId);
       router.dismissTo('/home');
-    } catch {
-      setError('We couldn’t share your post. Check your connection and try again.');
+    } catch (e) {
+      setError(shareErrorMessage(e));
       setBusy(false);
     }
   }
