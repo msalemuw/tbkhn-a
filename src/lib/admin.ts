@@ -167,6 +167,11 @@ export const ACTION_LABEL: Record<string, string> = {
   staff_role_set: 'Changed staff role',
   announcement_posted: 'Sent announcement',
   member_verified: 'Verified member',
+  member_note_added: 'Added a note on a member',
+  member_warned: 'Warned a member',
+  member_banned: 'Banned member',
+  member_unbanned: 'Lifted a ban',
+  member_deleted: 'Deleted member account',
   member_unverified: 'Removed verified mark',
   data_exported: 'Downloaded data',
 };

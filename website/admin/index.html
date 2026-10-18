@@ -95,6 +95,17 @@
   </div>
 </dialog>
 
+<dialog id="member" style="width:min(600px,94vw)">
+  <div class="row"><h3 class="grow" id="mmTitle" dir="auto" style="margin:0"></h3><button class="btn" id="mmClose" type="button">Close</button></div>
+  <p class="muted" id="mmSub" dir="auto" style="margin-top:4px"></p>
+  <div class="row" id="mmActions" style="gap:8px;margin:10px 0"></div>
+  <div class="err" id="mmErr" hidden></div>
+  <h4 style="margin:14px 0 6px">Warnings</h4><div id="mmWarn"></div>
+  <h4 style="margin:14px 0 6px">Staff notes <span class="muted" style="font-weight:400">(private, the member never sees them)</span></h4>
+  <div class="row" style="gap:8px"><input type="text" id="mmNote" maxlength="1000" placeholder="Add a note" style="min-width:0;flex:1 1 220px"><button class="btn strong" id="mmAdd" type="button">Add note</button></div>
+  <div id="mmNotes"></div>
+</dialog>
+
 <dialog id="edit" style="width:min(520px,94vw)">
   <h3 id="editTitle">Edit community</h3>
   <p class="muted" style="margin-top:0">Members and posts stay with the community. A name that already exists in the same governorate and type is refused.</p>
@@ -656,6 +667,45 @@
     return load();
   }
 
+  // ---------- one member: warnings, notes, ban, delete ----------
+  function manageMember(m, refresh) {
+    var dlg = $('member'), name = who(m.username, m.display_name), hist = { notes: [], warnings: [] };
+    function draw() {
+      $('mmTitle').textContent = name;
+      $('mmSub').textContent = [m.email, m.phone, [m.area, m.governorate].filter(Boolean).join(', '), 'joined ' + when(m.created_at)].filter(Boolean).join(' · ') + (m.banned_at ? ' · BANNED: ' + (m.suspended_reason || '') : m.suspended_at ? ' · SUSPENDED: ' + (m.suspended_reason || '') : '');
+      var staff = !!m.staff_role, mine = m.id === me;
+      $('mmActions').innerHTML = (canAct() && !mine ? '<button class="btn" data-a="warn">Send warning…</button>' : '') +
+        (canAct() && !mine && !staff ? (m.banned_at ? '<button class="btn" data-a="unban">Lift ban</button>' : '<button class="btn danger" data-a="ban">Ban…</button>') : '') +
+        (role === 'owner' && !mine && !staff ? '<button class="btn danger" data-a="delete">Delete account…</button>' : '') +
+        (staff ? '<span class="muted">Staff accounts can only be changed in the Staff tab.</span>' : '');
+      $('mmWarn').innerHTML = hist.warnings.length ? hist.warnings.map(function (w) {
+        return '<div class="card" style="margin:6px 0"><div dir="auto">' + esc(w.message) + '</div><div class="muted">' + esc(when(w.created_at)) + (w.issued_by ? ' · by @' + esc(w.issued_by) : '') + '</div></div>'; }).join('') : '<p class="muted">None.</p>';
+      $('mmNotes').innerHTML = hist.notes.length ? hist.notes.map(function (n) {
+        return '<div class="card" style="margin:6px 0"><div dir="auto">' + esc(n.body) + '</div><div class="muted">' + esc(when(n.created_at)) + (n.author ? ' · by @' + esc(n.author) : '') + '</div></div>'; }).join('') : '<p class="muted">No notes yet.</p>';
+    }
+    function load() { return rpc('admin_member_history', { p_id: m.id }).then(function (h) { hist = h; draw(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
+    function run(fn) { showErr($('mmErr'), ''); return fn().then(function () { return refresh && refresh(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
+    function reload() { return rpc('admin_find_members', { p_query: m.username || m.email }).then(function (r) { var f = r.filter(function (x) { return x.id === m.id; })[0]; if (f) m = f; }); }
+    function done() { $('mmAdd').onclick = null; $('mmClose').onclick = null; $('mmActions').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); }
+    $('mmClose').onclick = done; dlg.onclose = done;
+    $('mmNote').value = ''; showErr($('mmErr'), '');
+    $('mmAdd').onclick = function () {
+      var t = $('mmNote').value.trim(); if (!t) return;
+      run(function () { return rpc('admin_add_member_note', { p_id: m.id, p_body: t }); }).then(function () { $('mmNote').value = ''; return reload().then(load); });
+    };
+    $('mmActions').onclick = function (e) {
+      var b = e.target.closest('[data-a]'); if (!b) return; var a = b.getAttribute('data-a');
+      if (a === 'warn') ask('Send a warning to ' + name + '? They see it as a notification and it stays on their record.', { action: 'Send warning' }).then(function (t) {
+        if (t) return run(function () { return rpc('admin_warn_member', { p_id: m.id, p_message: t }); }).then(function () { return reload().then(load); }); });
+      if (a === 'ban') ask('Ban ' + name + '? They cannot sign in or act any more. You can lift the ban later.', { action: 'Ban' }).then(function (t) {
+        if (t) return run(function () { return rpc('admin_set_banned', { p_id: m.id, p_banned: true, p_reason: t }); }).then(function () { return reload().then(load); }); });
+      if (a === 'unban') run(function () { return rpc('admin_set_banned', { p_id: m.id, p_banned: false, p_reason: null }); }).then(function () { return reload().then(load); });
+      if (a === 'delete') ask('Delete the account of ' + name + ' for good? Their profile, posts, messages and orders are removed. This cannot be undone.', { action: 'Delete account' }).then(function (t) {
+        if (t && window.confirm('Delete ' + name + ' permanently?')) return run(function () { return rpc('admin_delete_member', { p_id: m.id, p_reason: t }); }).then(function () { if (!$('mmErr').textContent) done(); }); });
+    };
+    draw(); dlg.showModal(); load();
+  }
+
   // Members: search, verify, suspend, download
   function viewMembers(v) {
     var items = [], q = '';
@@ -665,12 +715,13 @@
       $('mres').innerHTML = !items.length ? (q ? '<p class="muted">No members match.</p>' : '<p class="muted">Type at least 2 characters.</p>') :
         '<div class="tablewrap"><table><tr><th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + items.map(function (m, i) {
           return '<tr><td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
-            (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
+            (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (m.banned_at ? ' <span class="tag">BANNED</span>' : m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
             '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + '</td>' +
             '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + '</span></td>' +
             '<td>' + m.posts + ' posts<br>' + m.orders + ' orders<br>' + m.open_reports + ' open reports</td>' +
             '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' +
-              (canAct() && !m.staff_role ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) + '</td></tr>';
+              (canAct() && !m.staff_role && !m.banned_at ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) +
+              ' <button class="btn" data-manage="' + i + '">Manage…' + (m.notes ? ' (' + m.notes + ' note' + (m.notes === 1 ? '' : 's') + ')' : '') + '</button></td></tr>';
         }).join('') + '</table></div>';
     }
     function search() { q = $('mq').value.trim(); return rpc('admin_find_members', { p_query: q }).then(function (r) { items = r; draw(); }).catch(fail); }
@@ -683,7 +734,8 @@
       rpc('admin_export_members').then(function (rows) { downloadCsv('tabkheen-members', rows); }).catch(fail).then(function () { ex.disabled = false; });
     };
     $('mres').onclick = function (e) {
-      var vf = e.target.closest('[data-verify]'), li = e.target.closest('[data-lift]'), su = e.target.closest('[data-susp]');
+      var vf = e.target.closest('[data-verify]'), li = e.target.closest('[data-lift]'), su = e.target.closest('[data-susp]'), mg = e.target.closest('[data-manage]');
+      if (mg) manageMember(items[mg.getAttribute('data-manage')], search);
       if (vf) { var m = items[vf.getAttribute('data-verify')]; rpc('admin_set_verified', { p_user_id: m.id, p_verified: !m.verified_at }).then(search).catch(fail); }
       if (li) { var m2 = items[li.getAttribute('data-lift')]; rpc('admin_set_suspended', { p_user_id: m2.id, p_suspended: false, p_reason: null }).then(search).catch(fail); }
       if (su) { var m3 = items[su.getAttribute('data-susp')]; ask('Suspend ' + who(m3.username, m3.display_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: m3.id, p_suspended: true, p_reason: why }).then(search); }).catch(fail); }
@@ -790,7 +842,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

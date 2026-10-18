@@ -47,3 +47,6 @@ $P -d tbkhn_test -f migrations/0027_admin_staff_controls.sql
 $P -d tbkhn_test -f tests/admin_staff_controls_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0028_admin_community_manage.sql
 $P -d tbkhn_test -f tests/admin_community_manage_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0017_push_tokens.sql
+$P -d tbkhn_test -f migrations/0029_admin_member_safety.sql
+$P -d tbkhn_test -f tests/admin_member_safety_test.sql | tail -1
