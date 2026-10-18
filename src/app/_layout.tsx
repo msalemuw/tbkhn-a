@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
+import { AppGate } from '@/components/app-gate';
 import { LiveAlerts } from '@/components/live-alerts';
 import { PositionReporter } from '@/components/position-reporter';
 import { PushSetup } from '@/components/push-setup';
@@ -62,6 +63,7 @@ export default function RootLayout() {
 
   return (
     <SessionProvider>
+      <AppGate>
       <LocationProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
@@ -97,6 +99,7 @@ export default function RootLayout() {
       <PushSetup />
       <PositionReporter />
       </LocationProvider>
+      </AppGate>
     </SessionProvider>
   );
 }
