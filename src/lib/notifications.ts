@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string };
+  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string; ticket_id?: string; subject?: string; preview?: string };
   created_at: string;
   read_at: string | null;
 };
@@ -79,6 +79,8 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: `tabkheen A updated your order of ${dish}`, sub: `${STAFF_STATUS[n.payload.status ?? ''] ?? 'Updated'}${n.payload.note ? `: ${n.payload.note}` : ''}`, icon: 'receipt-long' };
     case 'staff_warning':
       return { title: 'A warning from tabkheen A', sub: n.payload.message, icon: 'report' };
+    case 'support_reply':
+      return { title: 'tabkheen A replied to your message', sub: n.payload.preview ?? n.payload.subject, icon: 'support-agent' };
     case 'post_removed':
       return { title: 'One of your posts was removed', sub: n.payload.reason, icon: 'report' };
     default:
@@ -91,6 +93,7 @@ export const NOTIFICATIONS_PATH = '/inbox?tab=notifications';
 
 /** Where tapping a notification goes: the order, the dish page, the person's profile, or the Notifications list. */
 export function notificationPath(n: Notification): string {
+  if (n.kind === 'support_reply' && n.payload.ticket_id) return `/support?id=${n.payload.ticket_id}`;
   if (n.kind === 'post_removed' || n.kind.startsWith('community_')) return NOTIFICATIONS_PATH;
   if (n.payload.reservation_id) return `/order/${n.payload.reservation_id}`;
   if (n.payload.post_id) return `/dish/${n.payload.post_id}`;

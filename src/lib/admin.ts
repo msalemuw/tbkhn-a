@@ -176,4 +176,7 @@ export const ACTION_LABEL: Record<string, string> = {
   member_deleted: 'Deleted member account',
   member_unverified: 'Removed verified mark',
   data_exported: 'Downloaded data',
+  support_replied: 'Replied to a support message',
+  support_note_added: 'Added a note on a support message',
+  support_status_set: 'Changed a support message status',
 };

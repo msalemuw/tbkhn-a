@@ -92,6 +92,7 @@ export default function RootLayout() {
         <Stack.Screen name="communities-of/[id]" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="support" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="chat/[id]" />
       </Stack>

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BackHeader, formStyles } from '@/components/form';
@@ -59,7 +59,7 @@ export function AuthChoice({ mode }: { mode: AuthMode }) {
 
   function onHelp() {
     logFunnel('help_opened', { from: mode === 'signup' ? 'signup' : 'login' });
-    Alert.alert('Contact us', 'Support by chat, phone and WhatsApp is coming soon.');
+    router.push('/support');
   }
 
   return (
