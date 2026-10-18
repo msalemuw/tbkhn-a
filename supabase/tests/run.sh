@@ -54,3 +54,5 @@ $P -d tbkhn_test -f migrations/0030_admin_order_disputes.sql
 $P -d tbkhn_test -f tests/admin_order_disputes_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0031_admin_signup_funnel.sql
 $P -d tbkhn_test -f tests/admin_signup_funnel_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0032_support_inbox.sql
+$P -d tbkhn_test -f tests/support_inbox_test.sql | tail -1

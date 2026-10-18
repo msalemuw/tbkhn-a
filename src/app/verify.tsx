@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BackHeader, danger, formStyles, PrimaryButton } from '@/components/form';
@@ -62,7 +62,7 @@ export default function Verify() {
 
   function onHelp() {
     logFunnel('help_opened', { from: 'verify_code' });
-    Alert.alert('Contact us', 'Support by chat, phone and WhatsApp is coming soon.');
+    router.push('/support');
   }
 
   return (

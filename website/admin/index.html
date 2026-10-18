@@ -414,6 +414,7 @@
     reports: { label: 'Reports', render: viewReports },
     members: { label: 'Members', render: viewMembers },
     orders: { label: 'Orders', render: viewOrders },
+    support: { label: 'Support', render: viewSupport },
     referrals: { label: 'Referrals', render: viewReferrals },
     funnel: { label: 'Sign-up funnel', render: viewFunnel },
     announce: { label: 'Announcements', render: viewAnnounce },
@@ -832,6 +833,70 @@
     return search();
   }
 
+  // Support inbox: messages from members (or visitors who left an email/phone), reply, private notes, status
+  var SUPPORT_STATUS = { open: 'WAITING FOR US', pending: 'WAITING FOR MEMBER', closed: 'CLOSED' };
+  function viewSupport(v) {
+    var state = 'open', items = [], openId = null;
+    v.innerHTML = '<h2>Support</h2><div class="card"><div id="sstate"></div><p class="muted" style="margin:8px 0 0">A reply reaches signed-in members as a notification and in the app’s Help screen. People who were not signed in only left an email or phone: answer them there, then close the message here.</p></div><div id="slist"></div>';
+    function chips() {
+      $('sstate').innerHTML = [['Waiting for us', 'open'], ['Waiting for member', 'pending'], ['Closed', 'closed'], ['All', '']].map(function (s) {
+        return '<button class="chip" data-state="' + s[1] + '" aria-pressed="' + (state === s[1]) + '">' + s[0] + '</button>'; }).join('');
+    }
+    function draw() {
+      $('slist').innerHTML = items.length ? items.map(function (t, i) {
+        var from = t.member_id ? esc(who(t.member_username, t.member_name)) + (t.member_email ? ' <span class="muted">· ' + esc(t.member_email) + '</span>' : '') : 'Not signed in <span class="muted">· ' + esc(t.contact || '') + '</span>';
+        return '<div class="card"><div class="row"><b class="grow" dir="auto">' + esc(t.subject) + '</b><span class="tag">' + esc(SUPPORT_STATUS[t.status] || t.status) + '</span></div>' +
+          '<div>' + from + '</div>' +
+          '<div class="muted">' + esc(when(t.updated_at)) + ' · ' + t.messages + ' message' + (t.messages === 1 ? '' : 's') + ' · ' + (t.source === 'web' ? 'website' : 'app') + (t.assigned_username ? ' · @' + esc(t.assigned_username) : '') + '</div>' +
+          (t.last_body ? '<div dir="auto" class="muted">“' + esc(t.last_body.length > 160 ? t.last_body.slice(0, 160) + '…' : t.last_body) + '”</div>' : '') +
+          '<div class="row" style="margin-top:8px"><button class="btn strong" data-open="' + i + '">' + (openId === t.id ? 'Hide' : 'Open') + '</button></div><div id="st' + i + '"></div></div>';
+      }).join('') : '<p class="muted">Nothing here.</p>';
+    }
+    function refreshCount() { return rpc('admin_support_open_count').then(function (n) { counts.support = n; renderTabs(); }); }
+    function load() {
+      return rpc('admin_support_tickets', { p_status: state || null }).then(function (r) { items = r; draw(); if (openId) { var i = items.findIndex(function (t) { return t.id === openId; }); if (i >= 0) return thread(i); openId = null; } }).then(refreshCount).catch(fail);
+    }
+    function thread(i) {
+      var t = items[i], box = $('st' + i);
+      box.innerHTML = '<p class="muted">Loading…</p>';
+      return rpc('admin_support_thread', { p_id: t.id }).then(function (msgs) {
+        box.innerHTML = '<ul class="steps">' + msgs.map(function (m) {
+          var label = m.sender === 'member' ? 'Member' : m.sender === 'staff' ? 'Support' + (m.staff_username ? ' @' + m.staff_username : '') : 'Private note' + (m.staff_username ? ' @' + m.staff_username : '');
+          return '<li><b>' + esc(label) + '</b> <span class="muted">' + esc(when(m.created_at)) + '</span><div dir="auto" style="white-space:pre-wrap">' + esc(m.body) + '</div></li>';
+        }).join('') + '</ul>' +
+          '<textarea id="sr' + i + '" maxlength="2000" placeholder="Write a reply to the member" style="margin-top:8px"></textarea>' +
+          '<div class="err" id="se' + i + '" hidden></div>' +
+          '<div class="row" style="margin-top:8px"><button class="btn strong" data-reply="' + i + '">Send reply</button><button class="btn" data-replyclose="' + i + '">Send and close</button><button class="btn" data-snote="' + i + '">Add private note…</button>' +
+          (t.status === 'closed' ? '<button class="btn" data-set="' + i + '|open">Reopen</button>' : '<button class="btn" data-set="' + i + '|closed">Close without reply</button>') + '</div>';
+      }).catch(fail);
+    }
+    function reply(i, close) {
+      var body = $('sr' + i).value.trim();
+      if (!body) { showErr($('se' + i), 'Write a reply first.'); return; }
+      var mine = items[i].id;
+      return rpc('admin_support_reply', { p_id: mine, p_body: body, p_close: close }).then(function () { openId = mine; return load(); }).catch(function (e) { showErr($('se' + i), msg(e)); });
+    }
+    $('sstate').onclick = function (e) { var c = e.target.closest('[data-state]'); if (!c) return; state = c.getAttribute('data-state'); openId = null; chips(); load(); };
+    $('slist').onclick = function (e) {
+      var o = e.target.closest('[data-open]'), r = e.target.closest('[data-reply]'), rc = e.target.closest('[data-replyclose]'), n = e.target.closest('[data-snote]'), st = e.target.closest('[data-set]');
+      if (o) { var i = o.getAttribute('data-open'); if (openId === items[i].id) { openId = null; draw(); } else { openId = items[i].id; draw(); thread(i); } }
+      if (r) reply(r.getAttribute('data-reply'), false);
+      if (rc) reply(rc.getAttribute('data-replyclose'), true);
+      if (n) {
+        var ni = n.getAttribute('data-snote'), mine = items[ni].id;
+        ask('Add a private note. Only staff can see it.', { action: 'Add note' }).then(function (t) {
+          if (t) return rpc('admin_support_note', { p_id: mine, p_body: t }).then(function () { openId = mine; return load(); });
+        }).catch(fail);
+      }
+      if (st) {
+        var parts = st.getAttribute('data-set').split('|'), mine2 = items[parts[0]].id;
+        rpc('admin_support_set_status', { p_id: mine2, p_status: parts[1] }).then(function () { openId = null; return load(); }).catch(fail);
+      }
+    };
+    chips();
+    return load();
+  }
+
   // Sign-up funnel: where new people stop, by day, by ad, plus who signed in but never finished
   var FUNNEL_STEPS = [
     ['welcome_viewed', 'Opened the welcome screen', true], ['signup_method_chosen', 'Chose how to sign in', true], ['phone_entered', 'Entered a phone number', false],
@@ -964,7 +1029,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {
@@ -1011,6 +1076,7 @@
         try { me = JSON.parse(localStorage.getItem('tabkheen.admin.session')).user.id; } catch (e) { me = null; }
         $('signin').hidden = true; $('app').hidden = false; $('signout').hidden = false;
         $('who').textContent = 'Signed in as ' + role;
+        rpc('admin_support_open_count').then(function (n) { counts.support = n; renderTabs(); }, function () {});
         open('overview');
       });
     });
