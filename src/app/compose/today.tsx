@@ -18,6 +18,7 @@ import {
   type MyCommunity,
   type PickupPoint,
   postCookingToday,
+  shareErrorMessage,
   takeNewPickupPoint,
   uploadPhoto,
 } from '@/lib/posts';
@@ -123,8 +124,8 @@ export default function ComposeToday() {
         notifyFollowers: notify,
       });
       router.replace({ pathname: '/dish/[id]', params: { id, posted: '1' } });
-    } catch {
-      setError('We couldn’t share your post. Check your connection and try again.');
+    } catch (e) {
+      setError(shareErrorMessage(e));
       setBusy(false);
     }
   }

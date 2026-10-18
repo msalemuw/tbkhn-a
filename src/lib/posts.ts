@@ -98,6 +98,16 @@ export async function uploadPhoto(userId: string, uri: string, mimeType = 'image
   throw new Error(lastError);
 }
 
+/**
+ * What to tell a member whose post failed. A pause switched on by staff ("Posting is paused…", "Today’s menu is not open yet…")
+ * is shown as written; anything else keeps the generic line plus the real reason, so it is not mistaken for a bad connection.
+ */
+export function shareErrorMessage(e: unknown): string {
+  const reason = e instanceof Error ? e.message : typeof (e as { message?: unknown })?.message === 'string' ? (e as { message: string }).message : '';
+  if (/paused|not open yet/i.test(reason)) return reason;
+  return `We couldn’t share your post${reason ? ` (${reason.slice(0, 120)})` : ''}. Check your connection and try again.`;
+}
+
 export type MyCommunity = { id: string; name: string; kind: string };
 
 export async function fetchMyCommunities(userId: string): Promise<MyCommunity[]> {

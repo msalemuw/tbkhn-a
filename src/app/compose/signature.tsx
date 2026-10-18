@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { postSignature } from '@/lib/feed';
-import { fetchMyCommunities, type MyCommunity, uploadPhoto } from '@/lib/posts';
+import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
@@ -47,8 +47,8 @@ export default function ComposeSignature() {
       const path = await uploadPhoto(uid, photo.uri, photo.mimeType ?? 'image/jpeg');
       await postSignature(uid, caption, path, communityId);
       router.dismissTo('/home');
-    } catch {
-      setError('We couldn’t share your post. Check your connection and try again.');
+    } catch (e) {
+      setError(shareErrorMessage(e));
       setBusy(false);
     }
   }
