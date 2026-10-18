@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; name?: string; note?: string; reason?: string };
+  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; name?: string; note?: string; reason?: string };
   created_at: string;
   read_at: string | null;
 };

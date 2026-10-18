@@ -333,7 +333,8 @@
               return '<div dir="auto" style="margin-top:6px"><b>' + esc(m.name) + '</b> <span class="muted">· ' + (m.status === 'approved' ? 'already exists, ' + m.members + ' member' + (m.members === 1 ? '' : 's') : 'another request waiting') +
                 ' · ' + esc(KIND[m.kind] || m.kind) + ' · ' + esc(placeLine(m)) + (m.same_governorate ? ' (same governorate)' : '') + ' · ' + Math.round(m.score * 100) + '% alike</span></div>';
             }).join('') + '</div>' : '') +
-            (canAct() ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-ok="' + i + '">Approve</button><button class="btn" data-no="' + i + '">Reject…</button></div>' : '') + '</div>';
+            (canAct() ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-ok="' + i + '">Approve</button><button class="btn" data-no="' + i + '">Reject…</button>' +
+              la.map(function (m, j) { return m.status === 'approved' ? '<button class="btn" data-go="' + i + ':' + j + '" dir="auto">Add member to ' + esc(m.name) + '</button>' : ''; }).join('') + '</div>' : '') + '</div>';
         }).join('') : '<p class="muted">No requests waiting.</p>');
     }
     function drawDir() {
@@ -350,7 +351,14 @@
     }
     $('dirq').oninput = function () { filter = this.value.trim(); drawDir(); };
     $('creqs').onclick = function (e) {
-      var ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]');
+      var ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]'), go = e.target.closest('[data-go]');
+      if (go) {
+        // Duplicate: close the request and put the requester into the community that already exists.
+        var ij = go.getAttribute('data-go').split(':'), rq = reqs[ij[0]], to = rq.look_alikes[ij[1]];
+        if (confirm('Close “' + rq.name + '” and add ' + who(rq.requester_username, rq.requester_name) + ' to “' + to.name + '”? They get a notification that opens it.')) {
+          rpc('admin_join_existing_community', { p_id: rq.id, p_target_id: to.id }).then(load).catch(fail);
+        }
+      }
       if (ok) { var c = reqs[ok.getAttribute('data-ok')]; rpc('admin_review_community', { p_id: c.id, p_status: 'approved', p_note: null }).then(load).catch(fail); }
       if (no) {
         var r = reqs[no.getAttribute('data-no')], top = (r.look_alikes || []).filter(function (m) { return m.status === 'approved'; })[0];
@@ -524,7 +532,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

@@ -152,6 +152,7 @@ export const ORDER_EVENT_LABEL: Record<string, string> = {
 export const ACTION_LABEL: Record<string, string> = {
   community_approved: 'Approved community',
   community_rejected: 'Rejected community',
+  community_joined_existing: 'Added requester to existing community',
   post_removed: 'Removed post',
   reports_dismissed: 'Dismissed reports',
   member_suspended: 'Suspended member',
