@@ -29,7 +29,7 @@ export default function ComposeStory() {
   }, [uid]);
 
   async function pickPhoto(camera: boolean) {
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [4, 3] };
+    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [9, 16] };
     if (camera) {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) return;
@@ -71,7 +71,7 @@ export default function ComposeStory() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           {photo ? (
-            <View>
+            <View style={styles.photoWrap}>
               <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" />
               <Pressable style={styles.retake} onPress={() => pickPhoto(false)}>
                 <MaterialIcons name="autorenew" size={16} color={colors.white} />
@@ -112,7 +112,9 @@ const styles = StyleSheet.create({
   topTitle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
-  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, backgroundColor: colors.cream },
+  // Stories are tall, like the full-screen viewer: a 9:16 crop, shown at 60% width so the form stays in reach.
+  photoWrap: { width: '60%', alignSelf: 'center' },
+  photo: { width: '100%', aspectRatio: 9 / 16, borderRadius: 18, backgroundColor: colors.cream },
   photoEmpty: { flexDirection: 'row', gap: 12, aspectRatio: 2.2, borderRadius: 18, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center' },
   photoBtn: { alignItems: 'center', gap: 6, backgroundColor: colors.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
   photoBtnText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
