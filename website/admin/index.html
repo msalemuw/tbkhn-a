@@ -421,6 +421,7 @@
     announce: { label: 'Announcements', render: viewAnnounce },
     controls: { label: 'Controls', render: viewControls },
     staff: { label: 'Staff', render: viewStaff, only: 'owner' },
+    data: { label: 'Data', render: viewData, only: 'owner' },
     log: { label: 'Action log', render: viewLog }
   };
   var current = 'overview', counts = {};
@@ -755,6 +756,43 @@
       if (li) { var m2 = items[li.getAttribute('data-lift')]; rpc('admin_set_suspended', { p_user_id: m2.id, p_suspended: false, p_reason: null }).then(search).catch(fail); }
       if (su) { var m3 = items[su.getAttribute('data-susp')]; ask('Suspend ' + who(m3.username, m3.display_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: m3.id, p_suspended: true, p_reason: why }).then(search); }).catch(fail); }
     };
+  }
+
+  // Data browser (owner only, read only): look at the rows of the app's tables
+  function viewData(v) {
+    var PAGE = 50, table = null, offset = 0, q = '', rows = [], total = 0, tables = [];
+    v.innerHTML = '<h2>Data</h2><div class="card"><p class="muted" style="margin:0">Read only: nothing here can be changed. Private chat messages and phone push tokens are not shown on purpose. Opening a table is written to the action log.</p><div id="dtables" style="margin-top:10px"></div></div><div id="dview"></div>';
+    function chips() {
+      $('dtables').innerHTML = tables.map(function (t) {
+        return '<button class="chip" data-t="' + esc(t.table_name) + '" aria-pressed="' + (t.table_name === table) + '">' + esc(t.table_name) + ' <span class="muted">' + t.row_count + '</span></button>'; }).join('');
+    }
+    function cell(x) {
+      if (x === null || x === undefined) return '<span class="muted">—</span>';
+      var t = typeof x === 'object' ? JSON.stringify(x) : String(x);
+      return '<span title="' + esc(t) + '">' + esc(t.length > 80 ? t.slice(0, 80) + '…' : t) + '</span>';
+    }
+    function draw() {
+      if (!table) { $('dview').innerHTML = ''; return; }
+      var cols = rows.length ? Object.keys(rows[0]) : [];
+      $('dview').innerHTML = '<div class="card"><div class="row"><b class="grow">' + esc(table) + '</b><input type="text" id="dq" placeholder="Search any text in a row" value="' + esc(q) + '" autocomplete="off" style="flex:1 1 220px"><button class="btn strong" id="dgo">Search</button><button class="btn" id="dcsv"' + (rows.length ? '' : ' disabled') + '>Download this page (CSV)</button></div>' +
+        '<p class="muted" style="margin:8px 0">' + (total ? 'Rows ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + total : 'No rows') + '</p>' +
+        (rows.length ? '<div class="tablewrap"><table><tr>' + cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr>' +
+          rows.map(function (r) { return '<tr>' + cols.map(function (c) { return '<td dir="auto">' + cell(r[c]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div>' : '') +
+        '<div class="row" style="margin-top:10px"><button class="btn" id="dprev"' + (offset > 0 ? '' : ' disabled') + '>Previous</button><button class="btn" id="dnext"' + (offset + rows.length < total ? '' : ' disabled') + '>Next</button></div></div>';
+      $('dgo').onclick = function () { q = $('dq').value.trim(); offset = 0; load(); };
+      $('dq').onkeydown = function (e) { if (e.key === 'Enter') $('dgo').click(); };
+      $('dprev').onclick = function () { offset = Math.max(0, offset - PAGE); load(); };
+      $('dnext').onclick = function () { offset += PAGE; load(); };
+      $('dcsv').onclick = function () { downloadCsv('tabkheen-' + table, rows.map(function (r) { var o = {}; Object.keys(r).forEach(function (k) { o[k] = r[k] !== null && typeof r[k] === 'object' ? JSON.stringify(r[k]) : r[k]; }); return o; })); };
+    }
+    function load() {
+      $('dview').innerHTML = '<p class="muted">Loading…</p>';
+      return rpc('admin_data_rows', { p_table: table, p_search: q, p_limit: PAGE, p_offset: offset }).then(function (r) {
+        rows = r.map(function (x) { return x.row_data; }); total = r.length ? Number(r[0].total) : 0; draw();
+      }).catch(function (e) { $('dview').innerHTML = ''; showErr($('globalErr'), msg(e)); });
+    }
+    $('dtables').onclick = function (e) { var b = e.target.closest('[data-t]'); if (!b) return; table = b.getAttribute('data-t'); offset = 0; q = ''; chips(); showErr($('globalErr'), ''); load(); };
+    return rpc('admin_data_tables').then(function (r) { tables = r; chips(); });
   }
 
   // Cook verification: a checklist per cook; the tick turns on only when every item is ticked
@@ -1095,7 +1133,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', data_browsed: 'Opened a table in the data browser', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

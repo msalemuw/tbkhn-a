@@ -175,6 +175,7 @@ export const ACTION_LABEL: Record<string, string> = {
   member_unbanned: 'Lifted a ban',
   member_deleted: 'Deleted member account',
   member_unverified: 'Removed verified mark',
+  data_browsed: 'Opened a table in the data browser',
   verification_saved: 'Saved a verification checklist',
   data_exported: 'Downloaded data',
   support_replied: 'Replied to a support message',
