@@ -95,6 +95,18 @@
   </div>
 </dialog>
 
+<dialog id="ostatus" style="width:min(480px,94vw)">
+  <h3 id="osTitle"></h3>
+  <p class="muted" id="osSub" style="margin-top:0"></p>
+  <select id="osSel" style="width:100%"></select>
+  <textarea id="osText" maxlength="190" placeholder="Reason (required, kept in the history and shown to both people)" style="margin-top:10px"></textarea>
+  <div class="err" id="osErr" hidden></div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button class="btn" id="osCancel" type="button">Cancel</button>
+    <button class="btn danger" id="osGo" type="button">Change status</button>
+  </div>
+</dialog>
+
 <dialog id="member" style="width:min(600px,94vw)">
   <div class="row"><h3 class="grow" id="mmTitle" dir="auto" style="margin:0"></h3><button class="btn" id="mmClose" type="button">Close</button></div>
   <p class="muted" id="mmSub" dir="auto" style="margin-top:4px"></p>
@@ -744,14 +756,14 @@
 
   // Orders: find, open the timeline, download
   var ORDER_STATUS = { pending: 'WAITING FOR COOK', accepted: 'ACCEPTED', ready: 'READY', picked_up: 'PICKED UP', declined: 'DECLINED', cancelled: 'CANCELLED' };
-  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received' };
+  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received', staff_note: 'Staff note' };
   function viewOrders(v) {
     var state = null, items = [];
     v.innerHTML = '<div class="row"><h2 class="grow">Orders</h2>' + (role === 'owner' ? '<button class="btn" id="exportOrders">Download all orders (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="oq" placeholder="Buyer, cook, dish or order code" autocomplete="off"><button class="btn strong" id="ogo">Search</button></div>' +
       '<div style="margin-top:10px" id="ostate"></div></div><div id="olist"></div>';
     function chips() {
-      $('ostate').innerHTML = [['All', null], ['Open', 'open'], ['Picked up', 'done'], ['Cancelled', 'cancelled']].map(function (s) {
+      $('ostate').innerHTML = [['All', null], ['Open', 'open'], ['Stuck 24h+', 'stuck'], ['Picked up', 'done'], ['Cancelled', 'cancelled']].map(function (s) {
         return '<button class="chip" data-state="' + (s[1] || '') + '" aria-pressed="' + (state === s[1]) + '">' + s[0] + '</button>'; }).join('');
     }
     function draw() {
@@ -761,22 +773,54 @@
           '<div dir="auto">' + esc(who(o.buyer_username, o.buyer_name)) + ' ordered from ' + esc(who(o.cook_username, o.cook_name)) + '</div>' +
           '<div class="muted">Order ' + esc(o.id.slice(0, 8).toUpperCase()) + ' · ' + esc(when(o.created_at)) + (o.community_name ? ' · ' + esc(o.community_name) : '') + (o.pickup_at ? ' · pickup ' + esc(when(o.pickup_at)) : '') + '</div>' +
           (o.note ? '<div dir="auto">Note: “' + esc(o.note) + '”</div>' : '') + (o.cancel_reason ? '<div dir="auto">Reason: “' + esc(o.cancel_reason) + '”</div>' : '') +
-          '<div id="tl' + i + '"><button class="btn" data-tl="' + i + '" style="margin-top:8px">Show history</button></div></div>';
+          '<div class="row" style="margin-top:8px"><button class="btn" data-tl="' + i + '">Show history</button><button class="btn" data-note="' + i + '">Add staff note…</button>' +
+          (canAct() ? '<button class="btn danger" data-force="' + i + '">Change status…</button>' : '') + '</div><div id="tl' + i + '"></div></div>';
       }).join('') : '<p class="muted">No orders match.</p>';
     }
     function search() { return rpc('admin_find_orders', { p_query: $('oq').value.trim(), p_state: state }).then(function (r) { items = r; draw(); }).catch(fail); }
     $('ogo').onclick = search;
     $('oq').onkeydown = function (e) { if (e.key === 'Enter') search(); };
     $('ostate').onclick = function (e) { var c = e.target.closest('[data-state]'); if (!c) return; state = c.getAttribute('data-state') || null; chips(); search(); };
-    $('olist').onclick = function (e) {
-      var b = e.target.closest('[data-tl]'); if (!b) return;
-      var i = b.getAttribute('data-tl'), box = $('tl' + i);
+    function showTimeline(i) {
+      var box = $('tl' + i);
       box.innerHTML = '<p class="muted">Loading…</p>';
-      rpc('admin_order_timeline', { p_id: items[i].id }).then(function (evs) {
+      return rpc('admin_order_timeline', { p_id: items[i].id }).then(function (evs) {
         box.innerHTML = '<ul class="steps">' + evs.map(function (ev) {
           return '<li><b>' + esc(EVENT_LABEL[ev.event] || ev.event) + '</b> <span class="muted">' + esc(when(ev.created_at)) + (ev.actor_username ? ' · @' + esc(ev.actor_username) : '') + '</span>' + (ev.note ? '<div dir="auto">“' + esc(ev.note) + '”</div>' : '') + '</li>';
         }).join('') + '</ul>';
       }).catch(fail);
+    }
+    // Pick a new status and give a reason (owner and moderator). Resolves {status, reason} or null.
+    function askStatus(o) {
+      return new Promise(function (resolve) {
+        var dlg = $('ostatus');
+        $('osTitle').textContent = 'Change the status of ' + (o.dish_name || 'this order');
+        $('osSub').textContent = 'Now: ' + (ORDER_STATUS[o.status] || o.status) + '. Both people are told. Cancelling or declining puts the plates back on the dish.';
+        $('osSel').innerHTML = Object.keys(ORDER_STATUS).filter(function (k) { return k !== o.status; }).map(function (k) { return '<option value="' + k + '">' + esc(ORDER_STATUS[k]) + '</option>'; }).join('');
+        $('osText').value = ''; showErr($('osErr'), '');
+        function done(v) { $('osGo').onclick = null; $('osCancel').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
+        $('osGo').onclick = function () { var t = $('osText').value.trim(); if (t.length < 3) { showErr($('osErr'), 'Please write a reason (at least 3 letters).'); return; } done({ status: $('osSel').value, reason: t }); };
+        $('osText').oninput = function () { showErr($('osErr'), ''); };
+        $('osCancel').onclick = function () { done(null); };
+        dlg.onclose = function () { done(null); };
+        dlg.showModal(); $('osText').focus();
+      });
+    }
+    $('olist').onclick = function (e) {
+      var b = e.target.closest('[data-tl]'), nt = e.target.closest('[data-note]'), fc = e.target.closest('[data-force]');
+      if (b) showTimeline(b.getAttribute('data-tl'));
+      if (nt) {
+        var ni = nt.getAttribute('data-note');
+        ask('Add a staff note to this order. Only staff can see it.', { action: 'Add note' }).then(function (t) {
+          if (t) return rpc('admin_add_order_note', { p_id: items[ni].id, p_note: t }).then(function () { return showTimeline(ni); });
+        }).catch(fail);
+      }
+      if (fc) {
+        var fi = fc.getAttribute('data-force'), o = items[fi];
+        askStatus(o).then(function (r) {
+          if (r) return rpc('admin_force_order_status', { p_id: o.id, p_status: r.status, p_reason: r.reason }).then(function () { return search(); }).then(function () { return showTimeline(fi); });
+        }).catch(fail);
+      }
     };
     var ex = $('exportOrders');
     if (ex) ex.onclick = function () {
@@ -842,7 +886,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

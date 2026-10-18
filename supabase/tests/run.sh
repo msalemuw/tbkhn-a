@@ -50,3 +50,5 @@ $P -d tbkhn_test -f tests/admin_community_manage_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0017_push_tokens.sql
 $P -d tbkhn_test -f migrations/0029_admin_member_safety.sql
 $P -d tbkhn_test -f tests/admin_member_safety_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0030_admin_order_disputes.sql
+$P -d tbkhn_test -f tests/admin_order_disputes_test.sql | tail -1

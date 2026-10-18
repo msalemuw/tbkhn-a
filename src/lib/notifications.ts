@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string };
+  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string };
   created_at: string;
   read_at: string | null;
 };
@@ -32,6 +32,15 @@ export async function markNotificationsRead(userId: string) {
 }
 
 /** Title, optional second line and icon for one notification; `who` is the other person's name. */
+const STAFF_STATUS: Record<string, string> = {
+  pending: 'Waiting for the cook',
+  accepted: 'Accepted',
+  ready: 'Ready for pickup',
+  picked_up: 'Picked up',
+  declined: 'Declined',
+  cancelled: 'Cancelled',
+};
+
 export function describe(n: Notification, who: string): { title: string; sub?: string; icon: IconName } {
   const dish = n.payload.dish ?? 'your dish';
   switch (n.kind) {
@@ -65,6 +74,9 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       // An admin closed the request by adding the member to existing or new communities instead.
       if (n.payload.added?.length) return { title: `We added you to ${n.payload.added.map((c) => `“${c}”`).join(', ')}`, sub: `Your request “${n.payload.name ?? ''}” was matched`, icon: 'groups' };
       return { title: `Your community request “${n.payload.name ?? ''}” wasn’t approved`, sub: n.payload.note, icon: 'groups' };
+    case 'order_staff':
+      // Staff changed the order's status (a dispute); the reason is in `note`.
+      return { title: `tabkheen A updated your order of ${dish}`, sub: `${STAFF_STATUS[n.payload.status ?? ''] ?? 'Updated'}${n.payload.note ? `: ${n.payload.note}` : ''}`, icon: 'receipt-long' };
     case 'staff_warning':
       return { title: 'A warning from tabkheen A', sub: n.payload.message, icon: 'report' };
     case 'post_removed':
