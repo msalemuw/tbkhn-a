@@ -95,6 +95,21 @@
   </div>
 </dialog>
 
+<dialog id="pick" style="width:min(560px,94vw)">
+  <h3 id="pickTitle"></h3>
+  <p class="muted" id="pickSub" style="margin-top:0"></p>
+  <input type="text" id="pickq" placeholder="Search existing communities" autocomplete="off" style="width:100%;min-width:0;box-sizing:border-box">
+  <div id="picklist" style="max-height:220px;overflow:auto;margin:10px 0;border:1.5px solid var(--line);border-radius:12px;padding:4px 10px"></div>
+  <div><b>Or create new communities</b> <button class="btn" id="pickAdd" type="button" style="padding:4px 12px;margin-left:6px">+ Add one</button></div>
+  <div id="picknew"></div>
+  <div class="err" id="pickErr" hidden></div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <span class="muted grow" id="pickCount"></span>
+    <button class="btn" id="pickCancel" type="button">Cancel</button>
+    <button class="btn strong" id="pickGo" type="button">Add member</button>
+  </div>
+</dialog>
+
 <script>
 (function () {
   'use strict';
@@ -246,6 +261,55 @@
     });
   }
 
+  // ---------- pick communities dialog (join several existing ones and/or create new ones) ----------
+  // dir: approved communities [{id,name,kind,governorate,area,members}]; checked: ids to tick first; defGov: governorate for new rows.
+  // Resolves { join: [ids], create: [{name,kind,governorate,area}] } or null.
+  function pickCommunities(title, sub, dir, checked, defGov) {
+    return new Promise(function (resolve) {
+      var dlg = $('pick'), on = {}, news = [], q = '';
+      checked.forEach(function (id) { on[id] = true; });
+      $('pickTitle').textContent = title; $('pickSub').textContent = sub; $('pickq').value = ''; showErr($('pickErr'), '');
+      function kindOpts(sel) { return Object.keys(KIND).map(function (k) { return '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + esc(KIND[k]) + '</option>'; }).join(''); }
+      function count() { var n = Object.keys(on).filter(function (k) { return on[k]; }).length; $('pickCount').textContent = n + ' selected' + (news.length ? ' + ' + news.length + ' new' : ''); }
+      function drawList() {
+        var f = q.toLowerCase(), rows = dir.filter(function (c) { return !f || (c.name + ' ' + (c.area || '') + ' ' + c.governorate).toLowerCase().indexOf(f) >= 0; });
+        rows.sort(function (a, b) { return (on[b.id] ? 1 : 0) - (on[a.id] ? 1 : 0); });
+        $('picklist').innerHTML = rows.length ? rows.slice(0, 80).map(function (c) {
+          return '<label style="display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer"><input type="checkbox" data-c="' + esc(c.id) + '"' + (on[c.id] ? ' checked' : '') + '>' +
+            '<span dir="auto"><b>' + esc(c.name) + '</b> <span class="muted">· ' + esc(KIND[c.kind] || c.kind) + ' · ' + esc(placeLine(c)) + ' · ' + c.members + ' member' + (c.members === 1 ? '' : 's') + '</span></span></label>';
+        }).join('') : '<p class="muted">No communities match.</p>';
+        count();
+      }
+      function drawNew() {
+        $('picknew').innerHTML = news.map(function (n, i) {
+          return '<div class="row" style="margin-top:8px;gap:6px"><input type="text" data-f="name" data-i="' + i + '" placeholder="Name" value="' + esc(n.name) + '" style="min-width:0;flex:2 1 160px">' +
+            '<select data-f="kind" data-i="' + i + '">' + kindOpts(n.kind) + '</select>' +
+            '<input type="text" data-f="governorate" data-i="' + i + '" placeholder="Governorate" value="' + esc(n.governorate) + '" style="min-width:0;flex:1 1 110px">' +
+            '<input type="text" data-f="area" data-i="' + i + '" placeholder="Area (optional)" value="' + esc(n.area) + '" style="min-width:0;flex:1 1 110px">' +
+            '<button class="btn" type="button" data-x="' + i + '" style="padding:4px 10px" aria-label="Remove">×</button></div>';
+        }).join('');
+        count();
+      }
+      function done(v) { ['pickGo', 'pickCancel', 'pickAdd'].forEach(function (id) { $(id).onclick = null; }); $('pickq').oninput = null; $('picklist').onchange = null; $('picknew').oninput = null; $('picknew').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
+      $('pickq').oninput = function () { q = this.value.trim(); drawList(); };
+      $('picklist').onchange = function (e) { var c = e.target.getAttribute('data-c'); if (c) { on[c] = e.target.checked; count(); } };
+      $('pickAdd').onclick = function () { news.push({ name: '', kind: 'compound', governorate: defGov || '', area: '' }); drawNew(); };
+      $('picknew').oninput = function (e) { var i = e.target.getAttribute('data-i'); if (i !== null) news[i][e.target.getAttribute('data-f')] = e.target.value; };
+      $('picknew').onclick = function (e) { var x = e.target.closest('[data-x]'); if (x) { news.splice(+x.getAttribute('data-x'), 1); drawNew(); } };
+      $('pickGo').onclick = function () {
+        var join = Object.keys(on).filter(function (k) { return on[k]; });
+        for (var i = 0; i < news.length; i++) {
+          if (news[i].name.trim().length < 2 || !news[i].governorate.trim()) { showErr($('pickErr'), 'Each new community needs a name and a governorate.'); return; }
+        }
+        if (!join.length && !news.length) { showErr($('pickErr'), 'Tick at least one community, or add a new one.'); return; }
+        done({ join: join, create: news.map(function (n) { return { name: n.name.trim(), kind: n.kind, governorate: n.governorate.trim(), area: n.area.trim() || null }; }) });
+      };
+      $('pickCancel').onclick = function () { done(null); };
+      dlg.onclose = function () { done(null); };
+      drawList(); drawNew(); dlg.showModal();
+    });
+  }
+
   // ---------- views ----------
   var views = {
     overview: { label: 'Overview', render: viewOverview },
@@ -319,7 +383,12 @@
   function placeLine(c) { return [c.area, c.governorate].filter(Boolean).join(', '); }
   function viewCommunities(v) {
     var reqs = [], dir = [], filter = '';
-    v.innerHTML = '<h2>Community requests</h2><div id="creqs"></div>' +
+    v.innerHTML = (canAct() ? '<h2>New community</h2><div class="card"><div class="row" style="gap:8px"><input type="text" id="ncName" placeholder="Name" maxlength="80" style="min-width:0;flex:2 1 200px">' +
+      '<select id="ncKind">' + Object.keys(KIND).map(function (k) { return '<option value="' + k + '">' + esc(KIND[k]) + '</option>'; }).join('') + '</select>' +
+      '<input type="text" id="ncGov" placeholder="Governorate" list="govList" style="min-width:0;flex:1 1 140px"><datalist id="govList"></datalist>' +
+      '<input type="text" id="ncArea" placeholder="Area (optional)" style="min-width:0;flex:1 1 140px"><button class="btn strong" id="ncGo">Create</button></div>' +
+      '<div class="err" id="ncErr" hidden></div><p class="muted" style="margin:8px 0 0">Creates an approved community right away. Check the list below first to avoid a duplicate.</p></div>' : '') +
+      '<h2>Community requests</h2><div id="creqs"></div>' +
       '<div class="row" style="margin-top:24px"><h2 class="grow" id="dirTitle">Existing communities</h2><input type="text" id="dirq" placeholder="Search existing communities" autocomplete="off"></div>' +
       '<div class="card"><div class="tablewrap" id="dirlist"></div></div>';
     function drawReqs() {
@@ -334,7 +403,7 @@
                 ' · ' + esc(KIND[m.kind] || m.kind) + ' · ' + esc(placeLine(m)) + (m.same_governorate ? ' (same governorate)' : '') + ' · ' + Math.round(m.score * 100) + '% alike</span></div>';
             }).join('') + '</div>' : '') +
             (canAct() ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-ok="' + i + '">Approve</button><button class="btn" data-no="' + i + '">Reject…</button>' +
-              la.map(function (m, j) { return m.status === 'approved' ? '<button class="btn" data-go="' + i + ':' + j + '" dir="auto">Add member to ' + esc(m.name) + '</button>' : ''; }).join('') + '</div>' : '') + '</div>';
+              '<button class="btn" data-go="' + i + '">Add member to communities…</button></div>' : '') + '</div>';
         }).join('') : '<p class="muted">No requests waiting.</p>');
     }
     function drawDir() {
@@ -347,17 +416,27 @@
     function load() {
       return Promise.all([rpc('admin_community_requests_checked'), rpc('admin_community_directory')]).then(function (r) {
         reqs = r[0]; dir = r[1]; counts.communities = reqs.length; renderTabs(); drawReqs(); drawDir();
+        if ($('govList')) { var seen = {}; $('govList').innerHTML = dir.filter(function (c) { return !seen[c.governorate] && (seen[c.governorate] = 1); }).map(function (c) { return '<option value="' + esc(c.governorate) + '">'; }).join(''); }
       });
     }
     $('dirq').oninput = function () { filter = this.value.trim(); drawDir(); };
+    if ($('ncGo')) $('ncGo').onclick = function () {
+      var btn = this;
+      showErr($('ncErr'), '');
+      btn.disabled = true;
+      rpc('admin_create_community', { p_name: $('ncName').value.trim(), p_kind: $('ncKind').value, p_governorate: $('ncGov').value.trim(), p_area: $('ncArea').value.trim() || null })
+        .then(function () { $('ncName').value = ''; $('ncArea').value = ''; return load(); })
+        .catch(function (e) { showErr($('ncErr'), msg(e)); })
+        .then(function () { btn.disabled = false; });
+    };
     $('creqs').onclick = function (e) {
       var ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]'), go = e.target.closest('[data-go]');
       if (go) {
-        // Duplicate: close the request and put the requester into the community that already exists.
-        var ij = go.getAttribute('data-go').split(':'), rq = reqs[ij[0]], to = rq.look_alikes[ij[1]];
-        if (confirm('Close “' + rq.name + '” and add ' + who(rq.requester_username, rq.requester_name) + ' to “' + to.name + '”? They get a notification that opens it.')) {
-          rpc('admin_join_existing_community', { p_id: rq.id, p_target_id: to.id }).then(load).catch(fail);
-        }
+        // Close the request by adding the requester to any number of existing communities and/or new ones.
+        var rq = reqs[go.getAttribute('data-go')], pre = (rq.look_alikes || []).filter(function (m) { return m.status === 'approved'; }).map(function (m) { return m.id; });
+        pickCommunities('Add ' + who(rq.requester_username, rq.requester_name) + ' to communities', 'Request: “' + rq.name + '”. The request closes and they are told where they were added.', dir, pre, rq.governorate).then(function (pick) {
+          if (pick) return rpc('admin_resolve_community_request', { p_id: rq.id, p_join: pick.join, p_create: pick.create }).then(load);
+        }).catch(fail);
       }
       if (ok) { var c = reqs[ok.getAttribute('data-ok')]; rpc('admin_review_community', { p_id: c.id, p_status: 'approved', p_note: null }).then(load).catch(fail); }
       if (no) {
@@ -532,7 +611,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

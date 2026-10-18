@@ -153,6 +153,8 @@ export const ACTION_LABEL: Record<string, string> = {
   community_approved: 'Approved community',
   community_rejected: 'Rejected community',
   community_joined_existing: 'Added requester to existing community',
+  community_resolved: 'Added requester to communities',
+  community_created: 'Created community',
   post_removed: 'Removed post',
   reports_dismissed: 'Dismissed reports',
   member_suspended: 'Suspended member',
