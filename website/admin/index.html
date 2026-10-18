@@ -95,6 +95,34 @@
   </div>
 </dialog>
 
+<dialog id="edit" style="width:min(520px,94vw)">
+  <h3 id="editTitle">Edit community</h3>
+  <p class="muted" style="margin-top:0">Members and posts stay with the community. A name that already exists in the same governorate and type is refused.</p>
+  <div class="row" style="gap:8px">
+    <input type="text" id="edName" placeholder="Name" maxlength="80" style="min-width:0;flex:2 1 200px">
+    <select id="edKind"></select>
+    <input type="text" id="edGov" placeholder="Governorate" list="govList" style="min-width:0;flex:1 1 140px">
+    <input type="text" id="edArea" placeholder="Area (optional)" style="min-width:0;flex:1 1 140px">
+  </div>
+  <div class="err" id="edErr" hidden></div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button class="btn" id="edCancel" type="button">Cancel</button>
+    <button class="btn strong" id="edGo" type="button">Save</button>
+  </div>
+</dialog>
+
+<dialog id="merge" style="width:min(560px,94vw)">
+  <h3 id="mgTitle"></h3>
+  <p class="muted" id="mgSub" style="margin-top:0"></p>
+  <input type="text" id="mgq" placeholder="Search the community to keep" autocomplete="off" style="width:100%;min-width:0;box-sizing:border-box">
+  <div id="mglist" style="max-height:240px;overflow:auto;margin:10px 0;border:1.5px solid var(--line);border-radius:12px;padding:4px 10px"></div>
+  <div class="err" id="mgErr" hidden></div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button class="btn" id="mgCancel" type="button">Cancel</button>
+    <button class="btn danger" id="mgGo" type="button">Merge</button>
+  </div>
+</dialog>
+
 <dialog id="pick" style="width:min(560px,94vw)">
   <h3 id="pickTitle"></h3>
   <p class="muted" id="pickSub" style="margin-top:0"></p>
@@ -310,6 +338,52 @@
     });
   }
 
+  // ---------- edit a community ----------
+  function editCommunity(c) {
+    return new Promise(function (resolve) {
+      var dlg = $('edit');
+      $('editTitle').textContent = 'Edit “' + c.name + '”';
+      $('edKind').innerHTML = Object.keys(KIND).map(function (k) { return '<option value="' + k + '"' + (k === c.kind ? ' selected' : '') + '>' + esc(KIND[k]) + '</option>'; }).join('');
+      $('edName').value = c.name; $('edGov').value = c.governorate; $('edArea').value = c.area || ''; showErr($('edErr'), '');
+      function done(v) { $('edGo').onclick = null; $('edCancel').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
+      $('edGo').onclick = function () {
+        var name = $('edName').value.trim(), gov = $('edGov').value.trim();
+        if (name.length < 2) { showErr($('edErr'), 'The name needs at least 2 letters.'); return; }
+        if (!gov) { showErr($('edErr'), 'Choose a governorate.'); return; }
+        done({ name: name, kind: $('edKind').value, governorate: gov, area: $('edArea').value.trim() || null });
+      };
+      $('edCancel').onclick = function () { done(null); };
+      dlg.onclose = function () { done(null); };
+      dlg.showModal(); $('edName').focus();
+    });
+  }
+
+  // ---------- merge: choose the community to keep ----------
+  // Resolves the id of the target, or null.
+  function pickMergeTarget(src, dir) {
+    return new Promise(function (resolve) {
+      var dlg = $('merge'), chosen = null, q = '';
+      $('mgTitle').textContent = 'Merge “' + src.name + '” into…';
+      $('mgSub').textContent = 'Its ' + src.members + ' member' + (src.members === 1 ? '' : 's') + ' and all its posts move to the community you choose, and “' + src.name + '” is removed. This cannot be undone.';
+      $('mgq').value = ''; showErr($('mgErr'), '');
+      var rows0 = dir.filter(function (c) { return c.id !== src.id && !c.hidden_at; });
+      function draw() {
+        var f = q.toLowerCase(), rows = rows0.filter(function (c) { return !f || (c.name + ' ' + (c.area || '') + ' ' + c.governorate).toLowerCase().indexOf(f) >= 0; });
+        $('mglist').innerHTML = rows.length ? rows.slice(0, 80).map(function (c) {
+          return '<label style="display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer"><input type="radio" name="mgt" value="' + esc(c.id) + '"' + (c.id === chosen ? ' checked' : '') + '>' +
+            '<span dir="auto"><b>' + esc(c.name) + '</b> <span class="muted">· ' + esc(KIND[c.kind] || c.kind) + ' · ' + esc(placeLine(c)) + ' · ' + c.members + ' member' + (c.members === 1 ? '' : 's') + '</span></span></label>';
+        }).join('') : '<p class="muted">No communities match.</p>';
+      }
+      function done(v) { $('mgGo').onclick = null; $('mgCancel').onclick = null; $('mgq').oninput = null; $('mglist').onchange = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
+      $('mgq').oninput = function () { q = this.value.trim(); draw(); };
+      $('mglist').onchange = function (e) { if (e.target.name === 'mgt') { chosen = e.target.value; showErr($('mgErr'), ''); } };
+      $('mgGo').onclick = function () { if (!chosen) { showErr($('mgErr'), 'Choose the community to keep.'); return; } done(chosen); };
+      $('mgCancel').onclick = function () { done(null); };
+      dlg.onclose = function () { done(null); };
+      draw(); dlg.showModal();
+    });
+  }
+
   // ---------- views ----------
   var views = {
     overview: { label: 'Overview', render: viewOverview },
@@ -410,9 +484,12 @@
     }
     function drawDir() {
       var q = filter.toLowerCase(), rows = dir.filter(function (c) { return !q || (c.name + ' ' + (c.area || '') + ' ' + c.governorate).toLowerCase().indexOf(q) >= 0; });
-      $('dirTitle').textContent = 'Existing communities (' + dir.length + ')';
-      $('dirlist').innerHTML = rows.length ? '<table><tr><th>Name</th><th>Type</th><th>Where</th><th>Members</th></tr>' + rows.map(function (c) {
-        return '<tr><td dir="auto"><b>' + esc(c.name) + '</b></td><td>' + esc(KIND[c.kind] || c.kind) + '</td><td>' + esc(placeLine(c)) + '</td><td>' + c.members + '</td></tr>';
+      var hid = dir.filter(function (c) { return c.hidden_at; }).length;
+      $('dirTitle').textContent = 'Existing communities (' + dir.length + (hid ? ', ' + hid + ' hidden' : '') + ')';
+      $('dirlist').innerHTML = rows.length ? '<table><tr><th>Name</th><th>Type</th><th>Where</th><th>Members</th>' + (canAct() ? '<th></th>' : '') + '</tr>' + rows.map(function (c) {
+        return '<tr' + (c.hidden_at ? ' style="opacity:.65"' : '') + '><td dir="auto"><b>' + esc(c.name) + '</b>' + (c.hidden_at ? ' <span class="tag">Hidden</span>' : '') + '</td><td>' + esc(KIND[c.kind] || c.kind) + '</td><td>' + esc(placeLine(c)) + '</td><td>' + c.members + '</td>' +
+          (canAct() ? '<td style="white-space:nowrap"><button class="btn" data-edit="' + esc(c.id) + '">Edit</button> <button class="btn" data-hide="' + esc(c.id) + '">' + (c.hidden_at ? 'Show' : 'Hide') + '</button> ' +
+            '<button class="btn" data-merge="' + esc(c.id) + '">Merge…</button></td>' : '') + '</tr>';
       }).join('') + '</table>' : '<p class="muted">No communities match.</p>';
     }
     function load() {
@@ -431,12 +508,37 @@
         .catch(function (e) { showErr($('ncErr'), msg(e)); })
         .then(function () { btn.disabled = false; });
     };
+    $('dirlist').onclick = function (e) {
+      var ed = e.target.closest('[data-edit]'), hd = e.target.closest('[data-hide]'), mg = e.target.closest('[data-merge]');
+      function find(id) { return dir.filter(function (c) { return c.id === id; })[0]; }
+      if (ed) {
+        var c = find(ed.getAttribute('data-edit'));
+        editCommunity(c).then(function (f) {
+          if (f) return rpc('admin_update_community', { p_id: c.id, p_name: f.name, p_kind: f.kind, p_governorate: f.governorate, p_area: f.area }).then(load);
+        }).catch(function (err) { fail(err); });
+      }
+      if (hd) {
+        var h = find(hd.getAttribute('data-hide'));
+        if (h.hidden_at) { rpc('admin_set_community_hidden', { p_id: h.id, p_hidden: false }).then(load).catch(fail); return; }
+        ask('Hide “' + h.name + '”? Members keep their place, but the community disappears from the app and website until you show it again.', { action: 'Hide', optional: true }).then(function (note) {
+          if (note !== null) return rpc('admin_set_community_hidden', { p_id: h.id, p_hidden: true, p_reason: note || null }).then(load);
+        }).catch(fail);
+      }
+      if (mg) {
+        var src = find(mg.getAttribute('data-merge'));
+        pickMergeTarget(src, dir).then(function (tid) {
+          if (tid) return rpc('admin_merge_communities', { p_source: src.id, p_target: tid }).then(function (r) {
+            showErr($('globalErr'), ''); return load().then(function () { alert('Merged into “' + r.into_name + '”: ' + r.members + ' member' + (r.members === 1 ? '' : 's') + ' and ' + r.posts + ' post' + (r.posts === 1 ? '' : 's') + ' moved.'); });
+          });
+        }).catch(fail);
+      }
+    };
     $('creqs').onclick = function (e) {
       var ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]'), go = e.target.closest('[data-go]');
       if (go) {
         // Close the request by adding the requester to any number of existing communities and/or new ones.
         var rq = reqs[go.getAttribute('data-go')], pre = (rq.look_alikes || []).filter(function (m) { return m.status === 'approved'; }).map(function (m) { return m.id; });
-        pickCommunities('Add ' + who(rq.requester_username, rq.requester_name) + ' to communities', 'Request: “' + rq.name + '”. The request closes and they are told where they were added.', dir, pre, rq.governorate).then(function (pick) {
+        pickCommunities('Add ' + who(rq.requester_username, rq.requester_name) + ' to communities', 'Request: “' + rq.name + '”. The request closes and they are told where they were added.', dir.filter(function (c) { return !c.hidden_at; }), pre, rq.governorate).then(function (pick) {
           if (pick) return rpc('admin_resolve_community_request', { p_id: rq.id, p_join: pick.join, p_create: pick.create }).then(load);
         }).catch(fail);
       }
@@ -688,7 +790,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {
