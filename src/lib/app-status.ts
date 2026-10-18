@@ -9,6 +9,9 @@ export type AppStatus = {
   min_app_version: string;
   ordering_enabled: boolean;
   posting_enabled: boolean;
+  /** Menu tab on/off; while off the tab shows `menu_message` instead of the dishes. */
+  menu_enabled?: boolean;
+  menu_message?: string | null;
 };
 
 /** True when `version` is older than `min` (1.0.9 < 1.0.10). An empty minimum allows every version. */
@@ -46,3 +49,5 @@ export function blockReason(status: AppStatus | null): { title: string; text: st
   }
   return null;
 }
+
+export const MENU_CLOSED_FALLBACK = 'Today’s menu is coming soon. We are getting our cooks ready. Stay tuned!';

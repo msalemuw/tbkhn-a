@@ -593,6 +593,10 @@
     function draw() {
       var owner = role === 'owner', mod = canAct();
       v.innerHTML = '<h2>Controls</h2><p class="muted">Quick switches if something goes wrong. Pausing is enforced in the database, so it also stops older app versions. Every change is written to the action log.</p>' +
+        '<div class="card"><div class="row"><div class="grow"><b>Menu tab</b> <span class="tag">' + (on('menu_enabled') ? 'ON' : 'OFF') + '</span><div class="muted">When off, the Menu tab shows the message below instead of the dishes, and nobody can place a new order. Posting, stories, rankings and everything social keep working. Takes effect when a member next opens the tab.</div></div>' +
+        (mod ? '<button class="btn ' + (on('menu_enabled') ? 'danger' : 'strong') + '" data-menu="1">' + (on('menu_enabled') ? 'Turn off' : 'Turn on') + '</button>' : '') + '</div>' +
+        '<div style="margin-top:10px"><textarea id="ctlMenuMsg" maxlength="300" style="width:100%;box-sizing:border-box" ' + (mod ? '' : 'disabled') + ' dir="auto"></textarea>' +
+        (mod ? '<div class="row" style="margin-top:8px"><button class="btn" id="ctlMenuMsgSave">Save message</button></div>' : '') + '</div></div>' +
         pauseRow('ordering_enabled', 'Ordering', 'When paused, nobody can place a new order. Existing orders continue.', mod) +
         pauseRow('posting_enabled', 'Posting', 'When paused, nobody can add a new post, story or “today’s menu”.', mod) +
         '<div class="card"><div class="row"><div class="grow"><b>Maintenance mode</b> <span class="tag">' + (ctl.maintenance === true ? 'ON' : 'OFF') + '</span><div class="muted">When on, the app shows the message below instead of opening. Use for a short fix or migration.</div></div>' +
@@ -602,12 +606,14 @@
         '<div class="card"><b>Minimum app version</b><div class="muted">Anyone on an older version sees “please update” instead of the app. Leave empty to allow every version. The version is the one in Profile > Settings, such as 1.0.2.</div>' +
         '<div class="row" style="margin-top:8px"><input type="text" id="ctlVer" placeholder="e.g. 1.0.2" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn strong" id="ctlVerSave">Save</button>' : '') + '</div></div>' +
         '<div class="err" id="ctlErr" hidden></div>';
-      $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || '';
+      $('ctlMenuMsg').value = ctl.menu_message || ''; $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || '';
     }
     function load() { return rpc('admin_get_controls').then(function (rows) { ctl = {}; rows.forEach(function (r) { ctl[r.key] = r.value; }); draw(); }); }
     function set(k, val) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
     v.onclick = function (e) {
-      var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]');
+      var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]'), mn = e.target.closest('[data-menu]');
+      if (mn) { if (on('menu_enabled') && !confirm('Turn the Menu tab off for everyone? Members will see the coming-soon message and cannot place orders.')) return; set('menu_enabled', !on('menu_enabled')); }
+      if (e.target.id === 'ctlMenuMsgSave') set('menu_message', $('ctlMenuMsg').value.trim());
       if (p) { var k = p.getAttribute('data-pause'); if (on(k) && !confirm('Pause this for everyone?')) return; set(k, !on(k)); }
       if (m) { if (ctl.maintenance === true) set('maintenance', false); else if (confirm('Turn maintenance mode on? Nobody can use the app until you turn it off.')) set('maintenance', true); }
       if (e.target.id === 'ctlMsgSave') set('maintenance_message', $('ctlMsg').value.trim());
