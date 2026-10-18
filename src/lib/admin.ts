@@ -168,6 +168,8 @@ export const ACTION_LABEL: Record<string, string> = {
   announcement_posted: 'Sent announcement',
   member_verified: 'Verified member',
   member_note_added: 'Added a note on a member',
+  order_note_added: 'Added a note on an order',
+  order_status_forced: 'Changed an order status',
   member_warned: 'Warned a member',
   member_banned: 'Banned member',
   member_unbanned: 'Lifted a ban',
