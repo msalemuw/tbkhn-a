@@ -36,3 +36,5 @@ $P -d tbkhn_test -f migrations/0013_verified.sql
 $P -d tbkhn_test -f migrations/0014_post_communities.sql
 $P -d tbkhn_test -f migrations/0015_delete_account.sql
 $P -d tbkhn_test -t -f tests/delete_account_test.sql | grep ok
+$P -d tbkhn_test -f migrations/0023_admin_web_data.sql
+$P -d tbkhn_test -f tests/admin_web_data_test.sql | tail -1

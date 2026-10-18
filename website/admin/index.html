@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>tabkheen A admin</title>
+<link rel="icon" href="../favicon.png">
+<script src="../config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+  :root { --navy:#28303A; --yellow:#FFC107; --white:#FFFFFF; --blue:#CAE7F1; --teal:#00C2A8; --muted:#5d6874; --line:#dbe5ea; --bad:#b3261e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--navy); background:#f4f9fb; }
+  header { background:var(--navy); color:var(--white); display:flex; align-items:center; gap:14px; padding:10px 22px; flex-wrap:wrap; }
+  header img { height:30px; }
+  header h1 { font-size:17px; margin:0; font-weight:700; flex:1; }
+  header .who { font-size:13px; color:var(--blue); }
+  main { max-width:1180px; margin:0 auto; padding:22px; }
+  nav { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+  nav button { border:1.5px solid var(--blue); background:var(--white); color:var(--navy); border-radius:999px; padding:8px 16px; font:inherit; font-weight:700; cursor:pointer; }
+  nav button[aria-selected="true"] { background:var(--navy); color:var(--white); border-color:var(--navy); }
+  nav .count { background:var(--yellow); color:var(--navy); border-radius:999px; padding:0 7px; font-size:12px; margin-left:6px; }
+  h2 { font-size:18px; margin:0 0 12px; }
+  h3 { font-size:15px; margin:0 0 10px; }
+  .card { background:var(--white); border:1.5px solid var(--line); border-radius:16px; padding:16px; margin-bottom:16px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .tile { background:var(--blue); border-radius:14px; padding:14px; }
+  .tile b { display:block; font-size:26px; }
+  .tile span { font-size:13px; color:var(--muted); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .grow { flex:1; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:16px; }
+  input[type=text], textarea, select { font:inherit; color:var(--navy); border:1.5px solid var(--line); border-radius:12px; padding:9px 12px; background:var(--white); }
+  textarea { width:100%; min-height:90px; }
+  input[type=text] { min-width:300px; }
+  .row > h2 { margin:0; }
+  button.btn { font:inherit; font-weight:700; border-radius:999px; padding:8px 16px; border:1.5px solid var(--blue); background:var(--white); color:var(--navy); cursor:pointer; }
+  button.btn.strong { background:var(--teal); border-color:var(--teal); }
+  button.btn.danger { background:var(--yellow); border-color:var(--yellow); }
+  button.btn:disabled { opacity:.45; cursor:default; }
+  .chip { display:inline-block; border:1.5px solid var(--blue); background:var(--white); border-radius:999px; padding:4px 12px; margin:0 6px 6px 0; cursor:pointer; font:inherit; }
+  .chip[aria-pressed="true"] { background:var(--teal); border-color:var(--teal); font-weight:700; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .tablewrap { overflow-x:auto; }
+  .muted { color:var(--muted); font-size:13px; }
+  .tag { background:var(--yellow); border-radius:6px; padding:1px 7px; font-size:11.5px; font-weight:800; }
+  .err { color:var(--bad); font-weight:600; margin:8px 0; }
+  .ok { color:#0a7d6c; font-weight:600; margin:8px 0; }
+  .barrow { display:grid; grid-template-columns:160px 1fr 48px; gap:10px; align-items:center; margin:5px 0; font-size:14px; }
+  .bar { background:var(--blue); border-radius:6px; height:14px; position:relative; }
+  .bar i { position:absolute; inset:0 auto 0 0; background:var(--teal); border-radius:6px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; margin-right:14px; font-size:13px; }
+  .legend i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  #signin { max-width:420px; margin:70px auto; text-align:center; }
+  dialog { border:none; border-radius:18px; padding:20px; width:min(460px,92vw); }
+  dialog::backdrop { background:rgba(40,48,58,.45); }
+  .steps { margin:10px 0 0; padding:10px 0 0 0; border-top:1px solid var(--line); list-style:none; }
+  .steps li { padding:4px 0 4px 18px; position:relative; }
+  .steps li::before { content:""; position:absolute; left:0; top:11px; width:9px; height:9px; border-radius:50%; background:var(--teal); }
+  [hidden] { display:none !important; }
+  @media (max-width:640px) { .barrow { grid-template-columns:110px 1fr 40px; } main { padding:14px; } }
+</style>
+</head>
+<body>
+<header>
+  <img src="../logo.png" alt="tabkheen A">
+  <h1>Admin</h1>
+  <span class="who" id="who"></span>
+  <button class="btn" id="signout" hidden>Sign out</button>
+</header>
+
+<div id="signin" class="card" hidden>
+  <h2>Staff sign-in</h2>
+  <p class="muted">Use the Google account you use in the tabkheen A app. Only staff can open this page.</p>
+  <div id="gbtn" style="display:flex;justify-content:center;min-height:44px"></div>
+  <div class="err" id="signinErr" hidden></div>
+</div>
+
+<main id="app" hidden>
+  <nav id="tabs" role="tablist"></nav>
+  <div class="err" id="globalErr" hidden></div>
+  <section id="view"></section>
+</main>
+
+<dialog id="ask">
+  <h3 id="askTitle"></h3>
+  <textarea id="askText" maxlength="500"></textarea>
+  <div class="err" id="askErr" hidden></div>
+  <div class="row" style="margin-top:12px;justify-content:flex-end">
+    <button class="btn" id="askCancel" type="button">Cancel</button>
+    <button class="btn strong" id="askGo" type="button">Confirm</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var CFG = window.TABKHEEN || {};
+  var $ = function (id) { return document.getElementById(id); };
+  var role = null, me = null;
+
+  // ---------- helpers ----------
+  function esc(v) {
+    return String(v === null || v === undefined ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function when(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Cairo', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+  function dayLabel(d) { var p = d.split('-'); return Number(p[2]) + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(p[1]) - 1]; }
+  function who(u, n) { return u ? '@' + u : (n || 'No name yet'); }
+  function canAct() { return role === 'owner' || role === 'moderator'; }
+  function showErr(el, msg) { el.textContent = msg || ''; el.hidden = !msg; }
+  function msg(e) { return e && (e.message || e.msg || e.error_description) || 'Something went wrong'; }
+
+  // ---------- CSV (opens in Excel with Arabic names intact) ----------
+  function csvCell(v) {
+    var s = v === null || v === undefined ? '' : String(v);
+    // A cell that starts with = + - or @ would run as a formula in Excel: show it as text instead.
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function downloadCsv(name, rows) {
+    if (!rows.length) return;
+    var cols = Object.keys(rows[0]);
+    var lines = [cols.map(csvCell).join(',')].concat(rows.map(function (r) { return cols.map(function (c) { return csvCell(r[c]); }).join(','); }));
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+
+  // ---------- a small Supabase client (same one the sign-up page uses) ----------
+  var sb = (function () {
+    var KEY = 'tabkheen.admin.session', session = null;
+    try { session = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { session = null; }
+    function save(s) { session = s; try { if (s) localStorage.setItem(KEY, JSON.stringify(s)); else localStorage.removeItem(KEY); } catch (e) { /* private mode */ } }
+    function call(path, opts) {
+      opts = opts || {};
+      var headers = { apikey: CFG.supabaseKey, 'Content-Type': 'application/json' };
+      if (session && session.access_token) headers.Authorization = 'Bearer ' + session.access_token;
+      return fetch(CFG.supabaseUrl + path, { method: opts.method || 'GET', headers: headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) })
+        .then(function (r) {
+          return r.text().then(function (txt) {
+            var json = null; try { json = txt ? JSON.parse(txt) : null; } catch (e) { json = null; }
+            return r.ok ? { data: json, error: null } : { data: null, error: json || { message: 'http ' + r.status } };
+          });
+        }, function (e) { return { data: null, error: { message: String(e) } }; });
+    }
+    function tokenGrant(grant, body) {
+      return call('/auth/v1/token?grant_type=' + grant, { method: 'POST', body: body }).then(function (res) {
+        if (res.error || !res.data || !res.data.access_token) return { data: null, error: res.error || { message: 'no session' } };
+        var s = res.data; s.expires_at = s.expires_at || Math.floor(Date.now() / 1000) + (s.expires_in || 3600);
+        save(s);
+        return { data: s, error: null };
+      });
+    }
+    function fresh() {
+      if (!session) return Promise.resolve(false);
+      if (session.expires_at - 60 > Date.now() / 1000) return Promise.resolve(true);
+      return tokenGrant('refresh_token', { refresh_token: session.refresh_token }).then(function (res) {
+        if (res.error) { save(null); return false; }
+        return true;
+      });
+    }
+    return {
+      hasSession: function () { return !!session; },
+      fresh: fresh,
+      signInGoogle: function (token, nonce) { return tokenGrant('id_token', { provider: 'google', id_token: token, nonce: nonce }); },
+      signOut: function () {
+        var done = function () { save(null); };
+        return session ? call('/auth/v1/logout', { method: 'POST' }).then(done, done) : Promise.resolve(done());
+      },
+      rpc: function (fn, args) {
+        return fresh().then(function (ok) {
+          if (!ok) return Promise.reject(new Error('Your sign-in expired. Please sign in again.'));
+          return call('/rest/v1/rpc/' + fn, { method: 'POST', body: args || {} });
+        }).then(function (res) { if (res.error) throw new Error(msg(res.error)); return res.data; });
+      }
+    };
+  })();
+  var rpc = sb.rpc;
+
+  // ---------- charts (plain SVG, no library) ----------
+  var COLORS = { signups: '#00C2A8', orders: '#28303A', posts: '#FFC107', picked_up: '#00C2A8', cancelled: '#b3261e' };
+  function lineChart(rows, series) {
+    var W = 720, H = 240, L = 36, R = 10, T = 12, B = 28;
+    var max = 1;
+    rows.forEach(function (r) { series.forEach(function (s) { if (r[s.key] > max) max = r[s.key]; }); });
+    var top = Math.max(4, Math.ceil(max / 4) * 4);
+    var x = function (i) { return L + (rows.length === 1 ? 0 : i * (W - L - R) / (rows.length - 1)); };
+    var y = function (v) { return T + (H - T - B) * (1 - v / top); };
+    var out = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Daily counts">';
+    for (var g = 0; g <= 4; g++) {
+      var gv = top * g / 4;
+      out += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(gv) + '" y2="' + y(gv) + '" stroke="#dbe5ea"/>' +
+             '<text x="' + (L - 6) + '" y="' + (y(gv) + 4) + '" text-anchor="end" font-size="11" fill="#5d6874">' + Math.round(gv) + '</text>';
+    }
+    var step = Math.max(1, Math.ceil(rows.length / 7));
+    rows.forEach(function (r, i) {
+      if (i % step === 0 || i === rows.length - 1) out += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="' + (i === rows.length - 1 ? 'end' : i === 0 ? 'start' : 'middle') + '" font-size="11" fill="#5d6874">' + esc(dayLabel(r.day)) + '</text>';
+    });
+    series.forEach(function (s) {
+      var pts = rows.map(function (r, i) { return x(i).toFixed(1) + ',' + y(r[s.key]).toFixed(1); }).join(' ');
+      out += '<polyline fill="none" stroke="' + s.color + '" stroke-width="2.5" stroke-linejoin="round" points="' + pts + '"/>';
+      rows.forEach(function (r, i) {
+        out += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(r[s.key]).toFixed(1) + '" r="' + (rows.length > 45 ? 2 : 3.5) + '" fill="' + s.color + '"><title>' +
+               esc(dayLabel(r.day) + ': ' + r[s.key] + ' ' + s.label.toLowerCase()) + '</title></circle>';
+      });
+    });
+    out += '</svg><div class="legend">' + series.map(function (s) { return '<span><i style="background:' + s.color + '"></i>' + esc(s.label) + '</span>'; }).join('') + '</div>';
+    return out;
+  }
+  function barList(rows) {
+    if (!rows.length) return '<p class="muted">Nothing yet.</p>';
+    var max = Math.max.apply(null, rows.map(function (r) { return r.members; })) || 1;
+    return rows.map(function (r) {
+      return '<div class="barrow"><span dir="auto">' + esc(r.label) + '</span><div class="bar"><i style="width:' + Math.max(2, Math.round(r.members / max * 100)) + '%"></i></div><b>' + r.members + '</b></div>';
+    }).join('');
+  }
+
+  // ---------- the "why?" dialog ----------
+  function ask(title, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var dlg = $('ask'), text = $('askText'), go = $('askGo');
+      $('askTitle').textContent = title;
+      text.value = ''; text.placeholder = opts.optional ? 'Note (optional)' : 'Reason (required, kept in the log)';
+      showErr($('askErr'), '');
+      function done(v) { go.onclick = null; $('askCancel').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
+      go.textContent = opts.action || 'Confirm';
+      go.onclick = function () {
+        if (!opts.optional && !text.value.trim()) { showErr($('askErr'), 'Please write a reason.'); return; }
+        done(text.value.trim());
+      };
+      $('askCancel').onclick = function () { done(null); };
+      dlg.onclose = function () { done(null); };
+      dlg.showModal(); text.focus();
+    });
+  }
+
+  // ---------- views ----------
+  var views = {
+    overview: { label: 'Overview', render: viewOverview },
+    communities: { label: 'Communities', render: viewCommunities },
+    reports: { label: 'Reports', render: viewReports },
+    members: { label: 'Members', render: viewMembers },
+    orders: { label: 'Orders', render: viewOrders },
+    referrals: { label: 'Referrals', render: viewReferrals },
+    announce: { label: 'Announcements', render: viewAnnounce },
+    log: { label: 'Action log', render: viewLog }
+  };
+  var current = 'overview', counts = {};
+
+  function renderTabs() {
+    $('tabs').innerHTML = Object.keys(views).map(function (k) {
+      var n = counts[k] ? '<span class="count">' + counts[k] + '</span>' : '';
+      return '<button role="tab" data-tab="' + k + '" aria-selected="' + (k === current) + '">' + esc(views[k].label) + n + '</button>';
+    }).join('');
+  }
+  $('tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]'); if (!b) return;
+    open(b.getAttribute('data-tab'));
+  });
+  function open(name) {
+    current = name; renderTabs(); showErr($('globalErr'), '');
+    var v = $('view'); v.innerHTML = '<p class="muted">Loading…</p>';
+    Promise.resolve().then(function () { return views[name].render(v); }).catch(function (e) { v.innerHTML = ''; showErr($('globalErr'), msg(e)); });
+  }
+  function fail(e) { showErr($('globalErr'), msg(e)); }
+
+  // Overview: tiles, daily chart, and who the members are
+  function viewOverview(v) {
+    var days = 30, by = 'governorate';
+    var BYS = [['governorate', 'Governorate'], ['area', 'Area'], ['heard_from', 'How they heard'], ['loves', 'Love cooking / eating'], ['source', 'Sign-up source']];
+    v.innerHTML = '<div class="tiles" id="tiles"></div>' +
+      '<div class="card"><div class="row"><h2 class="grow">Day by day</h2><span id="rangeBtns"></span></div><div id="daily"><p class="muted">Loading…</p></div></div>' +
+      '<div class="grid2"><div class="card"><div class="row"><h2 class="grow">Members by</h2></div><div id="byBtns"></div><div id="breakdown"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h2>Orders</h2><div id="orderChart"></div></div></div>';
+    function loadDaily() {
+      $('rangeBtns').innerHTML = [7, 30, 90].map(function (d) { return '<button class="chip" data-days="' + d + '" aria-pressed="' + (d === days) + '">' + d + ' days</button>'; }).join('');
+      return rpc('admin_daily_stats', { p_days: days }).then(function (rows) {
+        var tot = function (k) { return rows.reduce(function (n, r) { return n + r[k]; }, 0); };
+        $('daily').innerHTML = '<p class="muted">Last ' + days + ' days: ' + tot('signups') + ' sign-ups, ' + tot('orders') + ' orders, ' + tot('posts') + ' posts.</p>' +
+          lineChart(rows, [{ key: 'signups', label: 'Sign-ups', color: COLORS.signups }, { key: 'posts', label: 'Posts', color: COLORS.posts }]);
+        $('orderChart').innerHTML = '<p class="muted">' + tot('orders') + ' placed, ' + tot('picked_up') + ' picked up, ' + tot('cancelled') + ' cancelled or declined.</p>' +
+          lineChart(rows, [{ key: 'orders', label: 'Orders placed', color: COLORS.orders }, { key: 'picked_up', label: 'Picked up', color: COLORS.picked_up }, { key: 'cancelled', label: 'Cancelled or declined', color: COLORS.cancelled }]);
+      });
+    }
+    function loadBy() {
+      $('byBtns').innerHTML = BYS.map(function (b) { return '<button class="chip" data-by="' + b[0] + '" aria-pressed="' + (b[0] === by) + '">' + esc(b[1]) + '</button>'; }).join('');
+      return rpc('admin_member_breakdown', { p_by: by }).then(function (rows) { $('breakdown').innerHTML = barList(rows); });
+    }
+    v.onclick = function (e) {
+      var d = e.target.closest('[data-days]'), b = e.target.closest('[data-by]');
+      if (d) { days = Number(d.getAttribute('data-days')); loadDaily().catch(fail); }
+      if (b) { by = b.getAttribute('data-by'); loadBy().catch(fail); }
+    };
+    return Promise.all([
+      rpc('admin_overview').then(function (o) {
+        o = o[0] || {};
+        $('tiles').innerHTML = [['Members', o.members], ['New this week', o.signups_7d], ['Community requests', o.pending_communities], ['Open reports', o.open_reports], ['Suspended', o.suspended_members]]
+          .map(function (t) { return '<div class="tile"><b>' + esc(t[1] === undefined ? '' : t[1]) + '</b><span>' + esc(t[0]) + '</span></div>'; }).join('');
+        counts.communities = o.pending_communities; counts.reports = o.open_reports; renderTabs();
+      }),
+      loadDaily(), loadBy()
+    ]);
+  }
+
+  // Community requests: approve, or reject with a reason the requester receives
+  function viewCommunities(v) {
+    function load() {
+      return rpc('admin_community_requests').then(function (rows) {
+        counts.communities = rows.length; renderTabs();
+        v.innerHTML = '<h2>Community requests</h2>' + (rows.length ? rows.map(function (c) {
+          return '<div class="card"><b dir="auto">' + esc(c.name) + '</b> <span class="tag">' + esc(c.kind) + '</span>' +
+            '<div class="muted">' + esc([c.area, c.governorate].filter(Boolean).join(', ')) + ' · asked by ' + esc(who(c.requester_username, c.requester_name)) + ' · ' + esc(when(c.created_at)) + '</div>' +
+            (canAct() ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-ok="' + esc(c.id) + '">Approve</button><button class="btn" data-no="' + esc(c.id) + '" data-name="' + esc(c.name) + '">Reject…</button></div>' : '') + '</div>';
+        }).join('') : '<p class="muted">No requests waiting.</p>');
+      });
+    }
+    v.onclick = function (e) {
+      var ok = e.target.closest('[data-ok]'), no = e.target.closest('[data-no]');
+      if (ok) rpc('admin_review_community', { p_id: ok.getAttribute('data-ok'), p_status: 'approved', p_note: null }).then(load).catch(fail);
+      if (no) ask('Reject ' + no.getAttribute('data-name') + '?', { action: 'Reject' }).then(function (note) {
+        if (note) return rpc('admin_review_community', { p_id: no.getAttribute('data-no'), p_status: 'rejected', p_note: note }).then(load);
+      }).catch(fail);
+    };
+    return load();
+  }
+
+  // Reports: dismiss, remove the post, or suspend the member
+  function viewReports(v) {
+    var groups = [];
+    function load() {
+      return rpc('admin_open_reports').then(function (rows) {
+        groups = rows; counts.reports = rows.length; renderTabs();
+        v.innerHTML = '<h2>Reports</h2>' + (rows.length ? rows.map(function (g, i) {
+          var target = g.post_id ? 'Post: ' + esc(g.post_dish || g.post_caption || g.post_kind || '') + (g.post_removed ? ' <span class="tag">REMOVED</span>' : '') : 'Member profile';
+          return '<div class="card"><b>' + g.reports + ' report' + (g.reports === 1 ? '' : 's') + '</b> · ' + target +
+            '<div class="muted" dir="auto">By ' + esc(who(g.owner_username, g.owner_name)) + (g.owner_suspended ? ' (suspended)' : '') + ' · first reported ' + esc(when(g.first_at)) + '</div>' +
+            '<div dir="auto">“' + esc((g.reasons || []).join('”, “')) + '”</div>' +
+            (canAct() ? '<div class="row" style="margin-top:10px">' +
+              '<button class="btn" data-dismiss="' + i + '">Dismiss</button>' +
+              (g.post_id && !g.post_removed ? '<button class="btn danger" data-remove="' + i + '">Remove post…</button>' : '') +
+              (g.owner_id && !g.owner_suspended ? '<button class="btn danger" data-suspend="' + i + '">Suspend member…</button>' : '') + '</div>' : '') + '</div>';
+        }).join('') : '<p class="muted">No open reports.</p>');
+      });
+    }
+    v.onclick = function (e) {
+      var d = e.target.closest('[data-dismiss]'), r = e.target.closest('[data-remove]'), s = e.target.closest('[data-suspend]');
+      if (d) { var g = groups[d.getAttribute('data-dismiss')]; rpc('admin_dismiss_reports', { p_post_id: g.post_id, p_profile_id: g.profile_id, p_note: null }).then(load).catch(fail); }
+      if (r) { var g2 = groups[r.getAttribute('data-remove')]; ask('Remove this post?', { action: 'Remove' }).then(function (why) { if (why) return rpc('admin_remove_post', { p_post_id: g2.post_id, p_reason: why }).then(load); }).catch(fail); }
+      if (s) { var g3 = groups[s.getAttribute('data-suspend')]; ask('Suspend ' + who(g3.owner_username, g3.owner_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: g3.owner_id, p_suspended: true, p_reason: why }).then(load); }).catch(fail); }
+    };
+    return load();
+  }
+
+  // Members: search, verify, suspend, download
+  function viewMembers(v) {
+    var items = [], q = '';
+    v.innerHTML = '<div class="row"><h2 class="grow">Members</h2>' + (role === 'owner' ? '<button class="btn" id="exportMembers">Download all members (CSV)</button>' : '') + '</div>' +
+      '<div class="card"><div class="row"><input type="text" id="mq" placeholder="Username, name, phone or email" autocomplete="off"><button class="btn strong" id="mgo">Search</button></div><div id="mres"></div></div>';
+    function draw() {
+      $('mres').innerHTML = !items.length ? (q ? '<p class="muted">No members match.</p>' : '<p class="muted">Type at least 2 characters.</p>') :
+        '<div class="tablewrap"><table><tr><th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + items.map(function (m, i) {
+          return '<tr><td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
+            (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
+            '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + '</td>' +
+            '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + '</span></td>' +
+            '<td>' + m.posts + ' posts<br>' + m.orders + ' orders<br>' + m.open_reports + ' open reports</td>' +
+            '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' +
+              (canAct() && !m.staff_role ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) + '</td></tr>';
+        }).join('') + '</table></div>';
+    }
+    function search() { q = $('mq').value.trim(); return rpc('admin_find_members', { p_query: q }).then(function (r) { items = r; draw(); }).catch(fail); }
+    $('mgo').onclick = search;
+    $('mq').onkeydown = function (e) { if (e.key === 'Enter') search(); };
+    draw();
+    var ex = $('exportMembers');
+    if (ex) ex.onclick = function () {
+      ex.disabled = true;
+      rpc('admin_export_members').then(function (rows) { downloadCsv('tabkheen-members', rows); }).catch(fail).then(function () { ex.disabled = false; });
+    };
+    $('mres').onclick = function (e) {
+      var vf = e.target.closest('[data-verify]'), li = e.target.closest('[data-lift]'), su = e.target.closest('[data-susp]');
+      if (vf) { var m = items[vf.getAttribute('data-verify')]; rpc('admin_set_verified', { p_user_id: m.id, p_verified: !m.verified_at }).then(search).catch(fail); }
+      if (li) { var m2 = items[li.getAttribute('data-lift')]; rpc('admin_set_suspended', { p_user_id: m2.id, p_suspended: false, p_reason: null }).then(search).catch(fail); }
+      if (su) { var m3 = items[su.getAttribute('data-susp')]; ask('Suspend ' + who(m3.username, m3.display_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: m3.id, p_suspended: true, p_reason: why }).then(search); }).catch(fail); }
+    };
+  }
+
+  // Orders: find, open the timeline, download
+  var ORDER_STATUS = { pending: 'WAITING FOR COOK', accepted: 'ACCEPTED', ready: 'READY', picked_up: 'PICKED UP', declined: 'DECLINED', cancelled: 'CANCELLED' };
+  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received' };
+  function viewOrders(v) {
+    var state = null, items = [];
+    v.innerHTML = '<div class="row"><h2 class="grow">Orders</h2>' + (role === 'owner' ? '<button class="btn" id="exportOrders">Download all orders (CSV)</button>' : '') + '</div>' +
+      '<div class="card"><div class="row"><input type="text" id="oq" placeholder="Buyer, cook, dish or order code" autocomplete="off"><button class="btn strong" id="ogo">Search</button></div>' +
+      '<div style="margin-top:10px" id="ostate"></div></div><div id="olist"></div>';
+    function chips() {
+      $('ostate').innerHTML = [['All', null], ['Open', 'open'], ['Picked up', 'done'], ['Cancelled', 'cancelled']].map(function (s) {
+        return '<button class="chip" data-state="' + (s[1] || '') + '" aria-pressed="' + (state === s[1]) + '">' + s[0] + '</button>'; }).join('');
+    }
+    function draw() {
+      $('olist').innerHTML = items.length ? items.map(function (o, i) {
+        var total = o.price_egp !== null ? ' · ' + (Number(o.price_egp) * o.plates) + ' EGP' : '';
+        return '<div class="card"><div class="row"><b class="grow" dir="auto">' + esc(o.dish_name || 'Dish') + ' × ' + o.plates + esc(total) + '</b><span class="tag">' + esc(ORDER_STATUS[o.status] || o.status) + '</span></div>' +
+          '<div dir="auto">' + esc(who(o.buyer_username, o.buyer_name)) + ' ordered from ' + esc(who(o.cook_username, o.cook_name)) + '</div>' +
+          '<div class="muted">Order ' + esc(o.id.slice(0, 8).toUpperCase()) + ' · ' + esc(when(o.created_at)) + (o.community_name ? ' · ' + esc(o.community_name) : '') + (o.pickup_at ? ' · pickup ' + esc(when(o.pickup_at)) : '') + '</div>' +
+          (o.note ? '<div dir="auto">Note: “' + esc(o.note) + '”</div>' : '') + (o.cancel_reason ? '<div dir="auto">Reason: “' + esc(o.cancel_reason) + '”</div>' : '') +
+          '<div id="tl' + i + '"><button class="btn" data-tl="' + i + '" style="margin-top:8px">Show history</button></div></div>';
+      }).join('') : '<p class="muted">No orders match.</p>';
+    }
+    function search() { return rpc('admin_find_orders', { p_query: $('oq').value.trim(), p_state: state }).then(function (r) { items = r; draw(); }).catch(fail); }
+    $('ogo').onclick = search;
+    $('oq').onkeydown = function (e) { if (e.key === 'Enter') search(); };
+    $('ostate').onclick = function (e) { var c = e.target.closest('[data-state]'); if (!c) return; state = c.getAttribute('data-state') || null; chips(); search(); };
+    $('olist').onclick = function (e) {
+      var b = e.target.closest('[data-tl]'); if (!b) return;
+      var i = b.getAttribute('data-tl'), box = $('tl' + i);
+      box.innerHTML = '<p class="muted">Loading…</p>';
+      rpc('admin_order_timeline', { p_id: items[i].id }).then(function (evs) {
+        box.innerHTML = '<ul class="steps">' + evs.map(function (ev) {
+          return '<li><b>' + esc(EVENT_LABEL[ev.event] || ev.event) + '</b> <span class="muted">' + esc(when(ev.created_at)) + (ev.actor_username ? ' · @' + esc(ev.actor_username) : '') + '</span>' + (ev.note ? '<div dir="auto">“' + esc(ev.note) + '”</div>' : '') + '</li>';
+        }).join('') + '</ul>';
+      }).catch(fail);
+    };
+    var ex = $('exportOrders');
+    if (ex) ex.onclick = function () {
+      ex.disabled = true;
+      rpc('admin_export_orders').then(function (rows) { downloadCsv('tabkheen-orders', rows); }).catch(fail).then(function () { ex.disabled = false; });
+    };
+    chips();
+    return search();
+  }
+
+  // Referrals: how members heard about us, by week and detail
+  var HEARD = { friend: 'A friend', family: 'Family', community: 'My community', social_media: 'Social media', ad: 'An ad', search: 'Search', event: 'An event', media: 'Media', other: 'Other' };
+  function viewReferrals(v) {
+    var comm = null, communities = [];
+    v.innerHTML = '<div class="row"><h2 class="grow">Referrals</h2><button class="btn" id="exportRef">Download table (CSV)</button></div>' +
+      '<div class="card"><div id="rchips"></div></div><div id="rres"></div>';
+    var rowsNow = [];
+    function load() {
+      $('rchips').innerHTML = '<button class="chip" data-c="" aria-pressed="' + (comm === null) + '">Everyone</button>' + communities.map(function (c) {
+        return '<button class="chip" data-c="' + esc(c.id) + '" aria-pressed="' + (comm === c.id) + '">' + esc(c.name) + ' (' + c.members + ')</button>'; }).join('');
+      return rpc('admin_referral_tally', { p_community_id: comm }).then(function (rows) {
+        rowsNow = rows;
+        var total = rows.reduce(function (n, r) { return n + r.signups; }, 0), by = {};
+        rows.forEach(function (r) { var k = r.heard_from || 'Skipped the question'; by[k] = (by[k] || 0) + r.signups; });
+        var list = Object.keys(by).map(function (k) { return { label: HEARD[k] || k, members: by[k] }; }).sort(function (a, b) { return b.members - a.members; });
+        $('rres').innerHTML = '<div class="card"><h3>All time · ' + total + ' sign-ups</h3>' + barList(list) + '</div>' +
+          '<div class="card"><h3>By week and detail</h3><div class="tablewrap"><table><tr><th>Week of</th><th>Answer</th><th>Detail</th><th>Sign-ups</th></tr>' +
+          rows.map(function (r) { return '<tr><td>' + esc(dayLabel(r.week_start)) + '</td><td>' + esc(r.heard_from ? (HEARD[r.heard_from] || r.heard_from) : 'Skipped') + '</td><td dir="auto">' + esc(r.heard_detail || '') + '</td><td>' + r.signups + '</td></tr>'; }).join('') + '</table></div></div>';
+      });
+    }
+    $('rchips').onclick = function (e) { var c = e.target.closest('[data-c]'); if (!c) return; comm = c.getAttribute('data-c') || null; load().catch(fail); };
+    $('exportRef').onclick = function () { downloadCsv('tabkheen-referrals', rowsNow.map(function (r) { return { week_of: r.week_start, answer: r.heard_from || 'skipped', detail: r.heard_detail || '', signups: r.signups }; })); };
+    return rpc('admin_communities').then(function (c) { communities = c; return load(); });
+  }
+
+  // Announcements
+  function viewAnnounce(v) {
+    if (!canAct()) { v.innerHTML = '<p class="muted">Only owners and moderators can send announcements.</p>'; return; }
+    var all = true, chosen = {}, communities = [];
+    v.innerHTML = '<h2>Send announcement</h2><div class="card"><h3>Who gets it</h3><div id="aw"></div><div id="ac"></div>' +
+      '<h3 style="margin-top:14px">Title</h3><input type="text" id="at" maxlength="80" style="width:100%">' +
+      '<h3 style="margin-top:14px">Message</h3><textarea id="ab" maxlength="1000"></textarea><div id="ares"></div>' +
+      '<div class="row" style="margin-top:12px"><button class="btn strong" id="asend">Send</button></div></div>';
+    function who2() {
+      $('aw').innerHTML = '<button class="chip" data-all="1" aria-pressed="' + all + '">Everyone</button><button class="chip" data-all="0" aria-pressed="' + !all + '">Chosen communities</button>';
+      $('ac').innerHTML = all ? '' : communities.map(function (c) { return '<button class="chip" data-cid="' + esc(c.id) + '" aria-pressed="' + !!chosen[c.id] + '">' + esc(c.name) + ' (' + c.members + ')</button>'; }).join('');
+    }
+    v.onclick = function (e) {
+      var a = e.target.closest('[data-all]'), c = e.target.closest('[data-cid]');
+      if (a) { all = a.getAttribute('data-all') === '1'; who2(); }
+      if (c) { var id = c.getAttribute('data-cid'); chosen[id] = !chosen[id]; who2(); }
+    };
+    $('asend').onclick = function () {
+      var ids = Object.keys(chosen).filter(function (k) { return chosen[k]; }), t = $('at').value.trim(), b = $('ab').value.trim();
+      if (!t || !b || (!all && !ids.length)) { $('ares').innerHTML = '<div class="err">Add a title, a message and who gets it.</div>'; return; }
+      if (!confirm('Send this to ' + (all ? 'everyone' : ids.length + ' communities') + '?')) return;
+      $('asend').disabled = true;
+      rpc('admin_post_announcement', { p_title: t, p_body: b, p_community_ids: all ? null : ids }).then(function () {
+        $('ares').innerHTML = '<div class="ok">Sent.</div>'; $('at').value = ''; $('ab').value = '';
+      }).catch(function (e2) { $('ares').innerHTML = '<div class="err">' + esc(msg(e2)) + '</div>'; }).then(function () { $('asend').disabled = false; });
+    };
+    return rpc('admin_communities').then(function (c) { communities = c; who2(); });
+  }
+
+  // Action log
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  function viewLog(v) {
+    return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
+      v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {
+        var d = a.details || {}, n = d.name || d.title || d.dish || (a.action === 'data_exported' ? a.target_type : '');
+        return '<tr><td>' + esc(when(a.created_at)) + '</td><td>' + esc(a.actor_username ? '@' + a.actor_username : 'Staff') + '</td><td dir="auto">' + esc((ACTION_LABEL[a.action] || a.action) + (n ? ': ' + n : '')) + '</td><td dir="auto">' + esc(a.reason || '') + '</td></tr>';
+      }).join('') + '</table></div></div>';
+    });
+  }
+
+  // ---------- sign-in ----------
+  function sha256Hex(text) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    });
+  }
+  var rawNonce = null, gsiStarted = false;
+  function renderGoogle() {
+    if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(renderGoogle, 300); return; }
+    if (gsiStarted) return;
+    gsiStarted = true;
+    rawNonce = crypto.getRandomValues(new Uint32Array(4)).join('-');
+    sha256Hex(rawNonce).then(function (hashed) {
+      google.accounts.id.initialize({ client_id: CFG.googleClientId, callback: onCredential, nonce: hashed, ux_mode: 'popup', itp_support: true });
+      google.accounts.id.renderButton($('gbtn'), { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', width: 300 });
+    });
+  }
+  function onCredential(resp) {
+    showErr($('signinErr'), '');
+    sb.signInGoogle(resp.credential, rawNonce).then(function (res) {
+      if (res.error) throw new Error(msg(res.error));
+      return start();
+    }).catch(function (e) { showErr($('signinErr'), msg(e)); });
+  }
+  function showSignin(note) {
+    $('app').hidden = true; $('signin').hidden = false; $('signout').hidden = true; $('who').textContent = '';
+    showErr($('signinErr'), note || '');
+    renderGoogle();
+  }
+  function start() {
+    return rpc('staff_role').then(function (r) {
+      if (!r) { return sb.signOut().then(function () { showSignin('This account is not staff. Ask the owner to add you.'); }); }
+      role = r;
+      return sb.fresh().then(function () {
+        try { me = JSON.parse(localStorage.getItem('tabkheen.admin.session')).user.id; } catch (e) { me = null; }
+        $('signin').hidden = true; $('app').hidden = false; $('signout').hidden = false;
+        $('who').textContent = 'Signed in as ' + role;
+        open('overview');
+      });
+    });
+  }
+  $('signout').onclick = function () { sb.signOut().then(function () { role = null; showSignin(''); }); };
+
+  if (sb.hasSession()) start().catch(function (e) { showSignin(/expired|JWT/i.test(msg(e)) ? '' : msg(e)); });
+  else showSignin('');
+})();
+</script>
+</body>
+</html>

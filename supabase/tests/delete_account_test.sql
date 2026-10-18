@@ -7,14 +7,16 @@ reset role;
 insert into auth.users (id, email) values
   ('d0000000-0000-0000-0000-000000000001', 'cook@example.com'),
   ('d0000000-0000-0000-0000-000000000002', 'buyer@example.com'),
-  ('d0000000-0000-0000-0000-000000000003', 'owner@example.com'),
-  ('d0000000-0000-0000-0000-000000000004', 'owner2@example.com');
+  ('d0000000-0000-0000-0000-000000000003', 'del-owner@example.com'),
+  ('d0000000-0000-0000-0000-000000000004', 'del-owner2@example.com');
 insert into public.profiles (id, username, display_name) values
   ('d0000000-0000-0000-0000-000000000001', 'del_cook', 'Cook'),
   ('d0000000-0000-0000-0000-000000000002', 'del_buyer', 'Buyer'),
   ('d0000000-0000-0000-0000-000000000003', 'del_owner', 'Owner'),
   ('d0000000-0000-0000-0000-000000000004', 'del_owner2', 'Owner2')
 on conflict (id) do update set username = excluded.username, display_name = excluded.display_name;
+-- the earlier admin tests share this database: this test needs its owner to be the only one
+delete from public.admin_staff;
 insert into public.admin_staff (user_id, role) values ('d0000000-0000-0000-0000-000000000003', 'owner');
 insert into public.pickup_points (id, owner_id, label, lat, lng)
   values ('d3000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'Home', 30.0, 31.0);
