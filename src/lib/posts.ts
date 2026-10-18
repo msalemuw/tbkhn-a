@@ -81,7 +81,6 @@ export function mediaUrl(path: string | null): string | null {
 export async function uploadPhoto(userId: string, uri: string, mimeType = 'image/jpeg'): Promise<string> {
   const type = mimeType === 'image/png' || mimeType === 'image/webp' ? mimeType : 'image/jpeg';
   const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
-  const path = `${userId}/${Date.now()}.${ext}`;
   let body: ArrayBuffer;
   try {
     body = await (await fetch(uri)).arrayBuffer();
@@ -90,7 +89,9 @@ export async function uploadPhoto(userId: string, uri: string, mimeType = 'image
   }
   let lastError = '';
   for (let attempt = 0; attempt < 2; attempt++) {
-    const { error } = await supabase.storage.from('media').upload(path, body, { contentType: type, upsert: true });
+    // A new name each try, and no upsert: replacing a file needs a read rule the photos bucket does not have (the cause of "row-level security" errors).
+    const path = `${userId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('media').upload(path, body, { contentType: type });
     if (!error) return path;
     lastError = error.message;
     await new Promise((r) => setTimeout(r, 800));
