@@ -64,3 +64,5 @@ $P -d tbkhn_test -f migrations/0035_menu_switch.sql
 $P -d tbkhn_test -f tests/menu_switch_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0036_menu_off_everything.sql
 $P -d tbkhn_test -f tests/menu_off_everything_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0037_admin_ranking_controls.sql
+$P -d tbkhn_test -f tests/admin_ranking_controls_test.sql | tail -1
