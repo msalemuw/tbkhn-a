@@ -319,12 +319,14 @@
     orders: { label: 'Orders', render: viewOrders },
     referrals: { label: 'Referrals', render: viewReferrals },
     announce: { label: 'Announcements', render: viewAnnounce },
+    controls: { label: 'Controls', render: viewControls },
+    staff: { label: 'Staff', render: viewStaff, only: 'owner' },
     log: { label: 'Action log', render: viewLog }
   };
   var current = 'overview', counts = {};
 
   function renderTabs() {
-    $('tabs').innerHTML = Object.keys(views).map(function (k) {
+    $('tabs').innerHTML = Object.keys(views).filter(function (k) { return !views[k].only || views[k].only === role; }).map(function (k) {
       var n = counts[k] ? '<span class="count">' + counts[k] + '</span>' : '';
       return '<button role="tab" data-tab="' + k + '" aria-selected="' + (k === current) + '">' + esc(views[k].label) + n + '</button>';
     }).join('');
@@ -446,6 +448,81 @@
           if (note) return rpc('admin_review_community', { p_id: r.id, p_status: 'rejected', p_note: note }).then(load);
         }).catch(fail);
       }
+    };
+    return load();
+  }
+
+  // Controls: pause ordering or posting, maintenance mode, minimum app version
+  function viewControls(v) {
+    var ctl = {};
+    function on(k) { return ctl[k] !== false; }
+    function pauseRow(k, label, what, canSet) {
+      var live = on(k);
+      return '<div class="card"><div class="row"><div class="grow"><b>' + label + '</b> <span class="tag">' + (live ? 'ON' : 'PAUSED') + '</span><div class="muted">' + what + '</div></div>' +
+        (canSet ? '<button class="btn ' + (live ? 'danger' : 'strong') + '" data-pause="' + k + '">' + (live ? 'Pause' : 'Turn back on') + '</button>' : '') + '</div></div>';
+    }
+    function draw() {
+      var owner = role === 'owner', mod = canAct();
+      v.innerHTML = '<h2>Controls</h2><p class="muted">Quick switches if something goes wrong. Pausing is enforced in the database, so it also stops older app versions. Every change is written to the action log.</p>' +
+        pauseRow('ordering_enabled', 'Ordering', 'When paused, nobody can place a new order. Existing orders continue.', mod) +
+        pauseRow('posting_enabled', 'Posting', 'When paused, nobody can add a new post, story or “today’s menu”.', mod) +
+        '<div class="card"><div class="row"><div class="grow"><b>Maintenance mode</b> <span class="tag">' + (ctl.maintenance === true ? 'ON' : 'OFF') + '</span><div class="muted">When on, the app shows the message below instead of opening. Use for a short fix or migration.</div></div>' +
+        (owner ? '<button class="btn ' + (ctl.maintenance === true ? 'strong' : 'danger') + '" data-maint="1">' + (ctl.maintenance === true ? 'Turn off' : 'Turn on…') + '</button>' : '') + '</div>' +
+        '<div style="margin-top:10px"><textarea id="ctlMsg" maxlength="300" style="width:100%;box-sizing:border-box" ' + (owner ? '' : 'disabled') + ' dir="auto"></textarea>' +
+        (owner ? '<div class="row" style="margin-top:8px"><button class="btn" id="ctlMsgSave">Save message</button></div>' : '') + '</div></div>' +
+        '<div class="card"><b>Minimum app version</b><div class="muted">Anyone on an older version sees “please update” instead of the app. Leave empty to allow every version. The version is the one in Profile > Settings, such as 1.0.2.</div>' +
+        '<div class="row" style="margin-top:8px"><input type="text" id="ctlVer" placeholder="e.g. 1.0.2" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn strong" id="ctlVerSave">Save</button>' : '') + '</div></div>' +
+        '<div class="err" id="ctlErr" hidden></div>';
+      $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || '';
+    }
+    function load() { return rpc('admin_get_controls').then(function (rows) { ctl = {}; rows.forEach(function (r) { ctl[r.key] = r.value; }); draw(); }); }
+    function set(k, val) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
+    v.onclick = function (e) {
+      var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]');
+      if (p) { var k = p.getAttribute('data-pause'); if (on(k) && !confirm('Pause this for everyone?')) return; set(k, !on(k)); }
+      if (m) { if (ctl.maintenance === true) set('maintenance', false); else if (confirm('Turn maintenance mode on? Nobody can use the app until you turn it off.')) set('maintenance', true); }
+      if (e.target.id === 'ctlMsgSave') set('maintenance_message', $('ctlMsg').value.trim());
+      if (e.target.id === 'ctlVerSave') set('min_app_version', $('ctlVer').value.trim());
+    };
+    return load();
+  }
+
+  // Staff: who can use this admin, and what they may do (owner only)
+  function viewStaff(v) {
+    var staff = [], found = [];
+    var ROLE = { owner: 'Owner (everything)', moderator: 'Moderator (queues, takedowns, announcements)', support: 'Support (read only)' };
+    function roleOpts(sel) { return ['moderator', 'support'].map(function (r) { return '<option value="' + r + '"' + (r === sel ? ' selected' : '') + '>' + esc(ROLE[r]) + '</option>'; }).join(''); }
+    function draw() {
+      v.innerHTML = '<h2>Staff</h2><div class="card"><div class="tablewrap"><table><tr><th>Member</th><th>Email</th><th>Role</th><th>Added by</th><th></th></tr>' + staff.map(function (s, i) {
+        return '<tr><td dir="auto"><b>' + esc(s.display_name || who(s.username)) + '</b><br><span class="muted">' + esc(s.username ? '@' + s.username : '') + '</span></td><td>' + esc(s.email || '') + '</td>' +
+          '<td>' + (s.role === 'owner' ? '<span class="tag">OWNER</span>' : '<select data-role="' + i + '">' + roleOpts(s.role) + '</select>') + '</td>' +
+          '<td>' + esc(s.added_by_username ? '@' + s.added_by_username : '') + '<br><span class="muted">' + esc(when(s.created_at)) + '</span></td>' +
+          '<td>' + (s.role === 'owner' ? '' : '<button class="btn danger" data-rm="' + i + '">Remove…</button>') + '</td></tr>';
+      }).join('') + '</table></div></div>' +
+      '<h2>Add staff</h2><div class="card"><p class="muted" style="margin-top:0">The person must already have a tabkheen A account (signed in with the same Google account on the admin page). Owners can only be changed in the Supabase SQL Editor.</p>' +
+      '<div class="row"><input type="text" id="stq" placeholder="Username, name or email" autocomplete="off"><button class="btn strong" id="stgo">Search</button></div><div id="stres"></div></div><div class="err" id="stErr" hidden></div>';
+      drawFound();
+    }
+    function drawFound() {
+      var el = $('stres'); if (!el) return;
+      el.innerHTML = found.length ? '<div class="tablewrap"><table>' + found.filter(function (m) { return !m.staff_role; }).map(function (m) {
+        return '<tr><td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b> <span class="muted">' + esc(m.username ? '@' + m.username : '') + ' · ' + esc(m.email || '') + '</span></td>' +
+          '<td><select id="newrole' + esc(m.id) + '">' + roleOpts('support') + '</select></td><td><button class="btn strong" data-add="' + esc(m.id) + '">Add as staff</button></td></tr>';
+      }).join('') + '</table></div>' : '';
+    }
+    function load() { return rpc('admin_list_staff').then(function (r) { staff = r; found = []; draw(); }); }
+    function setRole(id, role) { return rpc('admin_set_staff_role', { p_user_id: id, p_role: role }).then(load).catch(function (e) { showErr($('stErr'), msg(e)); }); }
+    v.onclick = function (e) {
+      var rm = e.target.closest('[data-rm]'), ad = e.target.closest('[data-add]');
+      if (rm) { var s = staff[rm.getAttribute('data-rm')]; if (confirm('Remove ' + who(s.username, s.display_name) + ' from staff? They lose access to this admin.')) setRole(s.user_id, null); }
+      if (ad) { var id = ad.getAttribute('data-add'); setRole(id, $('newrole' + id).value); }
+      if (e.target.id === 'stgo') {
+        rpc('admin_find_members', { p_query: $('stq').value.trim() }).then(function (r) { found = r; drawFound(); }).catch(function (er) { showErr($('stErr'), msg(er)); });
+      }
+    };
+    v.onchange = function (e) {
+      var r = e.target.getAttribute('data-role');
+      if (r !== null) { var s = staff[r]; setRole(s.user_id, e.target.value); }
     };
     return load();
   }
@@ -611,7 +688,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

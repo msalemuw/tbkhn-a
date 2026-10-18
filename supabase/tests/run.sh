@@ -43,3 +43,5 @@ $P -d tbkhn_test -f tests/admin_community_duplicates_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0025_admin_join_existing_community.sql
 $P -d tbkhn_test -f migrations/0026_admin_community_tools.sql
 $P -d tbkhn_test -f tests/admin_community_tools_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0027_admin_staff_controls.sql
+$P -d tbkhn_test -f tests/admin_staff_controls_test.sql | tail -1
