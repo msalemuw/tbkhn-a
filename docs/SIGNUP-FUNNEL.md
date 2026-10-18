@@ -37,3 +37,6 @@ Phone number, email and username must each be unique across all accounts, across
 - Unique index in the database; the live check in the app is advisory. The final check runs when the code is confirmed or the account is created, so two people cannot claim the same value at once.
 - On conflict: sign-up shows "already registered → Log in"; login with an unknown identifier shows "no account → Sign up". Log `identifier_conflict` (type: phone | email | username) in the funnel.
 - Never reveal which account owns the value beyond "already registered".
+
+## Admin dashboard
+The **Sign-up funnel** tab of the web admin (`website/admin`, migration `0031_admin_signup_funnel.sql`) reads this table: visits per step, day by day, stuck points, per-ad results and unfinished sign-ups. Counts are of distinct `session_id`s; the website's Google/Apple redirect starts a new visit, so a step can read slightly above the one before it.
