@@ -415,6 +415,7 @@
     members: { label: 'Members', render: viewMembers },
     orders: { label: 'Orders', render: viewOrders },
     referrals: { label: 'Referrals', render: viewReferrals },
+    funnel: { label: 'Sign-up funnel', render: viewFunnel },
     announce: { label: 'Announcements', render: viewAnnounce },
     controls: { label: 'Controls', render: viewControls },
     staff: { label: 'Staff', render: viewStaff, only: 'owner' },
@@ -829,6 +830,83 @@
     };
     chips();
     return search();
+  }
+
+  // Sign-up funnel: where new people stop, by day, by ad, plus who signed in but never finished
+  var FUNNEL_STEPS = [
+    ['welcome_viewed', 'Opened the welcome screen', true], ['signup_method_chosen', 'Chose how to sign in', true], ['phone_entered', 'Entered a phone number', false],
+    ['code_sent', 'Was sent a code', false], ['code_entered', 'Entered the code', false], ['profile_started', 'Started their profile', true],
+    ['communities_selected', 'Picked communities', true], ['signup_completed', 'Finished sign-up', true]
+  ];
+  function viewFunnel(v) {
+    var days = 14, via = null;
+    var VIAS = [[null, 'Everywhere'], ['web', 'Website'], ['app', 'App']];
+    v.innerHTML = '<div class="row"><h2 class="grow">Sign-up funnel</h2><span id="fdays"></span></div>' +
+      '<div class="card"><div id="fvia"></div><p class="muted" style="margin:8px 0 0">Each number is a count of visits. The website’s Google or Apple sign-in sends people away and back, which starts a new visit, so a later step can look a little bigger than the one before.</p></div>' +
+      '<div class="card"><h2>Step by step</h2><div id="fsteps"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h2>Day by day</h2><div id="fdaily"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h2>Where people get stuck</h2><div class="tablewrap" id="fprob"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h2>By ad</h2><p class="muted" style="margin-top:0">Visits per ad campaign and placement. “Finished” is visits that completed sign-up.</p><div class="tablewrap" id="fsrc"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h2>Signed in but never finished</h2><p class="muted" style="margin-top:0">People who created an account and did not finish their profile, at least 30 minutes ago. Their last step shows where they stopped.</p><div class="tablewrap" id="funf"><p class="muted">Loading…</p></div></div>';
+    function chips() {
+      $('fdays').innerHTML = [7, 14, 30, 90].map(function (d) { return '<button class="chip" data-days="' + d + '" aria-pressed="' + (d === days) + '">' + d + ' days</button>'; }).join('');
+      $('fvia').innerHTML = VIAS.map(function (x) { return '<button class="chip" data-via="' + (x[0] || '') + '" aria-pressed="' + (x[0] === via) + '">' + x[1] + '</button>'; }).join('');
+    }
+    function pct(a, b) { return b > 0 && a <= b ? Math.round(a / b * 100) + '%' : '–'; }
+    function loadSteps() {
+      return rpc('admin_signup_funnel', { p_days: days, p_via: via }).then(function (rows) {
+        var by = {}; rows.forEach(function (r) { by[r.step] = Number(r.visits); });
+        var shown = FUNNEL_STEPS.filter(function (st) { return st[2] || by[st[0]]; });
+        var first = by.welcome_viewed || 0, prev = null;
+        $('fsteps').innerHTML = first || shown.some(function (st) { return by[st[0]]; }) ? shown.map(function (st) {
+          var n = by[st[0]] || 0, top = Math.max.apply(null, shown.map(function (x) { return by[x[0]] || 0; })) || 1;
+          var out = '<div class="barrow"><span>' + esc(st[1]) + '</span><div class="bar"><i style="width:' + Math.max(2, Math.round(n / top * 100)) + '%"></i></div><b>' + n + '</b></div>' +
+            (prev === null ? '' : '<div class="muted" style="margin:-4px 0 8px;font-size:12px">' + pct(n, prev) + ' of the step before · ' + pct(n, first) + ' of those who opened the welcome screen</div>');
+          prev = n; return out;
+        }).join('') : '<p class="muted">No sign-up activity in this period.</p>';
+      });
+    }
+    function loadDaily() {
+      return rpc('admin_signup_daily', { p_days: days, p_via: via }).then(function (rows) {
+        rows = rows.map(function (r) { return { day: r.day, started: Number(r.started), completed: Number(r.completed) }; });
+        var tot = function (k) { return rows.reduce(function (n, r) { return n + r[k]; }, 0); };
+        $('fdaily').innerHTML = '<p class="muted">' + tot('started') + ' visits opened the welcome screen and ' + tot('completed') + ' finished sign-up.</p>' +
+          lineChart(rows, [{ key: 'started', label: 'Opened welcome screen', color: COLORS.orders }, { key: 'completed', label: 'Finished sign-up', color: COLORS.signups }]);
+      });
+    }
+    function loadProblems() {
+      return rpc('admin_signup_problems', { p_days: days, p_via: via }).then(function (rows) {
+        $('fprob').innerHTML = rows.length ? '<table><tr><th>Kind</th><th>What</th><th>Visits</th><th>Times</th><th>Last</th></tr>' + rows.map(function (r) {
+          return '<tr><td>' + esc(r.kind) + '</td><td dir="auto">' + esc(r.detail) + '</td><td>' + r.visits + '</td><td>' + r.events + '</td><td>' + esc(when(r.last_at)) + '</td></tr>';
+        }).join('') + '</table>' : '<p class="muted">Nothing went wrong in this period.</p>';
+      });
+    }
+    function loadSources() {
+      return rpc('admin_signup_by_source', { p_days: days }).then(function (rows) {
+        var map = {}, order = [];
+        rows.forEach(function (r) { var k = r.campaign + '\u0000' + r.placement; if (!map[k]) { map[k] = { campaign: r.campaign, placement: r.placement }; order.push(k); } map[k][r.step] = Number(r.visits); });
+        $('fsrc').innerHTML = order.length ? '<table><tr><th>Campaign</th><th>Placement</th><th>Opened</th><th>Chose sign-in</th><th>Started profile</th><th>Finished</th><th>Finish rate</th></tr>' + order.map(function (k) {
+          var m = map[k];
+          return '<tr><td dir="auto">' + esc(m.campaign) + '</td><td dir="auto">' + esc(m.placement || '') + '</td><td>' + (m.welcome_viewed || 0) + '</td><td>' + (m.signup_method_chosen || 0) + '</td><td>' + (m.profile_started || 0) + '</td><td>' + (m.signup_completed || 0) + '</td><td>' + pct(m.signup_completed || 0, m.welcome_viewed || 0) + '</td></tr>';
+        }).join('') + '</table>' : '<p class="muted">No visits in this period.</p>';
+      });
+    }
+    function loadUnfinished() {
+      return rpc('admin_unfinished_signups').then(function (rows) {
+        var LABEL = {}; FUNNEL_STEPS.forEach(function (st) { LABEL[st[0]] = st[1]; });
+        $('funf').innerHTML = rows.length ? '<table><tr><th>Contact</th><th>Signed in</th><th>From</th><th>Last step</th></tr>' + rows.map(function (r) {
+          return '<tr><td>' + esc(r.email || '') + '<br>' + esc(r.phone || '') + '</td><td>' + esc(when(r.created_at)) + '</td><td>' + esc(r.source || '') + (r.campaign ? '<br><span class="muted">' + esc(r.campaign) + '</span>' : '') + '</td><td>' + esc(r.last_step ? (LABEL[r.last_step] || r.last_step) : 'Nothing recorded') + (r.last_step_at ? '<br><span class="muted">' + esc(when(r.last_step_at)) + '</span>' : '') + '</td></tr>';
+        }).join('') + '</table><p class="muted">Showing the latest ' + rows.length + '.</p>' : '<p class="muted">Everyone who signed in has finished.</p>';
+      });
+    }
+    function loadAll() { chips(); return Promise.all([loadSteps(), loadDaily(), loadProblems(), loadSources()]).catch(fail); }
+    v.onclick = function (e) {
+      var d = e.target.closest('[data-days]'), x = e.target.closest('[data-via]');
+      if (d) { days = Number(d.getAttribute('data-days')); loadAll(); }
+      if (x) { via = x.getAttribute('data-via') || null; loadAll(); }
+    };
+    chips();
+    return Promise.all([loadSteps(), loadDaily(), loadProblems(), loadSources(), loadUnfinished()]);
   }
 
   // Referrals: how members heard about us, by week and detail
