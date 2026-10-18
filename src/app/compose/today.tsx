@@ -143,9 +143,7 @@ export default function ComposeToday() {
           <MaterialIcons name="close" size={28} color={colors.ink} />
         </Pressable>
         <Text style={styles.topTitle}>Today’s menu</Text>
-        <Pressable style={[styles.postBtn, busy && { opacity: 0.4 }]} onPress={busy ? undefined : onPost} accessibilityRole="button" accessibilityLabel="Post">
-          <Text style={styles.postText}>Post</Text>
-        </Pressable>
+        <View style={styles.closeHit} />
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
@@ -272,8 +270,6 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 12 },
   topTitle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
-  postBtn: { height: 44, minWidth: 84, borderRadius: 22, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.teal },
-  postText: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.navy },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, backgroundColor: colors.cream },
   photoEmpty: { flexDirection: 'row', gap: 12, aspectRatio: 2.2, borderRadius: 18, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center' },
