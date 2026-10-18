@@ -594,7 +594,7 @@
     function draw() {
       var owner = role === 'owner', mod = canAct();
       v.innerHTML = '<h2>Controls</h2><p class="muted">Quick switches if something goes wrong. Pausing is enforced in the database, so it also stops older app versions. Every change is written to the action log.</p>' +
-        '<div class="card"><div class="row"><div class="grow"><b>Menu tab</b> <span class="tag">' + (on('menu_enabled') ? 'ON' : 'OFF') + '</span><div class="muted">When off, the Menu tab shows the message below instead of the dishes, and nobody can place a new order. Posting, stories, rankings and everything social keep working. Takes effect when a member next opens the tab.</div></div>' +
+        '<div class="card"><div class="row"><div class="grow"><b>Menu tab</b> <span class="tag">' + (on('menu_enabled') ? 'ON' : 'OFF') + '</span><div class="muted">When off, the Menu tab shows the message below, cooks cannot post “Today’s menu” dishes, dishes open now end, and nobody can place a new order (orders already placed continue). Posts, stories, rankings and everything social keep working. Takes effect when a member next opens the tab.</div></div>' +
         (mod ? '<button class="btn ' + (on('menu_enabled') ? 'danger' : 'strong') + '" data-menu="1">' + (on('menu_enabled') ? 'Turn off' : 'Turn on') + '</button>' : '') + '</div>' +
         '<div style="margin-top:10px"><textarea id="ctlMenuMsg" maxlength="300" style="width:100%;box-sizing:border-box" ' + (mod ? '' : 'disabled') + ' dir="auto"></textarea>' +
         (mod ? '<div class="row" style="margin-top:8px"><button class="btn" id="ctlMenuMsgSave">Save message</button></div>' : '') + '</div></div>' +
@@ -613,7 +613,7 @@
     function set(k, val) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
     v.onclick = function (e) {
       var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]'), mn = e.target.closest('[data-menu]');
-      if (mn) { if (on('menu_enabled') && !confirm('Turn the Menu tab off for everyone? Members will see the coming-soon message and cannot place orders.')) return; set('menu_enabled', !on('menu_enabled')); }
+      if (mn) { if (on('menu_enabled') && !confirm('Turn the Menu tab off for everyone? Members will see the coming-soon message, cooks cannot post “Today’s menu” dishes, dishes that are open now end, and nobody can place new orders. Orders already placed continue. Posts, stories and rankings keep working.')) return; set('menu_enabled', !on('menu_enabled')); }
       if (e.target.id === 'ctlMenuMsgSave') set('menu_message', $('ctlMenuMsg').value.trim());
       if (p) { var k = p.getAttribute('data-pause'); if (on(k) && !confirm('Pause this for everyone?')) return; set(k, !on(k)); }
       if (m) { if (ctl.maintenance === true) set('maintenance', false); else if (confirm('Turn maintenance mode on? Nobody can use the app until you turn it off.')) set('maintenance', true); }

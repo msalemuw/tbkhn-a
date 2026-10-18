@@ -1,10 +1,11 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { type Href, router } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { type Href, router, useFocusEffect } from 'expo-router';
+import { type ComponentProps, useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/constants/theme';
+import { fetchAppStatus } from '@/lib/app-status';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
@@ -17,11 +18,19 @@ const OPTIONS: { title: string; note: string; icon: IconName; href?: Href }[] = 
 ];
 
 export default function Post() {
+  // While staff have the Menu switched off, "Today's menu" is not offered (a failed check leaves it available).
+  const [menuOff, setMenuOff] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      fetchAppStatus().then((s) => setMenuOff(!!s && s.menu_enabled === false));
+    }, []),
+  );
+  const options = menuOff ? OPTIONS.filter((o) => o.href !== '/compose/today') : OPTIONS;
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={styles.title}>What do you want to share?</Text>
       <View style={styles.list}>
-        {OPTIONS.map((o) => (
+        {options.map((o) => (
           <Pressable key={o.title} style={[styles.row, !o.href && { opacity: 0.5 }]} disabled={!o.href} onPress={() => o.href && router.push(o.href)}>
             <View style={styles.icon}>
               <MaterialIcons name={o.icon} size={22} color={colors.teal} />
