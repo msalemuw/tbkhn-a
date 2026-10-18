@@ -120,7 +120,10 @@ export default function Inbox() {
           refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
           renderItem={({ item }) => {
             const d = describe(item, personName(people.get(item.payload.from ?? '')));
-            const target = item.kind === 'post_removed' || item.kind === 'community_rejected'
+            // A rejected request that duplicates an existing community opens that community.
+            const target = item.kind === 'community_rejected' && item.payload.redirect_id
+              ? { pathname: '/community/[id]' as const, params: { id: item.payload.redirect_id } }
+              : item.kind === 'post_removed' || item.kind === 'community_rejected'
               ? null
               : item.kind === 'community_approved' && item.payload.community_id
                 ? { pathname: '/community/[id]' as const, params: { id: item.payload.community_id } }
