@@ -414,6 +414,7 @@
     reports: { label: 'Reports', render: viewReports },
     members: { label: 'Members', render: viewMembers },
     verification: { label: 'Verification', render: viewVerification },
+    rankings: { label: 'Rankings', render: viewRankings },
     orders: { label: 'Orders', render: viewOrders },
     support: { label: 'Support', render: viewSupport },
     referrals: { label: 'Referrals', render: viewReferrals },
@@ -801,6 +802,70 @@
     return rpc('admin_data_tables').then(function (r) { tables = r; chips(); });
   }
 
+  // Rankings: top 3 per community, keep a member out (reversible), review suspicious likes
+  function viewRankings(v) {
+    var kind = 'likes', standings = [], flagged = [], excluded = [], likers = null, filter = '';
+    v.innerHTML = '<h2>Rankings</h2>' +
+      '<div class="card"><p class="muted" style="margin:0">Every like counts and nothing here changes how they are counted. Staff can keep a member out of the rankings (with a reason, written to the action log) and let them back in at any time. The review list only points at cooks worth a look.</p></div>' +
+      '<div class="card"><div class="row"><h3 class="grow" style="margin:0">Current top 3 in each community</h3><span id="rkKinds"></span></div>' +
+      '<div class="row" style="margin:8px 0"><input type="text" id="rkq" placeholder="Filter by community or cook" autocomplete="off" style="flex:1 1 220px"></div><div id="rkStand"></div></div>' +
+      '<div class="card"><h3 style="margin:0 0 4px">Likes to review</h3><p class="muted" style="margin:0 0 8px">A cook appears when at least 5 of their likes (their own excluded) are at least half from accounts less than a day old at the time of the like, or when 10 or more likes arrived within one hour.</p><div id="rkFlag"></div></div>' +
+      '<div id="rkLikers"></div>' +
+      '<div class="card"><h3 style="margin:0 0 8px">Kept out of the rankings</h3><div id="rkOut"></div></div>';
+    function name(x) { return '<b>' + esc(x.display_name || who(x.username)) + '</b>' + (x.username ? '<br><span class="muted">@' + esc(x.username) + '</span>' : ''); }
+    function reload() {
+      return Promise.all([rpc('admin_ranking_standings', { p_kind: kind }), rpc('admin_ranking_suspicious_likes'), rpc('admin_ranking_exclusions')]).then(function (r) {
+        standings = r[0]; flagged = r[1]; excluded = r[2]; draw();
+      }).catch(fail);
+    }
+    function kindChips() {
+      $('rkKinds').innerHTML = [['likes', 'Likes'], ['service', 'Rating × orders']].map(function (k) {
+        return '<button class="chip" data-kind="' + k[0] + '" aria-pressed="' + (k[0] === kind) + '">' + k[1] + '</button>'; }).join('');
+    }
+    function keepOutBtn(id, label) { return canAct() ? '<button class="btn danger" data-out="' + esc(id) + '" data-label="' + esc(label) + '">Keep out of rankings…</button>' : ''; }
+    function draw() {
+      kindChips();
+      var f = filter.toLowerCase(), rows = standings.filter(function (s) {
+        return !f || [s.community_name, s.username, s.display_name].join(' ').toLowerCase().indexOf(f) >= 0; });
+      $('rkStand').innerHTML = !rows.length ? '<p class="muted">' + (standings.length ? 'Nothing matches.' : 'Nobody is ranked yet.') + '</p>' :
+        '<div class="tablewrap"><table><tr><th>Community</th><th>#</th><th>Cook</th><th>' + (kind === 'likes' ? 'Likes' : 'Score') + '</th><th>Orders</th><th>Rating</th><th></th></tr>' + rows.map(function (s) {
+          return '<tr><td dir="auto">' + esc(s.community_name) + '</td><td>' + s.rank + '</td><td dir="auto">' + name(s) + (s.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + '</td>' +
+            '<td>' + esc(kind === 'likes' ? s.likes : s.score) + '</td><td>' + s.orders + '</td><td>' + (s.rating === null ? '' : esc(s.rating)) + '</td>' +
+            '<td><button class="btn" data-likers="' + esc(s.cook_id) + '" data-label="' + esc(s.display_name || who(s.username)) + '">Who liked…</button> ' + keepOutBtn(s.cook_id, s.display_name || who(s.username)) + '</td></tr>'; }).join('') + '</table></div>';
+      $('rkFlag').innerHTML = !flagged.length ? '<p class="muted">Nothing suspicious right now.</p>' :
+        '<div class="tablewrap"><table><tr><th>Cook</th><th>Likes</th><th>Different people</th><th>From accounts under a day old</th><th>Most in one hour</th><th>Why</th><th></th></tr>' + flagged.map(function (s) {
+          var why = s.reasons.map(function (r) { return r === 'burst' ? 'Many likes in one hour' : 'Mostly brand-new accounts'; }).join(', ');
+          return '<tr><td dir="auto">' + name(s) + (s.excluded ? ' <span class="tag">KEPT OUT</span>' : '') + '</td><td>' + s.likes + '</td><td>' + s.likers + '</td><td>' + s.new_account_likes + '</td><td>' + s.peak_hour_likes + '</td><td>' + esc(why) + '</td>' +
+            '<td><button class="btn" data-likers="' + esc(s.cook_id) + '" data-label="' + esc(s.display_name || who(s.username)) + '">Who liked…</button> ' + (s.excluded ? '' : keepOutBtn(s.cook_id, s.display_name || who(s.username))) + '</td></tr>'; }).join('') + '</table></div>';
+      $('rkOut').innerHTML = !excluded.length ? '<p class="muted">Nobody is kept out.</p>' :
+        '<div class="tablewrap"><table><tr><th>Member</th><th>Reason</th><th>By</th><th>When</th><th></th></tr>' + excluded.map(function (x) {
+          return '<tr><td dir="auto">' + name(x) + '</td><td dir="auto">' + esc(x.reason) + '</td><td>' + esc(x.excluded_by_username ? '@' + x.excluded_by_username : 'Staff') + '</td><td>' + esc(when(x.excluded_at)) + '</td>' +
+            '<td>' + (canAct() ? '<button class="btn" data-restore="' + esc(x.user_id) + '" data-label="' + esc(x.display_name || who(x.username)) + '">Put back…</button>' : '') + '</td></tr>'; }).join('') + '</table></div>';
+      drawLikers();
+    }
+    function drawLikers() {
+      if (!likers) { $('rkLikers').innerHTML = ''; return; }
+      $('rkLikers').innerHTML = '<div class="card"><div class="row"><h3 class="grow" style="margin:0">Who liked ' + esc(likers.label) + '</h3><button class="btn" id="rkClose">Close</button></div>' +
+        (likers.rows.length ? '<p class="muted" style="margin:6px 0">Newest first, up to 200. “Account age” is how old the account was when it liked.</p><div class="tablewrap"><table><tr><th>Member</th><th>Liked</th><th>Account age</th><th>Posts</th><th>Orders</th></tr>' + likers.rows.map(function (l) {
+          return '<tr><td dir="auto">' + name(l) + '</td><td>' + esc(when(l.liked_at)) + '</td><td>' + (l.account_age_hours < 24 ? l.account_age_hours + ' hours' : Math.floor(l.account_age_hours / 24) + ' days') + '</td><td>' + l.posts + '</td><td>' + l.orders + '</td></tr>'; }).join('') + '</table></div>' : '<p class="muted">No likes yet.</p>') + '</div>';
+      $('rkClose').onclick = function () { likers = null; drawLikers(); };
+    }
+    v.onclick = function (e) {
+      var k = e.target.closest('[data-kind]'), lk = e.target.closest('[data-likers]'), out = e.target.closest('[data-out]'), rs = e.target.closest('[data-restore]');
+      if (k) { kind = k.getAttribute('data-kind'); reload(); }
+      if (lk) {
+        var label = lk.getAttribute('data-label');
+        rpc('admin_ranking_likers', { p_cook_id: lk.getAttribute('data-likers') }).then(function (r) { likers = { label: label, rows: r }; drawLikers(); $('rkLikers').scrollIntoView({ block: 'nearest' }); }).catch(fail);
+      }
+      if (out) ask('Keep ' + out.getAttribute('data-label') + ' out of the rankings?', { action: 'Keep out' }).then(function (why) {
+        if (why) return rpc('admin_ranking_exclude', { p_user_id: out.getAttribute('data-out'), p_reason: why }).then(reload); }).catch(fail);
+      if (rs) ask('Put ' + rs.getAttribute('data-label') + ' back in the rankings?', { action: 'Put back', optional: true }).then(function (why) {
+        if (why !== null) return rpc('admin_ranking_restore', { p_user_id: rs.getAttribute('data-restore'), p_reason: why || null }).then(reload); }).catch(fail);
+    };
+    $('rkq').oninput = function () { filter = this.value.trim(); draw(); };
+    return reload();
+  }
+
   // Cook verification: a checklist per cook; the tick turns on only when every item is ticked
   var VERIFY_ITEMS = [
     ['id_seen', 'Saw the original ID (photo or in person)'], ['selfie_matches', 'The person on the ID is the person on the account'],
@@ -1139,7 +1204,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', data_browsed: 'Opened a table in the data browser', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', data_browsed: 'Opened a table in the data browser', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status', ranking_excluded: 'Kept a member out of the rankings', ranking_restored: 'Put a member back in the rankings' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {
