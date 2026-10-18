@@ -1,12 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
-import type { LatLng } from '@/lib/format';
+import { distanceMeters, type LatLng } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 
-/** Where the member is looking from: GPS, or a spot they picked on the map. Every distance is computed from it. */
-export type Place = LatLng & { label: string };
+/**
+ * Where the member is looking from: GPS, or a spot they picked on the map. Every distance is computed from it.
+ * `manual` is set when they placed the pin somewhere other than where they are; without it the place follows the GPS.
+ */
+export type Place = LatLng & { label: string; manual?: boolean };
 
 const KEY = 'tabkheen.place';
 
@@ -15,6 +19,9 @@ type Ctx = {
   ready: boolean;
   setPlace: (p: Place) => void;
 };
+
+/** A moved phone shorter than this is GPS noise, not a new place. */
+const FOLLOW_METERS = 300;
 
 const PlaceContext = createContext<Ctx>({ place: null, ready: false, setPlace: () => {} });
 
@@ -133,32 +140,57 @@ async function searchPlacesOnPhone(text: string): Promise<PlaceHit[]> {
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [place, setPlaceState] = useState<Place | null>(null);
   const [ready, setReady] = useState(false);
+  // Read by the GPS follower, which outlives renders.
+  const placeRef = useRef<Place | null>(null);
 
-  // Start from the saved place; with none saved, from the phone's GPS.
+  const apply = useCallback((p: Place) => {
+    placeRef.current = p;
+    setPlaceState(p);
+    AsyncStorage.setItem(KEY, JSON.stringify(p)).catch(() => {});
+  }, []);
+
+  /** Moves the place to where the phone is now, unless the member pinned a spot by hand. */
+  const followGps = useCallback(async () => {
+    if (placeRef.current?.manual) return;
+    const gps = await getMyLocation();
+    const cur = placeRef.current;
+    if (!gps || cur?.manual) return;
+    if (cur && distanceMeters(cur, gps) < FOLLOW_METERS) return;
+    const label = (await placeName(gps)) ?? cur?.label ?? '';
+    if (!placeRef.current?.manual) apply({ ...gps, label });
+  }, [apply]);
+
+  // Start from the saved place; with none saved, from the phone's GPS. Then keep following the phone.
   useEffect(() => {
     let live = true;
     (async () => {
       try {
         const saved = await AsyncStorage.getItem(KEY);
-        if (saved && live) return setPlaceState(JSON.parse(saved) as Place);
+        if (saved && live) {
+          placeRef.current = JSON.parse(saved) as Place;
+          setPlaceState(placeRef.current);
+        }
       } catch {}
-      const gps = await getMyLocation();
-      if (gps && live) setPlaceState({ ...gps, label: (await placeName(gps)) ?? '' });
-    })().finally(() => live && setReady(true));
+      if (live) setReady(true);
+      await followGps();
+    })().catch(() => {});
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') followGps().catch(() => {});
+    });
     return () => {
       live = false;
+      sub.remove();
     };
-  }, []);
+  }, [followGps]);
 
   const setPlace = useCallback((p: Place) => {
-    setPlaceState(p);
-    AsyncStorage.setItem(KEY, JSON.stringify(p)).catch(() => {});
+    apply(p);
     // The member's last known position, for the server (see docs/DYNAMIC-DATA.md); best effort.
     supabase.auth.getSession().then(({ data }) => {
       const id = data.session?.user.id;
       if (id) supabase.from('profiles').update({ last_lat: p.lat, last_lng: p.lng }).eq('id', id).then(() => {}, () => {});
     });
-  }, []);
+  }, [apply]);
 
   const value = useMemo(() => ({ place, ready, setPlace }), [place, ready, setPlace]);
   return <PlaceContext.Provider value={value}>{children}</PlaceContext.Provider>;

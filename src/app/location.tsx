@@ -43,6 +43,8 @@ export default function LocationPicker() {
   // Pickup mode: the suggestion the cook picked, so its name in the box doesn't search again.
   const [picked, setPicked] = useState('');
   const startRef = useRef(start);
+  // Where the phone was when the member last tapped "use my current location".
+  const gpsRef = useRef<{ lat: number; lng: number } | null>(null);
   const searchSession = useRef(newSearchSession());
   const centerRef = useRef(start);
   const [lift] = useState(() => new Animated.Value(0));
@@ -112,6 +114,7 @@ export default function LocationPicker() {
       Alert.alert('Location is off', 'Allow location for tabkheen A in Settings, or drag the map to your spot.');
       return;
     }
+    gpsRef.current = gps;
     map.current?.animateToRegion({ latitude: gps.lat, longitude: gps.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
   }
 
@@ -133,7 +136,10 @@ export default function LocationPicker() {
 
   async function confirm() {
     if (!pickup) {
-      setPlace({ lat: center.latitude, lng: center.longitude, label: area });
+      // Confirming on the spot of "use my current location" hands the place back to the GPS; any other spot is pinned by hand.
+      const here = { lat: center.latitude, lng: center.longitude };
+      const onPhone = gpsRef.current != null && distanceMeters(here, gpsRef.current) < 150;
+      setPlace({ ...here, label: area, manual: !onPhone });
       router.back();
       return;
     }
