@@ -58,3 +58,5 @@ $P -d tbkhn_test -f migrations/0032_support_inbox.sql
 $P -d tbkhn_test -f tests/support_inbox_test.sql | tail -1
 $P -d tbkhn_test -f migrations/0033_admin_cook_verification.sql
 $P -d tbkhn_test -f tests/admin_cook_verification_test.sql | tail -1
+$P -d tbkhn_test -f migrations/0034_admin_data_browser.sql
+$P -d tbkhn_test -f tests/admin_data_browser_test.sql | tail -1
