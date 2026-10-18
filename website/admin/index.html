@@ -413,6 +413,7 @@
     communities: { label: 'Communities', render: viewCommunities },
     reports: { label: 'Reports', render: viewReports },
     members: { label: 'Members', render: viewMembers },
+    verification: { label: 'Verification', render: viewVerification },
     orders: { label: 'Orders', render: viewOrders },
     support: { label: 'Support', render: viewSupport },
     referrals: { label: 'Referrals', render: viewReferrals },
@@ -756,6 +757,71 @@
     };
   }
 
+  // Cook verification: a checklist per cook; the tick turns on only when every item is ticked
+  var VERIFY_ITEMS = [
+    ['id_seen', 'Saw the original ID (photo or in person)'], ['selfie_matches', 'The person on the ID is the person on the account'],
+    ['phone_confirmed', 'Reached them on their phone or WhatsApp'], ['instapay_name_matches', 'The InstaPay name matches the name on the ID'],
+    ['pickup_area_confirmed', 'The pickup area is real and they agreed to the house rules']
+  ];
+  function viewVerification(v) {
+    var filter = 'todo', items = [], openId = null;
+    v.innerHTML = '<h2>Cook verification</h2><div class="card"><div id="vfilter"></div><p class="muted" style="margin:8px 0 0">Cooks are members who have posted a “Cooking today” dish, busiest first. The verified tick appears next to their name only after every item is ticked and you press <b>Complete verification</b>. No ID photo is stored here: tick only what you checked yourself. Owners and moderators can tick; support can read.</p></div><div id="vlist"></div>';
+    function chips() {
+      $('vfilter').innerHTML = [['To check', 'todo'], ['Verified', 'verified'], ['All', 'all']].map(function (s) {
+        return '<button class="chip" data-f="' + s[1] + '" aria-pressed="' + (filter === s[1]) + '">' + s[0] + '</button>'; }).join('');
+    }
+    function draw() {
+      $('vlist').innerHTML = items.length ? items.map(function (c, i) {
+        return '<div class="card"><div class="row"><b class="grow" dir="auto">' + esc(c.display_name || who(c.username)) + ' <span class="muted">@' + esc(c.username) + '</span></b>' +
+          (c.verified_at ? '<span class="tag">VERIFIED</span>' : '<span class="tag">' + c.items_done + ' OF 5 CHECKED</span>') + '</div>' +
+          '<div class="muted">' + esc([c.area, c.governorate].filter(Boolean).join(', ')) + ' · ' + c.dishes + ' dish' + (c.dishes === 1 ? '' : 'es') + ' · ' + c.picked_up + ' picked up · joined ' + esc(when(c.created_at)) + '</div>' +
+          '<div class="row" style="margin-top:8px"><button class="btn strong" data-open="' + i + '">' + (openId === c.id ? 'Hide' : 'Open checklist') + '</button></div><div id="vc' + i + '"></div></div>';
+      }).join('') : '<p class="muted">Nobody here.</p>';
+    }
+    function load() {
+      return rpc('admin_verification_queue', { p_filter: filter }).then(function (r) {
+        items = r; draw();
+        if (openId) { var i = items.findIndex(function (c) { return c.id === openId; }); if (i >= 0) return detail(i); openId = null; }
+      }).catch(fail);
+    }
+    function detail(i) {
+      var box = $('vc' + i), c = items[i];
+      box.innerHTML = '<p class="muted">Loading…</p>';
+      return rpc('admin_verification_get', { p_user_id: c.id }).then(function (rows) {
+        var d = rows[0] || {}, edit = canAct();
+        box.innerHTML = '<div class="muted" dir="auto" style="margin:8px 0">Compare with the ID: <b>' + esc(d.display_name || '') + '</b> · phone ' + esc(d.phone || 'none') + ' · ' + esc(d.email || 'no email') + ' · InstaPay ' + esc(d.instapay_handle || 'not set') + '</div>' +
+          VERIFY_ITEMS.map(function (it) {
+            return '<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" data-item="' + it[0] + '"' + (d[it[0]] ? ' checked' : '') + (edit ? '' : ' disabled') + '> <span>' + esc(it[1]) + '</span></label>';
+          }).join('') +
+          '<textarea id="vn' + i + '" maxlength="500" placeholder="Note (optional): how and where you checked"' + (edit ? '' : ' disabled') + ' style="margin-top:8px">' + esc(d.note || '') + '</textarea>' +
+          '<div class="err" id="ve' + i + '" hidden></div>' +
+          (d.completed_at ? '<div class="muted">Verified ' + esc(when(d.completed_at)) + (d.completed_by_username ? ' by @' + esc(d.completed_by_username) : '') + '</div>' : (d.updated_at ? '<div class="muted">Last saved ' + esc(when(d.updated_at)) + (d.updated_by_username ? ' by @' + esc(d.updated_by_username) : '') + '</div>' : '')) +
+          (edit ? '<div class="row" style="margin-top:8px"><button class="btn" data-save="' + i + '">Save</button>' + (d.verified_at ? '<button class="btn danger" data-untick="' + i + '">Remove the tick…</button>' : '<button class="btn strong" data-complete="' + i + '">Complete verification</button>') + '</div>' : '');
+      }).catch(fail);
+    }
+    function items5(i) {
+      var o = {};
+      Array.prototype.forEach.call($('vc' + i).querySelectorAll('[data-item]'), function (b) { o[b.getAttribute('data-item')] = b.checked; });
+      return o;
+    }
+    function save(i) { return rpc('admin_verification_save', { p_user_id: items[i].id, p_items: items5(i), p_note: $('vn' + i).value }); }
+    $('vfilter').onclick = function (e) { var c = e.target.closest('[data-f]'); if (!c) return; filter = c.getAttribute('data-f'); openId = null; chips(); load(); };
+    $('vlist').onclick = function (e) {
+      var o = e.target.closest('[data-open]'), sv = e.target.closest('[data-save]'), cp = e.target.closest('[data-complete]'), un = e.target.closest('[data-untick]');
+      if (o) { var i = o.getAttribute('data-open'); if (openId === items[i].id) { openId = null; draw(); } else { openId = items[i].id; draw(); detail(i); } }
+      if (sv) { var si = sv.getAttribute('data-save'), sid = items[si].id; save(si).then(function () { openId = sid; return load(); }).catch(function (er) { showErr($('ve' + si), msg(er)); }); }
+      if (cp) { var ci = cp.getAttribute('data-complete'), cid = items[ci].id; save(ci).then(function () { return rpc('admin_verification_complete', { p_user_id: cid }); }).then(function () { openId = cid; return load(); }).catch(function (er) { showErr($('ve' + ci), msg(er)); }); }
+      if (un) {
+        var ui = un.getAttribute('data-untick'), uid = items[ui].id;
+        ask('Remove the verified tick from ' + who(items[ui].username, items[ui].display_name) + '?', { action: 'Remove tick' }).then(function (why) {
+          if (why) return rpc('admin_set_verified', { p_user_id: uid, p_verified: false }).then(function () { openId = uid; return load(); });
+        }).catch(fail);
+      }
+    };
+    chips();
+    return load();
+  }
+
   // Orders: find, open the timeline, download
   var ORDER_STATUS = { pending: 'WAITING FOR COOK', accepted: 'ACCEPTED', ready: 'READY', picked_up: 'PICKED UP', declined: 'DECLINED', cancelled: 'CANCELLED' };
   var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received', staff_note: 'Staff note' };
@@ -1029,7 +1095,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {
