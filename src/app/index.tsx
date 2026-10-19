@@ -78,7 +78,13 @@ export default function Welcome() {
           <MaterialIcons name="play-circle-filled" size={28} color={colors.white} />
           <Text style={styles.howText}>{t.how}</Text>
         </Pressable>
-        <View style={{ marginTop: -12, marginBottom: 8 }}>
+        <Text style={[styles.legal, lang === 'ar' && { writingDirection: 'rtl' }]}>
+          {t.agree}
+          <Text style={styles.legalLink} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'terms', lang } })} accessibilityRole="link">{t.terms}</Text>
+          {t.and}
+          <Text style={styles.legalLink} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'privacy', lang } })} accessibilityRole="link">{t.privacy}</Text>
+        </Text>
+        <View style={{ marginTop: 4, marginBottom: 8 }}>
           <BuildInfo onDark />
         </View>
       </SafeAreaView>
@@ -102,6 +108,8 @@ const styles = StyleSheet.create({
   primaryText: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.navy },
   secondary: { borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.45)', paddingVertical: 16, alignItems: 'center' },
   secondaryText: { fontFamily: fonts.bold, fontSize: 18, color: colors.white },
-  how: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 56, marginBottom: 24, marginHorizontal: 20, borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.35)', paddingVertical: 14 },
+  legal: { fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 18, color: 'rgba(255,255,255,.75)', textAlign: 'center', marginHorizontal: 16 },
+  legalLink: { fontFamily: fonts.bold, color: colors.white, textDecorationLine: 'underline' },
+  how: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 40, marginBottom: 16, marginHorizontal: 20, borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.35)', paddingVertical: 14 },
   howText: { fontFamily: fonts.bold, fontSize: 17, color: colors.white },
 });

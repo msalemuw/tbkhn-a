@@ -421,6 +421,7 @@
     funnel: { label: 'Sign-up funnel', render: viewFunnel },
     announce: { label: 'Announcements', render: viewAnnounce },
     controls: { label: 'Controls', render: viewControls },
+    legal: { label: 'Legal pages', render: viewLegal },
     staff: { label: 'Staff', render: viewStaff, only: 'owner' },
     data: { label: 'Data', render: viewData, only: 'owner' },
     log: { label: 'Action log', render: viewLog }
@@ -619,6 +620,35 @@
       if (m) { if (ctl.maintenance === true) set('maintenance', false); else if (confirm('Turn maintenance mode on? Nobody can use the app until you turn it off.')) set('maintenance', true); }
       if (e.target.id === 'ctlMsgSave') set('maintenance_message', $('ctlMsg').value.trim());
       if (e.target.id === 'ctlVerSave') set('min_app_version', $('ctlVer').value.trim());
+    };
+    return load();
+  }
+
+  // Legal pages: the Privacy policy and Terms of use shown in the app (Settings and the Welcome screen). Owner edits; everyone else reads.
+  function viewLegal(v) {
+    var pages = [];
+    var NAME = { privacy: 'Privacy policy', terms: 'Terms of use' };
+    function draw() {
+      var owner = role === 'owner';
+      v.innerHTML = '<h2>Legal pages</h2><p class="muted">What members read under Profile > Settings and on the Welcome screen. Changes show in the app straight away, no new version needed. Use “## ” for a heading, “- ” for a bullet, and a blank line between paragraphs. The text starts as a draft: have the lawyer review it before the stores open. Every change is written to the action log with the previous text.</p>' +
+        pages.map(function (p, i) {
+          return '<div class="card"><b>' + esc(NAME[p.slug] || p.slug) + '</b> <span class="muted">last changed ' + esc(when(p.updated_at)) + '</span>' +
+            '<div style="margin-top:8px"><label class="muted">Title (English)</label><input type="text" id="lgTitleEn' + i + '" style="width:100%;box-sizing:border-box" ' + (owner ? '' : 'disabled') + '></div>' +
+            '<div style="margin-top:8px"><label class="muted">Text (English)</label><textarea id="lgBodyEn' + i + '" rows="14" style="width:100%;box-sizing:border-box" ' + (owner ? '' : 'disabled') + '></textarea></div>' +
+            '<div style="margin-top:8px"><label class="muted">Title (Arabic)</label><input type="text" id="lgTitleAr' + i + '" dir="rtl" style="width:100%;box-sizing:border-box" ' + (owner ? '' : 'disabled') + '></div>' +
+            '<div style="margin-top:8px"><label class="muted">Text (Arabic)</label><textarea id="lgBodyAr' + i + '" rows="14" dir="rtl" style="width:100%;box-sizing:border-box" ' + (owner ? '' : 'disabled') + '></textarea></div>' +
+            (owner ? '<div class="row" style="margin-top:10px"><button class="btn strong" data-save="' + i + '">Save ' + esc(NAME[p.slug] || p.slug) + '</button></div>' : '') + '</div>';
+        }).join('') + '<div class="err" id="lgErr" hidden></div>';
+      pages.forEach(function (p, i) {
+        $('lgTitleEn' + i).value = p.title_en; $('lgBodyEn' + i).value = p.body_en; $('lgTitleAr' + i).value = p.title_ar; $('lgBodyAr' + i).value = p.body_ar;
+      });
+    }
+    function load() { return rpc('admin_get_pages').then(function (r) { pages = r; draw(); }); }
+    v.onclick = function (e) {
+      var b = e.target.closest('[data-save]'); if (!b) return;
+      var i = Number(b.getAttribute('data-save'));
+      rpc('admin_set_page', { p_slug: pages[i].slug, p_title_en: $('lgTitleEn' + i).value, p_title_ar: $('lgTitleAr' + i).value, p_body_en: $('lgBodyEn' + i).value, p_body_ar: $('lgBodyAr' + i).value })
+        .then(load).then(function () { showErr($('lgErr'), ''); }).catch(function (err) { showErr($('lgErr'), msg(err)); });
     };
     return load();
   }
