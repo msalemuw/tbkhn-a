@@ -11,7 +11,7 @@ import { PostCard } from '@/components/post-card';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked } from '@/lib/feed';
 import { distanceMeters } from '@/lib/format';
 import { useDataVersion } from '@/lib/live';
@@ -25,7 +25,6 @@ import { supabaseConfigured } from '@/lib/supabase';
 
 // Screen s6: Home is the social feed (design flow 15): signature dishes from the communities and cooks you watch.
 // Today’s menu and ordering live on the Menu tab.
-const NAVY = colors.navy;
 
 export default function Home() {
   const { session } = useSession();
@@ -78,12 +77,10 @@ export default function Home() {
     setLoading(false);
   }, [me]);
 
-  // Light status bar text over the navy header, back to dark when another tab shows.
   useFocusEffect(
     useCallback(() => {
-      setStatusBarStyle('light');
+      setStatusBarStyle('dark');
       load();
-      return () => setStatusBarStyle('dark');
     }, [load]),
   );
 
@@ -166,11 +163,11 @@ export default function Home() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: NAVY }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: ui.page }}>
         <View style={styles.header}>
-          <Logo on="dark" height={28} />
+          <Logo on="light" height={28} />
           <Pressable accessibilityLabel={unread ? `Inbox, ${unread} new` : 'Inbox'} onPress={() => router.push('/inbox')} hitSlop={8}>
-            <MaterialIcons name="mail-outline" size={26} color={colors.white} />
+            <MaterialIcons name="mail-outline" size={26} color={ui.deep} />
             {unread > 0 ? <View style={styles.dot} /> : null}
           </Pressable>
         </View>
@@ -215,13 +212,14 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
+  screen: { flex: 1, backgroundColor: ui.page },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12 },
-  dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: NAVY },
-  bar: { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 12, gap: 10, alignItems: 'flex-start' },
+  dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.page },
+  // Location and Feed filter share one soft white card above the posts, as in the design.
+  bar: { marginHorizontal: 14, marginTop: 4, marginBottom: 2, paddingHorizontal: 16, paddingVertical: 14, gap: 12, alignItems: 'flex-start', backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border },
   loc: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%' },
-  locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 15, color: colors.ink },
-  watch: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: NAVY, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 17, color: ui.deep },
+  watch: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 },
   watchText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
 });

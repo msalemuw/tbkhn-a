@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CommentsSheet } from '@/components/comments-sheet';
 import { useKeyboardHeight } from '@/components/form';
 import { PostCard } from '@/components/post-card';
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchPostsBy, reportPost, setLiked, updateCaption } from '@/lib/feed';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -195,7 +195,7 @@ function EditBox({ post, onClose, onSaved }: { post: FeedPost; onClose: () => vo
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper },
+  screen: { flex: 1, backgroundColor: ui.page },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 18, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   title: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 20 },
