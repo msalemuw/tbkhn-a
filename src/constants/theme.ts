@@ -1,3 +1,5 @@
+import { isRTL } from '@/lib/i18n';
+
 // The TBKHN A palette (founder, 2026-10-04): only these five colors, plus see-through tints of navy and white.
 // Text is navy (or white on navy). Teal and yellow are fills, icons and highlights, never small text on white.
 const navy = '#28303a';
@@ -33,7 +35,8 @@ export const ui = {
   border: 'rgba(1,49,62,0.08)',
 } as const;
 
-export const fonts = {
+// Hanken Grotesk and Instrument Serif have no Arabic letters, so Arabic uses IBM Plex Sans Arabic for every weight.
+const latinFonts = {
   regular: 'HankenGrotesk_400Regular',
   medium: 'HankenGrotesk_500Medium',
   semiBold: 'HankenGrotesk_600SemiBold',
@@ -41,4 +44,14 @@ export const fonts = {
   extraBold: 'HankenGrotesk_800ExtraBold',
   serif: 'InstrumentSerif_400Regular',
   serifItalic: 'InstrumentSerif_400Regular_Italic',
-} as const;
+};
+const arabicFonts: typeof latinFonts = {
+  regular: 'IBMPlexSansArabic_400Regular',
+  medium: 'IBMPlexSansArabic_500Medium',
+  semiBold: 'IBMPlexSansArabic_600SemiBold',
+  bold: 'IBMPlexSansArabic_700Bold',
+  extraBold: 'IBMPlexSansArabic_700Bold',
+  serif: 'IBMPlexSansArabic_700Bold',
+  serifItalic: 'IBMPlexSansArabic_700Bold',
+};
+export const fonts = isRTL ? arabicFonts : latinFonts;

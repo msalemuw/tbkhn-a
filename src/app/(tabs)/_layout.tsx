@@ -3,6 +3,7 @@ import { Redirect, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { t as tr } from '@/lib/i18n';
 import { colors, fonts, ui } from '@/constants/theme';
 import { useSession } from '@/lib/session';
 
@@ -35,7 +36,7 @@ export default function TabLayout() {
           key={t.name}
           name={t.name}
           options={{
-            title: t.title,
+            title: tr(t.title),
             tabBarIcon: ({ color, size, focused }) =>
               // The bubble from the design: the open tab's icon sits in a raised teal circle; Post is always a small teal circle.
               focused || t.name === 'post' ? (

@@ -3,6 +3,7 @@ import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { AdminScreen, ErrorLine, useStaffRole } from '@/components/admin-ui';
 import { colors, fonts } from '@/constants/theme';
 import { fetchOverview, type Overview } from '@/lib/admin';
@@ -59,7 +60,7 @@ export default function AdminHome() {
             <MaterialIcons name={r.icon} size={22} color={colors.navy} />
             <Text style={styles.rowLabel}>{r.label}</Text>
             {r.count ? <Text style={styles.count}>{r.count}</Text> : null}
-            <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+            <FlipIcon name="chevron-right" size={22} color={colors.muted} />
           </Pressable>
         ))}
       </ScrollView>

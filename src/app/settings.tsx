@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { lang, setLanguage, t } from '@/lib/i18n';
+import { FlipIcon } from '@/components/flip-icon';
 import { useFetchedStaffRole } from '@/components/admin-ui';
 import { PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
@@ -20,19 +22,19 @@ export default function Settings() {
   // Required by Apple and Google: delete the account from inside the app, after one clear confirmation.
   function confirmDelete() {
     Alert.alert(
-      'Delete your account?',
-      'This permanently removes your profile, photos, posts, comments, messages and orders. You can’t undo it.',
+      t('Delete your account?'),
+      t('This permanently removes your profile, photos, posts, comments, messages and orders. You can’t undo it.'),
       [
-        { text: 'Keep my account', style: 'cancel' },
+        { text: t('Keep my account'), style: 'cancel' },
         {
-          text: 'Delete my account',
+          text: t('Delete my account'),
           style: 'destructive',
           onPress: async () => {
             if (!profile) return;
             setDeleting(true);
             const failure = await deleteMyAccount(profile.id);
             setDeleting(false);
-            if (failure) return Alert.alert('We couldn’t delete your account', failure);
+            if (failure) return Alert.alert(t('We couldn’t delete your account'), failure);
             router.replace('/');
           },
         },
@@ -42,29 +44,30 @@ export default function Settings() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('Back')}>
+          <FlipIcon name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>{t('Settings')}</Text>
       </View>
       <View style={styles.body}>
-        <Row icon="receipt-long" label="My orders" onPress={() => router.push('/orders')} />
-        <Row icon="edit" label="Edit profile" onPress={() => router.push('/edit-profile')} />
-        <Row icon="block" label="Blocked accounts" onPress={() => router.push('/blocked')} />
-        <Row icon="help-outline" label="Help & support" onPress={() => router.push('/support')} />
-        <Row icon="privacy-tip" label="Privacy policy" onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'privacy' } })} />
-        <Row icon="description" label="Terms of use" onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'terms' } })} />
-        <Text style={styles.insta}>{profile?.instapay_handle ? `InstaPay: ${profile.instapay_handle}` : 'Add your InstaPay handle so buyers can pay you. Tap Edit profile.'}</Text>
-        {staffRole ? <PrimaryButton label="Admin" onPress={() => router.push('/admin')} style={{ marginBottom: 10 }} /> : null}
+        <Row icon="receipt-long" label={t('My orders')} onPress={() => router.push('/orders')} />
+        <Row icon="edit" label={t('Edit profile')} onPress={() => router.push('/edit-profile')} />
+        <Row icon="translate" label={lang === 'ar' ? 'English' : 'العربية'} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />
+        <Row icon="block" label={t('Blocked accounts')} onPress={() => router.push('/blocked')} />
+        <Row icon="help-outline" label={t('Help & support')} onPress={() => router.push('/support')} />
+        <Row icon="privacy-tip" label={t('Privacy policy')} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'privacy' } })} />
+        <Row icon="description" label={t('Terms of use')} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'terms' } })} />
+        <Text style={styles.insta}>{profile?.instapay_handle ? t('InstaPay: {h}', { h: profile.instapay_handle }) : t('Add your InstaPay handle so buyers can pay you. Tap Edit profile.')}</Text>
+        {staffRole ? <PrimaryButton label={t('Admin')} onPress={() => router.push('/admin')} style={{ marginBottom: 10 }} /> : null}
         <PrimaryButton
-          label="Log out"
+          label={t('Log out')}
           onPress={async () => {
             await supabase.auth.signOut();
             router.replace('/');
           }}
         />
-        <Pressable onPress={confirmDelete} disabled={deleting} style={styles.delete} accessibilityRole="button" accessibilityLabel="Delete my account">
-          <Text style={styles.deleteText}>{deleting ? 'Deleting…' : 'Delete my account'}</Text>
+        <Pressable onPress={confirmDelete} disabled={deleting} style={styles.delete} accessibilityRole="button" accessibilityLabel={t('Delete my account')}>
+          <Text style={styles.deleteText}>{deleting ? t('Deleting…') : t('Delete my account')}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -76,7 +79,7 @@ function Row({ icon, label, onPress }: { icon: React.ComponentProps<typeof Mater
     <Pressable style={styles.row} onPress={onPress} accessibilityRole="button">
       <MaterialIcons name={icon} size={22} color={colors.ink} />
       <Text style={styles.rowText}>{label}</Text>
-      <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+      <FlipIcon name="chevron-right" size={22} color={colors.muted} />
     </Pressable>
   );
 }

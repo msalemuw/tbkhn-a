@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { lang as appLang, t } from '@/lib/i18n';
 import { BackHeader } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { fetchLegalPage, type LegalPage, type LegalSlug, parseLegal } from '@/lib/legal';
@@ -10,7 +11,7 @@ import { fetchLegalPage, type LegalPage, type LegalSlug, parseLegal } from '@/li
 /** Privacy policy and Terms of use, in English or Arabic. Reachable from Settings and from the Welcome screen (signed out too). */
 export default function Legal() {
   const { slug, lang: startLang } = useLocalSearchParams<{ slug: string; lang?: string }>();
-  const [lang, setLang] = useState<'en' | 'ar'>(startLang === 'ar' ? 'ar' : 'en');
+  const [lang, setLang] = useState<'en' | 'ar'>(startLang === 'ar' || startLang === 'en' ? startLang : appLang);
   const [page, setPage] = useState<LegalPage | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -39,7 +40,7 @@ export default function Legal() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <BackHeader title={page ? (rtl ? page.title_ar : page.title_en) : slug === 'terms' ? 'Terms of use' : 'Privacy policy'} />
+      <BackHeader title={page ? (rtl ? page.title_ar : page.title_en) : slug === 'terms' ? t('Terms of use') : t('Privacy policy')} />
       <View style={styles.langRow}>
         {(['en', 'ar'] as const).map((l) => (
           <Pressable key={l} onPress={() => setLang(l)} accessibilityRole="button" accessibilityLabel={l === 'en' ? 'English' : 'العربية'} style={[styles.langBtn, lang === l && styles.langOn]}>
@@ -49,9 +50,9 @@ export default function Legal() {
       </View>
       {failed ? (
         <View style={styles.center}>
-          <Text style={styles.muted}>We couldn’t load this page. Check your connection and try again.</Text>
+          <Text style={styles.muted}>{t('We couldn’t load this page. Check your connection and try again.')}</Text>
           <Pressable onPress={retry} style={styles.retry} accessibilityRole="button">
-            <Text style={styles.retryText}>Try again</Text>
+            <Text style={styles.retryText}>{t('Try again')}</Text>
           </Pressable>
         </View>
       ) : !page ? (

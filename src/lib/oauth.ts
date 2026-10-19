@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { t } from '@/lib/i18n';
 import { logFunnel } from '@/lib/funnel';
 import { supabase } from '@/lib/supabase';
 
@@ -19,7 +20,7 @@ export const GOOGLE_SIGNIN = Platform.OS !== 'web' && Boolean(GOOGLE_WEB_CLIENT_
 /** Apple sign-in is iOS only, and App Store rules require it next to Google. */
 export const APPLE_SIGNIN = Platform.OS === 'ios';
 
-const FAILED = 'We couldn’t sign you in. Check your connection and try again.';
+const FAILED = t('We couldn’t sign you in. Check your connection and try again.');
 
 async function finish(method: OAuthMethod, started: number, token: string, nonce?: string, fullName?: string): Promise<OAuthResult> {
   const { data, error } = await supabase.auth.signInWithIdToken({ provider: method, token, nonce });
@@ -35,7 +36,7 @@ async function finish(method: OAuthMethod, started: number, token: string, nonce
 }
 
 export async function signInWithGoogle(): Promise<OAuthResult> {
-  if (!GOOGLE_SIGNIN) return { ok: false, message: 'Google sign-in isn’t available yet.' };
+  if (!GOOGLE_SIGNIN) return { ok: false, message: t('Google sign-in isn’t available yet.') };
   const started = Date.now();
   try {
     const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
@@ -52,7 +53,7 @@ export async function signInWithGoogle(): Promise<OAuthResult> {
 }
 
 export async function signInWithApple(): Promise<OAuthResult> {
-  if (!APPLE_SIGNIN) return { ok: false, message: 'Apple sign-in isn’t available on this device.' };
+  if (!APPLE_SIGNIN) return { ok: false, message: t('Apple sign-in isn’t available on this device.') };
   const started = Date.now();
   try {
     const Apple = await import('expo-apple-authentication');
@@ -81,6 +82,6 @@ export async function signInWithEmail(email: string, password: string): Promise<
   const started = Date.now();
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   logFunnel('signup_method_chosen', { method: 'review_password', result: error ? 'error' : 'ok' }, { latencyMs: Date.now() - started, errorCode: error?.code, userRef: data.user?.id });
-  if (error || !data.user) return { ok: false, message: 'That email or password isn’t right.' };
+  if (error || !data.user) return { ok: false, message: t('That email or password isn’t right.') };
   return { ok: true, userId: data.user.id };
 }

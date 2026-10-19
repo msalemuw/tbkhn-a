@@ -1,9 +1,9 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { CommentsSheet } from '@/components/comments-sheet';
 import { LikesSheet } from '@/components/likes-sheet';
@@ -104,7 +104,7 @@ export default function PostScreen() {
     <View style={styles.screen}>
       <SafeAreaView edges={['top']} style={styles.bar}>
         <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={24} color={colors.ink} />
+          <FlipIcon name="arrow-back" size={24} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>Posts</Text>
       </SafeAreaView>

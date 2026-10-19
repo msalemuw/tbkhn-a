@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts, ui } from '@/constants/theme';
@@ -64,7 +65,7 @@ export function PostCard({
               accessibilityRole="link">
               <MaterialIcons name="soup-kitchen" size={15} color={ui.deep} />
               <Text style={styles.cookingText}>See today’s menu</Text>
-              <MaterialIcons name="chevron-right" size={16} color={ui.deep} />
+              <FlipIcon name="chevron-right" size={16} color={ui.deep} />
             </Pressable>
           ) : null}
         </View>
