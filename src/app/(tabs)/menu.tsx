@@ -29,24 +29,49 @@ export default function Menu() {
           <Text style={styles.soonText}>{closed.message}</Text>
         </View>
       ) : (
-        <DishList header={
+        <DishList
+          header={
             <View style={styles.header}>
-              <View style={styles.blob} pointerEvents="none" />
+              {/* Art from the design: a teal blob over a light-blue one, bleeding off the top-right edge. */}
+              <View style={styles.artBack} pointerEvents="none" />
+              <View style={styles.artBlob} pointerEvents="none" />
               <Logo on="light" height={28} />
-              <Text style={styles.title}>Today’s menu</Text>
-              <Text style={styles.sub}>Home-cooked plates from neighbors, ready for pickup.</Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.title}>Today’s menu</Text>
+                <View style={styles.sparkle} pointerEvents="none">
+                  <View style={[styles.spark, { left: 0, top: 10, transform: [{ rotate: '-18deg' }] }]} />
+                  <View style={[styles.spark, { left: 12, top: 2, transform: [{ rotate: '40deg' }] }]} />
+                  <View style={[styles.spark, { left: 20, top: 20, transform: [{ rotate: '82deg' }] }]} />
+                </View>
+              </View>
             </View>
-          } />
+          }
+        />
       )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { gap: 6, paddingTop: 4, paddingBottom: 4, overflow: 'hidden' },
-  blob: { position: 'absolute', right: -40, top: -30, width: 150, height: 150, borderRadius: 75, backgroundColor: colors.lightBlue, opacity: 0.55 },
-  title: { fontFamily: fonts.serif, fontSize: 34, color: ui.deep, marginTop: 10 },
-  sub: { fontFamily: fonts.semiBold, fontSize: 14.5, color: colors.muted },
+  header: { gap: 4, paddingTop: 4 },
+  artBack: { position: 'absolute', right: -34, top: -46, width: 96, height: 150, borderRadius: 48, backgroundColor: '#cdecf3' },
+  artBlob: {
+    position: 'absolute',
+    right: -34,
+    top: 12,
+    width: 118,
+    height: 84,
+    backgroundColor: ui.bubble,
+    borderTopLeftRadius: 56,
+    borderBottomLeftRadius: 40,
+    borderTopRightRadius: 42,
+    borderBottomRightRadius: 56,
+    transform: [{ rotate: '-14deg' }],
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'flex-start', marginTop: 12 },
+  title: { fontFamily: fonts.serif, fontSize: 38, lineHeight: 46, color: ui.deep },
+  sparkle: { width: 30, height: 34, marginLeft: 4, marginTop: -2 },
+  spark: { position: 'absolute', width: 11, height: 2.5, borderRadius: 2, backgroundColor: ui.bubble },
   soon: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
   soonTitle: { fontFamily: fonts.serif, fontSize: 32, color: ui.deep, textAlign: 'center' },
   soonText: { fontFamily: fonts.medium, fontSize: 15.5, color: colors.muted, textAlign: 'center', lineHeight: 23 },

@@ -17,6 +17,8 @@ import { supabaseConfigured } from '@/lib/supabase';
  * Starts showing everything; the "Menu filter" sheet (same format as the Home feed filter) narrows by community and cuisine.
  */
 const NEARBY = 'nearby';
+/** Search icon and placeholder colour from the design: a soft blue-grey. */
+const SLATE = 'rgba(1,49,62,.5)';
 /** How close a pickup point must be to the eater to count as "Nearby". */
 const NEARBY_METERS = 10_000;
 
@@ -131,13 +133,13 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={ui.deepTeal} />}
       ListHeaderComponent={
-        <View style={{ gap: 10 }}>
+        <View style={{ gap: 14 }}>
           {header}
           {filters ? (
             <>
               <View style={styles.searchBox}>
-                <MaterialIcons name="search" size={22} color={ui.deepTeal} />
-                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={colors.faint} style={styles.search} accessibilityLabel="Search dishes or cooks" />
+                <MaterialIcons name="search" size={24} color={SLATE} />
+                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes or cooks" />
               </View>
               <Pressable style={styles.filter} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
@@ -157,7 +159,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
 
 const styles = StyleSheet.create({
   list: { padding: 14, gap: 14 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border, borderRadius: 18, paddingHorizontal: 14 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: colors.lightBlue, borderRadius: 18, paddingHorizontal: 14 },
   search: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: ui.deep, paddingVertical: 13 },
   filter: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 },
   filterText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
