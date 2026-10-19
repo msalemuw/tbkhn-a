@@ -9,6 +9,7 @@ import { CommentsSheet } from '@/components/comments-sheet';
 import { Logo } from '@/components/logo';
 import { PostCard } from '@/components/post-card';
 import { type Badge, fetchBadges } from '@/lib/rankings';
+import { FadeBg } from '@/components/fade-bg';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
@@ -163,7 +164,7 @@ export default function Home() {
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: ui.page }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: ui.card }}>
         <View style={styles.header}>
           <Logo on="light" height={28} />
           <Pressable accessibilityLabel={unread ? `Inbox, ${unread} new` : 'Inbox'} onPress={() => router.push('/inbox')} hitSlop={8}>
@@ -171,7 +172,6 @@ export default function Home() {
             {unread > 0 ? <View style={styles.dot} /> : null}
           </Pressable>
         </View>
-        <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => router.push('/compose/story')} />
       </SafeAreaView>
       <FlatList
         data={shown}
@@ -189,17 +189,22 @@ export default function Home() {
         )}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
         ListHeaderComponent={
-          <View style={styles.bar}>
-            <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityLabel="Choose your location">
-              <MaterialIcons name="location-on" size={18} color={colors.teal} />
-              <Text style={styles.locText} numberOfLines={1}>{place?.label || 'Location'}</Text>
-              <MaterialIcons name="expand-more" size={20} color={colors.muted} />
-            </Pressable>
-            <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
-              <MaterialIcons name="tune" size={18} color={colors.white} />
-              <Text style={styles.watchText}>Feed filter: {all ? 'Everyone' : 'Custom'}</Text>
-              <MaterialIcons name="expand-more" size={18} color={colors.white} />
-            </Pressable>
+          // White at the top (like the header) fading to the cream page by the time the first post starts.
+          <View>
+            <FadeBg from={[255, 255, 255]} to={PAGE_RGB} />
+            <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => router.push('/compose/story')} />
+            <View style={styles.bar}>
+              <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityLabel="Choose your location">
+                <MaterialIcons name="location-on" size={18} color={colors.teal} />
+                <Text style={styles.locText} numberOfLines={1}>{place?.label || 'Location'}</Text>
+                <MaterialIcons name="expand-more" size={20} color={colors.muted} />
+              </Pressable>
+              <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
+                <MaterialIcons name="tune" size={18} color={colors.white} />
+                <Text style={styles.watchText}>Feed filter: {all ? 'Everyone' : 'Custom'}</Text>
+                <MaterialIcons name="expand-more" size={18} color={colors.white} />
+              </Pressable>
+            </View>
           </View>
         }
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
@@ -211,12 +216,14 @@ export default function Home() {
   );
 }
 
+const PAGE_RGB: [number, number, number] = [246, 242, 236]; // ui.page (#f6f2ec)
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: ui.page },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12 },
-  dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.page },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
+  dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // Location and Feed filter share one soft white card above the posts, as in the design.
-  bar: { marginHorizontal: 14, marginTop: 4, marginBottom: 2, paddingHorizontal: 16, paddingVertical: 14, gap: 12, alignItems: 'flex-start', backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border },
+  bar: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12, gap: 12, alignItems: 'flex-start' },
   loc: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%' },
   locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 17, color: ui.deep },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 },

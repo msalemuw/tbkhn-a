@@ -24,7 +24,7 @@ export function StoriesRow({
   const others = groups.filter((g) => g.author.id !== me);
   const mineUnseen = mine?.items.some((i) => !seen.includes(i.id));
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.row}>
       {mine ? (
         <View style={styles.item}>
           <Pressable onPress={() => onOpen(mine.author.id)} accessibilityRole="button" accessibilityLabel="Your story">
@@ -65,6 +65,8 @@ export function StoriesRow({
 }
 
 const styles = StyleSheet.create({
+  // flexGrow 0: a horizontal ScrollView otherwise stretches taller than its content and leaves a gap below the stories.
+  scroll: { flexGrow: 0 },
   row: { paddingHorizontal: 18, gap: 14, paddingBottom: 12 },
   item: { width: 66, alignItems: 'center', gap: 6 },
   ring: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5 },
