@@ -5,6 +5,7 @@ import { type ReactNode, useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { Avatar } from '@/components/avatar';
 import { DishCard } from '@/components/dish-card';
@@ -264,7 +265,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
 function BarIcon({ name, label, onPress }: { name: 'arrow-back' | 'ios-share' | 'more-horiz'; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} hitSlop={10} style={styles.barSlot} accessibilityRole="button" accessibilityLabel={label}>
-      <MaterialIcons name={name} size={28} color={colors.ink} />
+      {name === 'arrow-back' ? <FlipIcon name={name} size={28} color={colors.ink} /> : <MaterialIcons name={name} size={28} color={colors.ink} />}
     </Pressable>
   );
 }

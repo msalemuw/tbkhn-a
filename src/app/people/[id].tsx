@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { Pill } from '@/components/pill';
 import { colors, fonts } from '@/constants/theme';
@@ -60,7 +61,7 @@ export default function PeopleList() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
+          <FlipIcon name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <Text style={styles.title}>{TITLE[mode]}</Text>
       </View>

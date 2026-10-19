@@ -1,9 +1,9 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { DishCard } from '@/components/dish-card';
 import { colors, fonts } from '@/constants/theme';
 import { fetchCommunityOverview } from '@/lib/community';
@@ -34,7 +34,7 @@ export default function CommunityToday() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/home'))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
+          <FlipIcon name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.title} numberOfLines={1}>Today’s menu{name ? ` in ${name}` : ''}</Text>

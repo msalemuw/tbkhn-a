@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
@@ -112,7 +113,7 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable hitSlop={12} onPress={() => (router.canGoBack() ? router.back() : router.replace('/inbox'))} accessibilityLabel="Back">
-          <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
+          <FlipIcon name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
         <Avatar person={partner} size={36} />
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
@@ -216,7 +217,7 @@ function OrderCard({ order, me, name, paying, onPay }: { order: Order; me: strin
             {STATUS_LINE[order.status]} · {payLine}
           </Text>
         </View>
-        <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+        <FlipIcon name="chevron-right" size={22} color={colors.muted} />
       </Pressable>
       {canPay && !isCook && order.payment_status === 'none' ? (
         <PrimaryButton label="Payment sent" busy={paying} onPress={() => onPay('sent')} style={styles.orderBtn} />

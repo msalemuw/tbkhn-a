@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { lang as appLang, setLanguage } from '@/lib/i18n';
 import { BuildInfo } from '@/components/build-info';
 import { Logo } from '@/components/logo';
 import { colors, fonts } from '@/constants/theme';
@@ -19,7 +20,7 @@ const ART_NAVY = '#0f2330';
 
 export default function Welcome() {
   const { loading, session, needsProfile } = useSession();
-  const [lang, setLang] = useState<Lang>('en');
+  const [lang, setLang] = useState<Lang>(appLang);
   const t = welcomeCopy[lang];
   const showWelcome = !loading && !session;
 
@@ -47,7 +48,10 @@ export default function Welcome() {
           {(['en', 'ar'] as const).map((l) => (
             <Pressable
               key={l}
-              onPress={() => setLang(l)}
+              onPress={() => {
+                setLang(l);
+                setLanguage(l);
+              }}
               accessibilityRole="button"
               accessibilityLabel={l === 'en' ? 'English' : 'العربية'}
               style={[styles.langBtn, lang === l && styles.langOn]}

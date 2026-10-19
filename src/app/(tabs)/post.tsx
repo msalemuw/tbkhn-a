@@ -4,6 +4,7 @@ import { type ComponentProps, useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { colors, fonts } from '@/constants/theme';
 import { fetchAppStatus } from '@/lib/app-status';
 
@@ -39,7 +40,7 @@ export default function Post() {
               <Text style={styles.rowTitle}>{o.title}</Text>
               <Text style={styles.rowNote}>{o.note}</Text>
             </View>
-            <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+            <FlipIcon name="chevron-right" size={22} color={colors.muted} />
           </Pressable>
         ))}
       </View>

@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FlipIcon } from '@/components/flip-icon';
 import { colors, fonts } from '@/constants/theme';
 
 // Errors: navy text on yellow, since the palette has no red.
@@ -29,7 +30,7 @@ export function BackHeader({ title, onBack }: { title?: string; onBack?: () => v
   return (
     <View style={styles.header}>
       <Pressable hitSlop={12} onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))}>
-        <MaterialIcons name="arrow-back" size={28} color={colors.ink} />
+        <FlipIcon name="arrow-back" size={28} color={colors.ink} />
       </Pressable>
       {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
     </View>

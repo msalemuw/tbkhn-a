@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { t } from '@/lib/i18n';
 import { BackHeader, formStyles } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
@@ -15,23 +16,23 @@ import { supabase, supabaseConfigured } from '@/lib/supabase';
 // WhatsApp codes are set up (EXPO_PUBLIC_PHONE_SIGNIN).
 const copy = {
   signup: {
-    title: 'Create your account',
-    sub: 'Join with Google or Apple. It takes a few seconds.',
-    switchQ: 'Already have an account?',
-    switchLink: 'Log in',
+    title: t('Create your account'),
+    sub: t('Join with Google or Apple. It takes a few seconds.'),
+    switchQ: t('Already have an account?'),
+    switchLink: t('Log in'),
     switchTo: '/log-in',
   },
   login: {
-    title: 'Welcome back',
-    sub: 'Log in with the account you joined with.',
-    switchQ: 'New to tabkheen A?',
-    switchLink: 'Sign up',
+    title: t('Welcome back'),
+    sub: t('Log in with the account you joined with.'),
+    switchQ: t('New to tabkheen A?'),
+    switchLink: t('Sign up'),
     switchTo: '/sign-up',
   },
 } as const;
 
 export function AuthChoice({ mode }: { mode: AuthMode }) {
-  const t = copy[mode];
+  const c = copy[mode];
   const [busy, setBusy] = useState<OAuthMethod | null>(null);
   const [error, setError] = useState<string | null>(null);
   const none = !GOOGLE_SIGNIN && !APPLE_SIGNIN && !PHONE_SIGNIN;
@@ -39,7 +40,7 @@ export function AuthChoice({ mode }: { mode: AuthMode }) {
   async function go(method: OAuthMethod) {
     if (busy) return;
     if (!supabaseConfigured) {
-      setError('The app isn’t connected to the server yet.');
+      setError(t('The app isn’t connected to the server yet.'));
       return;
     }
     setBusy(method);
@@ -67,35 +68,35 @@ export function AuthChoice({ mode }: { mode: AuthMode }) {
       <ScrollView contentContainerStyle={styles.pad}>
         <BackHeader />
         <View style={{ marginTop: 22 }}>
-          <Text style={formStyles.title}>{t.title}</Text>
-          <Text style={formStyles.sub}>{t.sub}</Text>
+          <Text style={formStyles.title}>{c.title}</Text>
+          <Text style={formStyles.sub}>{c.sub}</Text>
         </View>
 
         <View style={styles.buttons}>
-          {GOOGLE_SIGNIN ? <ChoiceButton label="Continue with Google" busy={busy === 'google'} onPress={() => go('google')} variant="light" /> : null}
-          {APPLE_SIGNIN ? <ChoiceButton label="Continue with Apple" busy={busy === 'apple'} onPress={() => go('apple')} variant="dark" /> : null}
+          {GOOGLE_SIGNIN ? <ChoiceButton label={t('Continue with Google')} busy={busy === 'google'} onPress={() => go('google')} variant="light" /> : null}
+          {APPLE_SIGNIN ? <ChoiceButton label={t('Continue with Apple')} busy={busy === 'apple'} onPress={() => go('apple')} variant="dark" /> : null}
           {PHONE_SIGNIN ? (
-            <ChoiceButton label="Continue with phone" busy={false} onPress={() => router.push({ pathname: '/phone', params: { mode } })} variant="teal" />
+            <ChoiceButton label={t('Continue with phone')} busy={false} onPress={() => router.push({ pathname: '/phone', params: { mode } })} variant="teal" />
           ) : null}
-          {none ? <Text style={formStyles.hint}>Sign-in isn’t set up on this build yet.</Text> : null}
+          {none ? <Text style={formStyles.hint}>{t('Sign-in isn’t set up on this build yet.')}</Text> : null}
         </View>
 
         {error ? <Text style={[formStyles.error, { textAlign: 'center', marginTop: 14 }]}>{error}</Text> : null}
 
         <View style={{ flex: 1 }} />
         <Text style={[formStyles.small, { marginTop: 28 }]}>
-          Trouble signing in?{' '}
+          {t('Trouble signing in?')}{' '}
           <Text style={formStyles.link} onPress={onHelp}>
-            Contact us
+            {t('Contact us')}
           </Text>
         </Text>
         <Text style={[formStyles.small, { marginTop: 10 }]} onPress={() => router.push('/review-login')} accessibilityRole="link">
           App store reviewer? <Text style={formStyles.link}>Demo sign-in</Text>
         </Text>
         <Text style={[formStyles.small, { marginTop: 10 }]}>
-          {t.switchQ}{' '}
-          <Text style={formStyles.link} onPress={() => router.replace(t.switchTo)}>
-            {t.switchLink}
+          {c.switchQ}{' '}
+          <Text style={formStyles.link} onPress={() => router.replace(c.switchTo)}>
+            {c.switchLink}
           </Text>
         </Text>
       </ScrollView>
@@ -111,7 +112,7 @@ function ChoiceButton({ label, busy, onPress, variant }: { label: string; busy: 
       disabled={busy}
       accessibilityRole="button"
       style={[styles.btn, variant === 'light' && styles.light, dark && styles.dark, variant === 'teal' && styles.teal, busy && { opacity: 0.6 }]}>
-      <Text style={[styles.btnText, dark && { color: colors.white }]}>{busy ? 'Please wait…' : label}</Text>
+      <Text style={[styles.btnText, dark && { color: colors.white }]}>{busy ? t('Please wait…') : label}</Text>
     </Pressable>
   );
 }
