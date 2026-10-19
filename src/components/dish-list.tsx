@@ -5,7 +5,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View 
 
 import { DishCard } from '@/components/dish-card';
 import { FilterSheet } from '@/components/filter-sheet';
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, ui } from '@/constants/theme';
 import { distanceMeters } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
 import { CUISINES, type Dish, fetchMyCommunities, fetchTodaysDishes, type MyCommunity } from '@/lib/posts';
@@ -125,14 +125,18 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       data={shown}
       keyExtractor={(d) => d.id}
       renderItem={({ item }) => <DishCard dish={item} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
+      style={{ backgroundColor: ui.page }}
       contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={ui.deepTeal} />}
       ListHeaderComponent={
         <View style={{ gap: 10 }}>
           {header}
           {filters ? (
             <>
-              <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={colors.faint} style={styles.search} accessibilityLabel="Search dishes or cooks" />
+              <View style={styles.searchBox}>
+                <MaterialIcons name="search" size={22} color={ui.deepTeal} />
+                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={colors.faint} style={styles.search} accessibilityLabel="Search dishes or cooks" />
+              </View>
               <Pressable style={styles.filter} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
                 <Text style={styles.filterText}>Menu filter: {allShown ? 'Everyone' : 'Custom'}</Text>
@@ -150,9 +154,10 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
 }
 
 const styles = StyleSheet.create({
-  list: { padding: 16, gap: 12 },
-  search: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.ink, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
-  filter: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', backgroundColor: colors.navy, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  list: { padding: 14, gap: 14 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: ui.border, borderRadius: 18, paddingHorizontal: 14 },
+  search: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: ui.deep, paddingVertical: 13 },
+  filter: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 },
   filterText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 20, lineHeight: 20 },
 });

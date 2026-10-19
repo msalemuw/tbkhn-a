@@ -22,6 +22,17 @@ export const colors = {
   tealSoft: lightBlue,
 } as const;
 
+// The newer Home and Menu design (founder, 2026-10-19): warm page, white cards, deep teal. Used by those two tabs and the tab bar.
+export const ui = {
+  page: '#f6f2ec',
+  card: '#ffffff',
+  deep: '#01313e',
+  deepTeal: '#016c71',
+  mint: '#e1f7ed',
+  bubble: '#05aaa5',
+  border: 'rgba(1,49,62,0.08)',
+} as const;
+
 export const fonts = {
   regular: 'HankenGrotesk_400Regular',
   medium: 'HankenGrotesk_500Medium',

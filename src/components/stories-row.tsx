@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/avatar';
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, ui } from '@/constants/theme';
 import { personName } from '@/lib/posts';
 import type { StoryGroup } from '@/lib/stories';
 
@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
   ring: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5 },
   addRing: { borderColor: colors.teal },
   unseen: { borderColor: colors.yellow },
-  seen: { borderColor: 'rgba(255,255,255,.35)' },
+  seen: { borderColor: 'rgba(1,49,62,.2)' },
   inner: { borderRadius: 27, overflow: 'hidden' },
-  plus: { position: 'absolute', top: 42, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.navy },
-  name: { fontFamily: fonts.bold, fontSize: 11, color: colors.white, maxWidth: 66, textAlign: 'center' },
+  plus: { position: 'absolute', top: 42, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: ui.page },
+  name: { fontFamily: fonts.bold, fontSize: 11, color: ui.deep, maxWidth: 66, textAlign: 'center' },
 });

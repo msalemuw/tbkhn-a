@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Redirect, Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
+import { StyleSheet, View } from 'react-native';
 
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, ui } from '@/constants/theme';
 import { useSession } from '@/lib/session';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
@@ -24,18 +25,55 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.ink,
+        tabBarActiveTintColor: ui.deepTeal,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontFamily: fonts.semiBold, fontSize: 11 },
-        tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line },
+        tabBarStyle: styles.bar,
       }}>
       {TABS.map((t) => (
         <Tabs.Screen
           key={t.name}
           name={t.name}
-          options={{ title: t.title, tabBarIcon: ({ color, size }) => <MaterialIcons name={t.icon} color={color} size={size} /> }}
+          options={{
+            title: t.title,
+            tabBarIcon: ({ color, size, focused }) =>
+              // The bubble from the design: the open tab's icon sits in a raised teal circle; Post is always a small teal circle.
+              focused || t.name === 'post' ? (
+                <View style={[styles.bubble, !focused && styles.postDot]}>
+                  <MaterialIcons name={t.icon} color={colors.white} size={focused ? size : size - 4} />
+                </View>
+              ) : (
+                <MaterialIcons name={t.icon} color={color} size={size} />
+              ),
+          }}
         />
       ))}
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    backgroundColor: ui.card,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: ui.deep,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -3 },
+    elevation: 12,
+  },
+  bubble: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginTop: -14,
+    backgroundColor: ui.bubble,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: ui.card,
+  },
+  postDot: { width: 38, height: 38, borderRadius: 19, marginTop: 0, borderWidth: 0, backgroundColor: ui.deepTeal },
+});
