@@ -72,3 +72,15 @@ export async function signInWithApple(): Promise<OAuthResult> {
     return { ok: false, message: FAILED };
   }
 }
+
+/**
+ * Email and password sign-in for the store reviewers' demo account only. It never creates an account: the demo user is
+ * added by hand in Supabase, so nobody else can use it. Stores need a login that works without a personal Google or Apple account.
+ */
+export async function signInWithEmail(email: string, password: string): Promise<OAuthResult> {
+  const started = Date.now();
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  logFunnel('signup_method_chosen', { method: 'review_password', result: error ? 'error' : 'ok' }, { latencyMs: Date.now() - started, errorCode: error?.code, userRef: data.user?.id });
+  if (error || !data.user) return { ok: false, message: 'That email or password isn’t right.' };
+  return { ok: true, userId: data.user.id };
+}
