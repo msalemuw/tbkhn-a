@@ -69,7 +69,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       (d) =>
         (!places.length || places.some((p) => (p === NEARBY ? near(d) : d.community_ids.includes(p)))) &&
         (!cuisines.length || (d.cuisine != null && cuisines.includes(d.cuisine))) &&
-        (!needle || `${d.dish_name} ${d.author.display_name ?? ''} ${d.author.username ?? ''}`.toLowerCase().includes(needle)),
+        (!needle || d.dish_name.toLowerCase().includes(needle)),
     );
     // Nearest first once we know where the member is; otherwise newest first.
     if (here) {
@@ -139,7 +139,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
             <>
               <View style={styles.searchBox}>
                 <MaterialIcons name="search" size={24} color={SLATE} />
-                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes or cooks" />
+                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes" />
               </View>
               <Pressable style={styles.filter} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
