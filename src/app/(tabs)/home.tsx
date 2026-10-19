@@ -46,6 +46,8 @@ export default function Home() {
   const [meters, setMeters] = useState<Map<string, number>>(new Map());
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
+  // Only a pull-down shows the spinner. Showing it for the automatic loads pushes the whole list down and leaves a blank gap.
+  const [pulling, setPulling] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const dataVersion = useDataVersion();
@@ -190,7 +192,7 @@ export default function Home() {
             onMore={() => onMore(item)}
           />
         )}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={colors.teal} />}
         ListHeaderComponent={
           // White at the top (like the header) fading to the cream page by the time the first post starts.
           <View>
@@ -211,7 +213,7 @@ export default function Home() {
           </View>
         }
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
       {watching ? <WatchingSheet visible={watchOpen} mine={mine} value={watching} onChange={setWatching} onClose={() => setWatchOpen(false)} /> : null}
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
@@ -223,7 +225,8 @@ export default function Home() {
 const PAGE_RGB: [number, number, number] = [246, 242, 236]; // ui.page (#f6f2ec)
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.page },
+  // White behind the list so pulling down reveals white (the header's colour), not cream; the cream lives on the list content.
+  screen: { flex: 1, backgroundColor: ui.card },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // Location and Feed filter share one soft white card above the posts, as in the design.
