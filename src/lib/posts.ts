@@ -1,4 +1,5 @@
 import { dataChanged } from '@/lib/live';
+import { withoutBlocked } from '@/lib/blocks';
 import { supabase } from '@/lib/supabase';
 
 // Cooking-today posts: the dish, price, portions and pickup point in one place (design flow 9).
@@ -47,7 +48,7 @@ export async function fetchTodaysDishes(): Promise<Dish[]> {
     .order('created_at', { ascending: false })
     .limit(200);
   if (error) throw error;
-  return (data ?? []) as unknown as Dish[];
+  return withoutBlocked((data ?? []) as unknown as Dish[], (d) => d.author_id);
 }
 
 /** What one cook is still serving today (their profile's "Today's menu" tab). */

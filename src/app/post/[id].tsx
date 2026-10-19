@@ -4,12 +4,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { CommentsSheet } from '@/components/comments-sheet';
 import { LikesSheet } from '@/components/likes-sheet';
 import { useKeyboardHeight } from '@/components/form';
 import { PostCard } from '@/components/post-card';
 import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchPostsBy, reportPost, setLiked, updateCaption } from '@/lib/feed';
+import { confirmBlock } from '@/lib/blocks';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
@@ -22,6 +24,7 @@ export default function PostScreen() {
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [likesFor, setLikesFor] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
   const [editing, setEditing] = useState<FeedPost | null>(null);
   const list = useRef<FlatList<FeedPost>>(null);
   const scrolled = useRef(false);
@@ -78,23 +81,23 @@ export default function PostScreen() {
   }
 
   function onMore(p: FeedPost) {
-    const mine = p.author_id === me;
-    Alert.alert(personName(p.author), undefined, [
-      ...(mine
+    const name = personName(p.author);
+    const actions: SheetAction[] =
+      p.author_id === me
         ? [
-            { text: 'Edit caption', onPress: () => setEditing(p) },
-            { text: 'Delete post', style: 'destructive' as const, onPress: () => confirmDelete(p) },
+            { label: 'Edit caption', onPress: () => setEditing(p) },
+            { label: 'Delete post', destructive: true, onPress: () => confirmDelete(p) },
           ]
         : [
-            { text: 'View profile', onPress: () => router.push({ pathname: '/cook/[id]', params: { id: p.author_id } }) },
+            { label: 'View profile', onPress: () => router.push({ pathname: '/cook/[id]', params: { id: p.author_id } }) },
             {
-              text: 'Report post',
-              style: 'destructive' as const,
+              label: 'Report post',
+              destructive: true,
               onPress: () => (me ? reportPost(me, p.id).then(() => Alert.alert('Thanks', 'Our team will take a look.'), () => null) : router.push('/sign-up')),
             },
-          ]),
-      { text: 'Cancel', style: 'cancel' as const },
-    ]);
+            { label: `Block ${name}`, destructive: true, onPress: () => (me ? confirmBlock(name, p.author_id, back) : router.push('/sign-up')) },
+          ];
+    setMenu({ title: name, actions });
   }
 
   return (
@@ -123,6 +126,7 @@ export default function PostScreen() {
           ListEmptyComponent={<Text style={styles.empty}>No posts here any more.</Text>}
         />
       )}
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
       <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(pid) => patch(pid, (x) => ({ ...x, comments: x.comments + 1 }))} />
       <EditCaption

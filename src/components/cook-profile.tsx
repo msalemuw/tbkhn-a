@@ -2,9 +2,10 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { type ReactNode, useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { Avatar } from '@/components/avatar';
 import { DishCard } from '@/components/dish-card';
 import { RankBadge } from '@/components/rank-badge';
@@ -22,6 +23,7 @@ import {
   setFollowing,
   type Signature,
 } from '@/lib/cooks';
+import { confirmBlock, isBlocked, reportMember, unblockMember } from '@/lib/blocks';
 import { useMyLocation } from '@/lib/location';
 import { type Dish, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
@@ -55,6 +57,8 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
   const [badges, setBadges] = useState<Badge[]>([]);
   const [following, setFollowingState] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
 
   const me = session?.user.id ?? null;
   const mine = me === id;
@@ -66,7 +70,10 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
     fetchSignatures(id).then(setPosts, () => setPosts([]));
     fetchReviews(id).then(setReviews, () => setReviews([]));
     fetchBadges([id]).then((m) => setBadges(m.get(id) ?? []), () => {});
-    if (me && !mine) isFollowing(me, id).then(setFollowingState, () => {});
+    if (me && !mine) {
+      isFollowing(me, id).then(setFollowingState, () => {});
+      isBlocked(id).then(setBlocked, () => {});
+    }
   }, [id, me, mine]);
 
   // Counts, posts and reviews reload when anything changes in the app (a follow, an order, a review...) and when this screen comes back into view.
@@ -108,12 +115,36 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
 
   const handle = cook.username ? `@${cook.username}` : personName(cook);
 
+  // Block / unblock and report this member, from the "…" on their profile.
+  function openMore() {
+    if (!cook) return;
+    const name = personName(cook);
+    setMenu({
+      title: name,
+      actions: [
+        blocked
+          ? { label: `Unblock ${name}`, onPress: () => unblockMember(id).then(() => setBlocked(false), () => Alert.alert('We couldn’t unblock this person', 'Check your connection and try again.')) }
+          : { label: `Block ${name}`, destructive: true, onPress: () => confirmBlock(name, id, () => setBlocked(true)) },
+        {
+          label: 'Report this member',
+          destructive: true,
+          onPress: () => (me ? reportMember(me, id).then(() => Alert.alert('Thanks', 'Our team will take a look.'), () => Alert.alert('We couldn’t send your report', 'Check your connection and try again.')) : undefined),
+        },
+      ],
+    });
+  }
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <View style={styles.bar}>
         {onBack ? <BarIcon name="arrow-back" label="Back" onPress={onBack} /> : <View style={styles.barSlot} />}
         <Text style={styles.handle}>{handle}</Text>
-        {barRight ?? <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: `${personName(cook)} on tabkheen A (${handle})` }).catch(() => {})} />}
+        {barRight ?? (
+          <View style={styles.barRightRow}>
+            <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: `${personName(cook)} on tabkheen A (${handle})` }).catch(() => {})} />
+            {me && !mine ? <BarIcon name="more-horiz" label="More" onPress={openMore} /> : null}
+          </View>
+        )}
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.top}>
@@ -225,11 +256,12 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
 
         {footer}
       </ScrollView>
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
     </SafeAreaView>
   );
 }
 
-function BarIcon({ name, label, onPress }: { name: 'arrow-back' | 'ios-share'; label: string; onPress: () => void }) {
+function BarIcon({ name, label, onPress }: { name: 'arrow-back' | 'ios-share' | 'more-horiz'; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} hitSlop={10} style={styles.barSlot} accessibilityRole="button" accessibilityLabel={label}>
       <MaterialIcons name={name} size={28} color={colors.ink} />
@@ -250,6 +282,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   center: { alignItems: 'center', justifyContent: 'center' },
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 6 },
+  barRightRow: { flexDirection: 'row', alignItems: 'center' },
   barSlot: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   handle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 22, paddingTop: 14 },

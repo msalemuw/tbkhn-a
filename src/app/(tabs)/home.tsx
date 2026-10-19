@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { CommentsSheet } from '@/components/comments-sheet';
 import { LikesSheet } from '@/components/likes-sheet';
 import { Logo } from '@/components/logo';
@@ -22,6 +23,7 @@ import { unreadMessageCount } from '@/lib/chat';
 import { unreadNotificationCount } from '@/lib/notifications';
 import { fetchMyCommunities, type MyCommunity, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
+import { confirmBlock } from '@/lib/blocks';
 import { fetchStories, loadSeen, type StoryGroup } from '@/lib/stories';
 import { supabaseConfigured } from '@/lib/supabase';
 
@@ -43,6 +45,7 @@ export default function Home() {
   const [watchOpen, setWatchOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [likesFor, setLikesFor] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
   const [meters, setMeters] = useState<Map<string, number>>(new Map());
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -134,26 +137,34 @@ export default function Home() {
   }
 
   function onMore(p: FeedPost) {
-    const buttons = [
-      { text: 'View profile', onPress: () => router.push({ pathname: '/cook/[id]', params: { id: p.author_id } }) },
-      p.author_id === me
-        ? {
-            text: 'Delete post',
-            style: 'destructive' as const,
-            onPress: () =>
-              deletePost(p.id).then(
-                () => setPosts((l) => l.filter((x) => x.id !== p.id)),
-                () => Alert.alert('We couldn’t delete the post', 'Check your connection and try again.'),
-              ),
-          }
-        : {
-            text: 'Report post',
-            style: 'destructive' as const,
-            onPress: () => (me ? reportPost(me, p.id).then(() => Alert.alert('Thanks', 'Our team will take a look.'), () => null) : router.push('/sign-up')),
-          },
-      { text: 'Cancel', style: 'cancel' as const },
-    ];
-    Alert.alert(personName(p.author), undefined, buttons);
+    const name = personName(p.author);
+    const mine = p.author_id === me;
+    const actions: SheetAction[] = [{ label: 'View profile', onPress: () => router.push({ pathname: '/cook/[id]', params: { id: p.author_id } }) }];
+    if (mine) {
+      actions.push({
+        label: 'Delete post',
+        destructive: true,
+        onPress: () =>
+          deletePost(p.id).then(
+            () => setPosts((l) => l.filter((x) => x.id !== p.id)),
+            () => Alert.alert('We couldn’t delete the post', 'Check your connection and try again.'),
+          ),
+      });
+    } else {
+      actions.push(
+        {
+          label: 'Report post',
+          destructive: true,
+          onPress: () => (me ? reportPost(me, p.id).then(() => Alert.alert('Thanks', 'Our team will take a look.'), () => null) : router.push('/sign-up')),
+        },
+        {
+          label: `Block ${name}`,
+          destructive: true,
+          onPress: () => (me ? confirmBlock(name, p.author_id, () => { setPosts((l) => l.filter((x) => x.author_id !== p.author_id)); load(); }) : router.push('/sign-up')),
+        },
+      );
+    }
+    setMenu({ title: name, actions });
   }
 
   const empty = !supabaseConfigured
@@ -216,6 +227,7 @@ export default function Home() {
         contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
       {watching ? <WatchingSheet visible={watchOpen} mine={mine} value={watching} onChange={setWatching} onClose={() => setWatchOpen(false)} /> : null}
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
       <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(id) => patch(id, (x) => ({ ...x, comments: x.comments + 1 }))} />
     </View>

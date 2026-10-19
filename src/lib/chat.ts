@@ -1,6 +1,7 @@
 import { dataChanged } from '@/lib/live';
 import { type Order, ORDER_SELECT } from '@/lib/orders';
 import type { Person } from '@/lib/posts';
+import { withoutBlocked } from '@/lib/blocks';
 import { supabase } from '@/lib/supabase';
 
 // One-to-one chat (s20 Inbox > Messages, s23 conversation). Payment sent / received lines are
@@ -48,7 +49,7 @@ export async function fetchConversations(): Promise<Conversation[]> {
   if (error) throw error;
   const rows = (data ?? []) as (Omit<Conversation, 'partner'> & { partner_id: string })[];
   const people = await fetchPeople(rows.map((r) => r.partner_id));
-  return rows.map(({ partner_id, ...r }) => ({
+  return (await withoutBlocked(rows, (r) => r.partner_id)).map(({ partner_id, ...r }) => ({
     ...r,
     partner: people.get(partner_id) ?? { id: partner_id, username: null, display_name: null, avatar_path: null },
   }));

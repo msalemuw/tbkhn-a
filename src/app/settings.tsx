@@ -50,6 +50,7 @@ export default function Settings() {
       <View style={styles.body}>
         <Row icon="receipt-long" label="My orders" onPress={() => router.push('/orders')} />
         <Row icon="edit" label="Edit profile" onPress={() => router.push('/edit-profile')} />
+        <Row icon="block" label="Blocked accounts" onPress={() => router.push('/blocked')} />
         <Row icon="help-outline" label="Help & support" onPress={() => router.push('/support')} />
         <Row icon="privacy-tip" label="Privacy policy" onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'privacy' } })} />
         <Row icon="description" label="Terms of use" onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'terms' } })} />
