@@ -89,6 +89,9 @@ export function AuthChoice({ mode }: { mode: AuthMode }) {
             Contact us
           </Text>
         </Text>
+        <Text style={[formStyles.small, { marginTop: 10 }]} onPress={() => router.push('/review-login')} accessibilityRole="link">
+          App store reviewer? <Text style={formStyles.link}>Demo sign-in</Text>
+        </Text>
         <Text style={[formStyles.small, { marginTop: 10 }]}>
           {t.switchQ}{' '}
           <Text style={formStyles.link} onPress={() => router.replace(t.switchTo)}>
