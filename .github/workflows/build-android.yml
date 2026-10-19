@@ -1,0 +1,28 @@
+# Builds a new Android app. Start it from the Actions tab.
+# "preview" gives an .apk you can install on a phone to test. "production" gives the .aab file Google Play needs.
+name: Build Android app
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: preview = test file for a phone, production = file for Google Play
+        type: choice
+        options:
+          - preview
+          - production
+        default: preview
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --no-wait
