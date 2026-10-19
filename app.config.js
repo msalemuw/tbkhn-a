@@ -4,7 +4,11 @@
 // so builds keep working before they are set up.
 module.exports = ({ config }) => {
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-  const plugins = [...(config.plugins ?? []), 'expo-apple-authentication'];
+  // The order-alert sound is named new-order.wav, which iOS accepts but Android rejects as a resource name (hyphen),
+  // so Android builds skip the bundled sound and use the phone's default alert sound.
+  const onAndroid = process.env.EAS_BUILD_PLATFORM === 'android';
+  const base = (config.plugins ?? []).map((p) => (onAndroid && Array.isArray(p) && p[0] === 'expo-notifications' ? [p[0], { ...p[1], sounds: [] }] : p));
+  const plugins = [...base, 'expo-apple-authentication'];
   if (iosClientId) {
     const iosUrlScheme = `com.googleusercontent.apps.${iosClientId.replace('.apps.googleusercontent.com', '')}`;
     plugins.push(['@react-native-google-signin/google-signin', { iosUrlScheme }]);

@@ -15,6 +15,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
       "package": "com.tabkheen.a"
     },
     "web": {
@@ -63,7 +67,11 @@
     "ios": {
       "bundleIdentifier": "com.tabkheen.a",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": [
+          "en",
+          "ar"
+        ]
       }
     },
     "extra": {
