@@ -46,6 +46,8 @@ export default function Home() {
   const [meters, setMeters] = useState<Map<string, number>>(new Map());
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
+  // Only a pull-down shows the spinner. Showing it for the automatic loads pushes the whole list down and leaves a blank gap.
+  const [pulling, setPulling] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const dataVersion = useDataVersion();
@@ -190,7 +192,7 @@ export default function Home() {
             onMore={() => onMore(item)}
           />
         )}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={colors.teal} />}
         ListHeaderComponent={
           // White at the top (like the header) fading to the cream page by the time the first post starts.
           <View>

@@ -32,6 +32,8 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
   const [filterOpen, setFilterOpen] = useState(false);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
+  // Only a pull-down shows the spinner. Showing it for the automatic loads pushes the whole list down and leaves a blank gap.
+  const [pulling, setPulling] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -127,7 +129,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       renderItem={({ item }) => <DishCard dish={item} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
       style={{ backgroundColor: ui.page }}
       contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={ui.deepTeal} />}
+      refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={ui.deepTeal} />}
       ListHeaderComponent={
         <View style={{ gap: 10 }}>
           {header}
