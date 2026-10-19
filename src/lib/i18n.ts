@@ -34,6 +34,9 @@ function lookup(body: string): string | undefined {
   }
   const optional = /^(.+) \(optional\)$/i.exec(body);
   if (optional && lookup(optional[1]) !== undefined) return `${lookup(optional[1])} (اختياري)`;
+  // "Feed filter: Everyone": a label and a value that are each known.
+  const labelled = /^([^:]{2,40}): (.+)$/.exec(body);
+  if (labelled && lookup(labelled[1]) !== undefined) return `${lookup(labelled[1])}: ${lookup(labelled[2]) ?? labelled[2]}`;
   // "Egyptian · Chicken · 3 left", "You: Payment sent": translate the parts that are known.
   if (body.startsWith('You: ')) return `إنت: ${tr(body.slice(5))}`;
   if (body.includes(' · ')) {

@@ -1,5 +1,7 @@
 // Arabic for text with numbers or names inside, tried in order when ar.ts has no exact match.
 // [pattern for the whole English text, Arabic with $1 $2 for the captured parts, or a function making it].
+import { ar } from '@/lib/ar';
+
 type To = string | ((...m: string[]) => string);
 
 const NOUN: Record<string, string> = {
@@ -11,6 +13,9 @@ const NOUN: Record<string, string> = {
   'Sahel community': 'مجتمع الساحل',
   community: 'مجتمع',
 };
+// A place or community name in Arabic when we have it, else as typed.
+const arByLower = new Map(Object.entries(ar).map(([k, v]) => [k.toLowerCase(), v]));
+const nm = (x: string) => arByLower.get(x.toLowerCase()) ?? x;
 const noun = (n: string) => NOUN[n] ?? n;
 const NEW: Record<string, string> = { area: 'منطقة جديدة', club: 'نادي جديد', school: 'مدرسة جديدة', workplace: 'مكان شغل جديد', work: 'مكان شغل جديد', 'Sahel community': 'مجتمع ساحل جديد', community: 'مجتمع جديد' };
 
@@ -39,15 +44,30 @@ export const arPatterns: [RegExp, To][] = [
   [/^Payment sent · EGP ([\d.,]+) by InstaPay$/, 'الدفع اتبعت · $1 جنيه بإنستاباي'],
   [/^Payment received · EGP ([\d.,]+)$/, 'الدفع وصل · $1 جنيه'],
 
+  [/^(.+) away$/, '$1 بعيد'],
+  [/^See all (\d+) cooks$/, 'شوف كل الـ $1 طباخ'],
+  [/^Nothing on today’s menu in (.+) yet\.$/, (_, c) => `مفيش حاجة في قائمة النهاردة في ${nm(c)} لسه.`],
+  [/^Today’s menu in (.+)$/, (_, c) => `قائمة النهاردة في ${nm(c)}`],
+  [/^We got your message and will answer on (.+)\.$/, 'وصلتنا رسالتك وهنرد عليك على $1.'],
+  [/^Tell us what happened and we will answer here\.$/, 'قولنا حصل إيه وهنرد عليك هنا.'],
+  [/^Tell us what happened and we will answer here, on the email or phone you leave\.$/, 'قولنا حصل إيه وهنرد عليك على الإيميل أو الموبايل اللي هتسيبه.'],
+  [/^NOTE FROM (.+)$/, (_, n) => (n === 'YOU' ? 'ملاحظة منك' : `ملاحظة من ${n}`)],
+  [/^Cancellation is closed once the cook confirms\. If something changed, contact (.+)\.$/, 'الإلغاء بيتقفل لما الطباخ يأكد. لو حاجة اتغيّرت، كلّم $1.'],
+  [/^How was (.+)’s meal\?$/, 'أكل $1 كان عامل إزاي؟'],
+  [/^Resend code in (\d+:\d\d)$/, 'ابعت الكود تاني بعد $1'],
+  [/^Pay (.+) by InstaPay after (.+) accepts\. Nothing is charged in the app\.$/, 'ادفع لـ $1 بإنستاباي بعد ما $2 يقبل. مفيش أي مبلغ بيتخصم من التطبيق.'],
+  [/^Say hello to (.+)\. Ask about the dish or agree on pickup here\.$/, 'قول أهلاً لـ $1. اسأل عن الأكلة أو اتفق على الاستلام هنا.'],
+  [/^(?:In (.+)\. )?Our team reviews every request\. You can keep going now, and you join as soon as it is approved\.$/, (_, w) => `${w ? `في ${w}. ` : ''}فريقنا بيراجع كل طلب. تقدر تكمّل دلوقتي، وهتنضم أول ما يتوافق عليه.`],
+
   // Counts
   [/^Comments · (\d+)$/, 'التعليقات · $1'],
   [/^Likes · (\d+)$/, 'اللايكات · $1'],
   [/^Inbox, (\d+) new$/, 'الرسايل، $1 جديدة'],
   [/^(\d+) likes\. See who liked$/, '$1 لايك. شوف مين عمل لايك'],
-  [/^#(\d+) in (.+) · Likes$/, '#$1 في $2 · لايكات'],
-  [/^#(\d+) in (.+)$/, '#$1 في $2'],
-  [/^TOP COOKS IN (.+)$/, 'أفضل الطباخين في $1'],
-  [/^MOST LIKED IN (.+)$/, 'الأكثر لايكات في $1'],
+  [/^#(\d+) in (.+) · Likes$/, (_, r, c) => `#${r} في ${nm(c)} · لايكات`],
+  [/^#(\d+) in (.+)$/, (_, r, c) => `#${r} في ${nm(c)}`],
+  [/^TOP COOKS IN (.+)$/i, (_, c) => `أفضل الطباخين في ${nm(c)}`],
+  [/^MOST LIKED IN (.+)$/i, (_, c) => `الأكثر لايكات في ${nm(c)}`],
   [/^(.+) · (\d+) likes?$/, (_, h, n) => `${h} · ${n} لايك`],
 
   // People and blocking
@@ -60,7 +80,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Replying to your story: (.+)$/, 'رد على الستوري بتاعتك: $1'],
   [/^(.+) on tabkheen A: (.+)$/, '$1 على tabkheen A: $2'],
   [/^(.+) on tabkheen A (.+)$/, '$1 على tabkheen A $2'],
-  [/^(.+) on tabkheen A$/, '$1 على tabkheen A'],
+  [/^(.+) on tabkheen A$/, (_, c) => `${nm(c)} على tabkheen A`],
   [/^(.+)’s signature dish on tabkheen A$/, 'أكلة $1 المميزة على tabkheen A'],
   [/^Thanks! “(.+)” is waiting for approval\.$/, 'شكرًا! «$1» مستني الموافقة.'],
 
