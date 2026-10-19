@@ -3,9 +3,10 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { DishList } from '@/components/dish-list';
 import { Logo } from '@/components/logo';
 import { colors, fonts, ui } from '@/constants/theme';

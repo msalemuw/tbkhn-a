@@ -2,9 +2,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { type ReactNode, useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { FlipIcon } from '@/components/flip-icon';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { Avatar } from '@/components/avatar';
@@ -31,6 +33,7 @@ import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
+import { tr } from '@/lib/i18n';
 
 type Tab = 'posts' | 'today' | 'reviews';
 
@@ -142,7 +145,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
         <Text style={styles.handle}>{handle}</Text>
         {barRight ?? (
           <View style={styles.barRightRow}>
-            <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: `${personName(cook)} on tabkheen A (${handle})` }).catch(() => {})} />
+            <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: tr(`${personName(cook)} on tabkheen A (${handle})`) }).catch(() => {})} />
             {me && !mine ? <BarIcon name="more-horiz" label="More" onPress={openMore} /> : null}
           </View>
         )}
@@ -164,7 +167,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
             ) : null}
           </View>
         </View>
-        {cook.bio ? <Text style={styles.bio}>{cook.bio}</Text> : null}
+        {cook.bio ? <Text verbatim style={styles.bio}>{cook.bio}</Text> : null}
 
         {mine ? (
           actions ? <View style={styles.btns}>{actions}</View> : null
@@ -209,7 +212,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
                 const uri = mediaUrl(p.media_path);
                 return (
                   <Pressable key={p.id} style={styles.cell} onPress={() => router.push({ pathname: '/post/[id]', params: { id: p.id, by: id } })} accessibilityRole="button" accessibilityLabel={p.caption ?? 'Signature dish'}>
-                    {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Text style={styles.cellText} numberOfLines={5}>{p.caption}</Text>}
+                    {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Text verbatim style={styles.cellText} numberOfLines={5}>{p.caption}</Text>}
                   </Pressable>
                 );
               })}
@@ -246,7 +249,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
                       <Text style={styles.reviewer}>{r.rating}</Text>
                     </View>
                   </View>
-                  {r.body ? <Text style={styles.reviewBody}>{r.body}</Text> : null}
+                  {r.body ? <Text verbatim style={styles.reviewBody}>{r.body}</Text> : null}
                 </View>
               ))
             ) : (

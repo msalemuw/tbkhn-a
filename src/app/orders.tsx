@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { BackHeader } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { fmtAgo, fmtClock } from '@/lib/format';

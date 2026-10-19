@@ -1,9 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, type TextInput as RNTextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { BackHeader, danger, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
@@ -24,7 +25,7 @@ export default function Verify() {
   const [error, setError] = useState<string | null>(null);
   const [sentAt, setSentAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
-  const input = useRef<TextInput>(null);
+  const input = useRef<RNTextInput>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);

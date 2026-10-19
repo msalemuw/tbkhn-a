@@ -3,8 +3,9 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { RankBadge } from '@/components/rank-badge';
@@ -75,7 +76,7 @@ export function PostCard({
       </View>
       {photo ? <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" /> : null}
       {post.caption ? (
-        <Text style={styles.caption} numberOfLines={open ? undefined : 2}>
+        <Text verbatim style={styles.caption} numberOfLines={open ? undefined : 2}>
           {post.caption}
           {long && !open ? <Text style={styles.more} onPress={() => setOpen(true)}>  more</Text> : null}
         </Text>

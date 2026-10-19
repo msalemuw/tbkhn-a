@@ -1,7 +1,8 @@
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
 
 // One small line that tells us which build is installed and which update it runs, so "the app did not change" can be diagnosed from a screenshot.

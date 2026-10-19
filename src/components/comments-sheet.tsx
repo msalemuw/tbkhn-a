@@ -1,9 +1,10 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
+import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
@@ -87,7 +88,7 @@ function Thread({ postId, me, onClose, onAdded }: { postId: string; me: string |
                         <Text style={styles.name}>{personName(item.author)}</Text>
                         <Text style={styles.when}>  {fmtAgo(Date.parse(item.created_at))}</Text>
                       </Text>
-                      <Text style={styles.body}>{item.body}</Text>
+                      <Text verbatim style={styles.body}>{item.body}</Text>
                     </View>
                   </View>
                 )}
@@ -105,7 +106,7 @@ function Thread({ postId, me, onClose, onAdded }: { postId: string; me: string |
                 accessibilityLabel="Add a comment"
               />
               <Pressable onPress={send} disabled={busy || (!draft.trim() && !!me)} hitSlop={8} accessibilityLabel="Send comment">
-                {busy ? <ActivityIndicator color={colors.teal} /> : <MaterialIcons name="send" size={22} color={draft.trim() || !me ? colors.ink : colors.faint} />}
+                {busy ? <ActivityIndicator color={colors.teal} /> : <FlipIcon name="send" size={22} color={draft.trim() || !me ? colors.ink : colors.faint} />}
               </Pressable>
             </View>
           </SafeAreaView>

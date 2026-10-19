@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
+import { Text, TextInput } from '@/components/text';
 import { DishCard } from '@/components/dish-card';
 import { FilterSheet } from '@/components/filter-sheet';
 import { colors, fonts, ui } from '@/constants/theme';

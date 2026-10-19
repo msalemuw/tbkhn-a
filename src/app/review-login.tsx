@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { BackHeader, Field, formStyles, PrimaryButton } from '@/components/form';
 import { colors } from '@/constants/theme';
 import { signInWithEmail } from '@/lib/oauth';

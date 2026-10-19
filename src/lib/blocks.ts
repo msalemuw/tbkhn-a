@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert } from '@/lib/alert';
 
 import { dataChanged } from '@/lib/live';
 import { type Person } from '@/lib/posts';

@@ -3,9 +3,10 @@ import { Image } from 'expo-image';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { lang as appLang, setLanguage } from '@/lib/i18n';
 import { BuildInfo } from '@/components/build-info';
 import { Logo } from '@/components/logo';

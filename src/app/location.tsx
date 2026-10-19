@@ -1,10 +1,12 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { colors, fonts } from '@/constants/theme';
 import { distanceMeters } from '@/lib/format';
 import { getMyLocation, newSearchSession, type PlaceHit, placeDetails, resolvePlace, searchPlaces, usePlace } from '@/lib/location';

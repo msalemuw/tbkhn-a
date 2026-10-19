@@ -1,6 +1,7 @@
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { colors, fonts, ui } from '@/constants/theme';
 
 export type SheetAction = { label: string; destructive?: boolean; onPress: () => void };

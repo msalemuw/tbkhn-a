@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
+import { Text } from '@/components/text';
 import { fonts, ui } from '@/constants/theme';
 import type { Badge } from '@/lib/rankings';
 

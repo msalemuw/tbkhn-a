@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
+import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
 
 /** Follow / Following and Join / Joined button used in lists (teal when it offers the action). */

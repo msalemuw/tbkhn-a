@@ -6,8 +6,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 
+import { Alert } from '@/lib/alert';
 import { AppGate } from '@/components/app-gate';
 import { LiveAlerts } from '@/components/live-alerts';
 import { PositionReporter } from '@/components/position-reporter';

@@ -1,6 +1,7 @@
 import { ReactNode, useCallback, useEffect, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
 import { AppStatus, blockReason, fetchAppStatus } from '@/lib/app-status';
 

@@ -1,9 +1,11 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { type ComponentProps, useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { BackHeader, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { fmtClock } from '@/lib/format';
@@ -114,7 +116,7 @@ export default function OrderScreen() {
         {o.note ? (
           <View style={styles.card}>
             <Text style={styles.label}>NOTE FROM {isCook ? buyer.toUpperCase() : 'YOU'}</Text>
-            <Text style={styles.body}>{o.note}</Text>
+            <Text verbatim style={styles.body}>{o.note}</Text>
           </View>
         ) : null}
 

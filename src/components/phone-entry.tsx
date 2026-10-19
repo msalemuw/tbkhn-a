@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { BackHeader, danger, Field, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';

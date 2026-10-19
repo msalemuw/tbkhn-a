@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { Avatar } from '@/components/avatar';
 import { fonts, ui } from '@/constants/theme';
 import { fetchLikers } from '@/lib/feed';

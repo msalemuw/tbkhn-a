@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { DishCard } from '@/components/dish-card';
 import { colors, fonts } from '@/constants/theme';

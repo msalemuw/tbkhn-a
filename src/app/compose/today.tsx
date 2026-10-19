@@ -3,9 +3,10 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { Chip } from '@/components/chip';
 import { colors, fonts } from '@/constants/theme';

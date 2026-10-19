@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { Avatar } from '@/components/avatar';
 import { BackHeader } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';

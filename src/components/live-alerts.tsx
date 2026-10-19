@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, usePathname } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Animated, Pressable, StyleSheet } from 'react-native';
 
+import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
 import { fetchPeople } from '@/lib/chat';
 import { useOverlayInsets } from '@/lib/insets';
