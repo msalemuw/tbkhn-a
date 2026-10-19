@@ -213,7 +213,7 @@ export default function Home() {
           </View>
         }
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
       {watching ? <WatchingSheet visible={watchOpen} mine={mine} value={watching} onChange={setWatching} onClose={() => setWatchOpen(false)} /> : null}
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
@@ -225,7 +225,8 @@ export default function Home() {
 const PAGE_RGB: [number, number, number] = [246, 242, 236]; // ui.page (#f6f2ec)
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: ui.page },
+  // White behind the list so pulling down reveals white (the header's colour), not cream; the cream lives on the list content.
+  screen: { flex: 1, backgroundColor: ui.card },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // Location and Feed filter share one soft white card above the posts, as in the design.
