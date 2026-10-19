@@ -6,6 +6,7 @@ import { Alert, FlatList, Pressable, RefreshControl, Share, StyleSheet, Text, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CommentsSheet } from '@/components/comments-sheet';
+import { LikesSheet } from '@/components/likes-sheet';
 import { Logo } from '@/components/logo';
 import { PostCard } from '@/components/post-card';
 import { type Badge, fetchBadges } from '@/lib/rankings';
@@ -41,6 +42,7 @@ export default function Home() {
   const [watching, setWatching] = useState<Watching | null>(null);
   const [watchOpen, setWatchOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [likesFor, setLikesFor] = useState<string | null>(null);
   const [meters, setMeters] = useState<Map<string, number>>(new Map());
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -182,6 +184,7 @@ export default function Home() {
             badges={badges.get(item.author_id)}
             meters={meters.get(item.author_id) ?? null}
             onLike={() => onLike(item)}
+            onLikes={() => setLikesFor(item.id)}
             onComments={() => setCommentsFor(item.id)}
             onShare={() => onShare(item)}
             onMore={() => onMore(item)}
@@ -211,6 +214,7 @@ export default function Home() {
         contentContainerStyle={{ paddingBottom: 20 }}
       />
       {watching ? <WatchingSheet visible={watchOpen} mine={mine} value={watching} onChange={setWatching} onClose={() => setWatchOpen(false)} /> : null}
+      <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
       <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(id) => patch(id, (x) => ({ ...x, comments: x.comments + 1 }))} />
     </View>
   );

@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Share, StyleSheet
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CommentsSheet } from '@/components/comments-sheet';
+import { LikesSheet } from '@/components/likes-sheet';
 import { useKeyboardHeight } from '@/components/form';
 import { PostCard } from '@/components/post-card';
 import { colors, fonts, ui } from '@/constants/theme';
@@ -20,6 +21,7 @@ export default function PostScreen() {
   const me = session?.user.id ?? null;
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
+  const [likesFor, setLikesFor] = useState<string | null>(null);
   const [editing, setEditing] = useState<FeedPost | null>(null);
   const list = useRef<FlatList<FeedPost>>(null);
   const scrolled = useRef(false);
@@ -116,11 +118,12 @@ export default function PostScreen() {
             setTimeout(() => list.current?.scrollToIndex({ index: info.index, animated: false }), 100);
           }}
           renderItem={({ item }) => (
-            <PostCard post={item} meters={null} onLike={() => onLike(item)} onComments={() => setCommentsFor(item.id)} onShare={() => onShare(item)} onMore={() => onMore(item)} />
+            <PostCard post={item} meters={null} onLike={() => onLike(item)} onLikes={() => setLikesFor(item.id)} onComments={() => setCommentsFor(item.id)} onShare={() => onShare(item)} onMore={() => onMore(item)} />
           )}
           ListEmptyComponent={<Text style={styles.empty}>No posts here any more.</Text>}
         />
       )}
+      <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
       <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(pid) => patch(pid, (x) => ({ ...x, comments: x.comments + 1 }))} />
       <EditCaption
         post={editing}

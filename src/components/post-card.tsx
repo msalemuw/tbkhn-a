@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -19,6 +20,7 @@ export function PostCard({
   badges,
   meters,
   onLike,
+  onLikes,
   onComments,
   onShare,
   onMore,
@@ -28,6 +30,8 @@ export function PostCard({
   /** Live distance to the cook in metres, when both positions are known. */
   meters: number | null;
   onLike: () => void;
+  /** Opens the list of who liked the post (tap the count, like Instagram). */
+  onLikes: () => void;
   onComments: () => void;
   onShare: () => void;
   onMore: () => void;
@@ -76,16 +80,20 @@ export function PostCard({
         </Text>
       ) : null}
       <View style={styles.actions}>
-        <Pressable style={styles.act} onPress={onLike} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.liked ? 'Unlike' : 'Like'}>
-          <MaterialIcons name={post.liked ? 'favorite' : 'favorite-border'} size={24} color={ui.deep} />
-          <Text style={styles.n}>{post.likes}</Text>
-        </Pressable>
+        <View style={styles.act}>
+          <Pressable onPress={onLike} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.liked ? 'Unlike' : 'Like'}>
+            <Ionicons name={post.liked ? 'heart' : 'heart-outline'} size={27} color={post.liked ? ui.deepTeal : ui.deep} />
+          </Pressable>
+          <Pressable onPress={onLikes} disabled={post.likes === 0} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${post.likes} likes. See who liked`}>
+            <Text style={styles.n}>{post.likes}</Text>
+          </Pressable>
+        </View>
         <Pressable style={styles.act} onPress={onComments} hitSlop={8} accessibilityRole="button" accessibilityLabel="Comments">
-          <MaterialIcons name="chat-bubble-outline" size={23} color={ui.deep} />
+          <Ionicons name="chatbubble-outline" size={25} color={ui.deep} />
           <Text style={styles.n}>{post.comments}</Text>
         </Pressable>
         <Pressable style={styles.act} onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="Share">
-          <MaterialIcons name="ios-share" size={23} color={ui.deep} />
+          <Ionicons name="arrow-redo-outline" size={26} color={ui.deep} />
         </Pressable>
       </View>
     </View>
@@ -105,7 +113,7 @@ const styles = StyleSheet.create({
   photo: { width: '100%', height: 270, marginTop: 12, borderRadius: 16, backgroundColor: colors.cream },
   caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },
   more: { fontFamily: fonts.bold, color: colors.muted },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 22, paddingTop: 12 },
-  act: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  n: { fontFamily: fonts.bold, fontSize: 13, color: ui.deep },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingTop: 12 },
+  act: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  n: { fontFamily: fonts.semiBold, fontSize: 16, color: ui.deep },
 });

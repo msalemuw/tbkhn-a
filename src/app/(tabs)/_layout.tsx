@@ -40,7 +40,7 @@ export default function TabLayout() {
               // The bubble from the design: the open tab's icon sits in a raised teal circle; Post is always a small teal circle.
               focused || t.name === 'post' ? (
                 <View style={[styles.bubble, !focused && styles.postDot]}>
-                  <MaterialIcons name={t.icon} color={colors.white} size={focused ? size : size - 4} />
+                  <MaterialIcons name={t.icon} color={colors.white} size={focused ? size : 20} />
                 </View>
               ) : (
                 <MaterialIcons name={t.icon} color={color} size={size} />
@@ -75,5 +75,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: ui.card,
   },
-  postDot: { width: 38, height: 38, borderRadius: 19, marginTop: 0, borderWidth: 0, backgroundColor: ui.deepTeal },
+  // Small enough to sit inside the bar with a clear gap above it and above its label.
+  postDot: { width: 32, height: 32, borderRadius: 16, marginTop: 2, borderWidth: 0, backgroundColor: ui.deepTeal },
 });
