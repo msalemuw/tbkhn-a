@@ -72,6 +72,7 @@ export default function RootLayout() {
         <Stack.Screen name="sign-up/index" />
         <Stack.Screen name="log-in" />
         <Stack.Screen name="how-it-works" />
+        <Stack.Screen name="legal/[slug]" />
         <Stack.Screen name="phone" />
         <Stack.Screen name="verify" />
         <Stack.Screen name="sign-up/profile" options={{ gestureEnabled: false }} />

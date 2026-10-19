@@ -8,6 +8,10 @@ export const welcomeCopy = {
     create: 'Create account',
     login: 'Log in',
     how: 'How the app works',
+    agree: 'By continuing you agree to our ',
+    terms: 'Terms of use',
+    and: ' and ',
+    privacy: 'Privacy policy',
   },
   ar: {
     dir: 'rtl',
@@ -16,6 +20,10 @@ export const welcomeCopy = {
     create: 'إنشاء حساب',
     login: 'تسجيل الدخول',
     how: 'إزاي التطبيق بيشتغل',
+    agree: 'بالمتابعة أنت توافق على ',
+    terms: 'شروط الاستخدام',
+    and: ' و',
+    privacy: 'سياسة الخصوصية',
   },
 } as const;
 
