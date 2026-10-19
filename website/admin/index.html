@@ -759,39 +759,60 @@
     draw(); dlg.showModal(); load();
   }
 
-  // Members: search, verify, suspend, download
+  // Members: everyone who signed up (newest first), search, verify, suspend, download
   function viewMembers(v) {
-    var items = [], q = '';
+    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '';
     v.innerHTML = '<div class="row"><h2 class="grow">Members</h2>' + (role === 'owner' ? '<button class="btn" id="exportMembers">Download all members (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="mq" placeholder="Username, name, phone or email" autocomplete="off"><button class="btn strong" id="mgo">Search</button></div><div id="mres"></div></div>';
+    function rows() { return q ? items : all; }
     function draw() {
-      $('mres').innerHTML = !items.length ? (q ? '<p class="muted">No members match.</p>' : '<p class="muted">Type at least 2 characters.</p>') :
-        '<div class="tablewrap"><table><tr><th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + items.map(function (m, i) {
+      var list = rows(), head = '';
+      if (!q) head = listErr ? '<p class="muted">' + esc(listErr) + '</p>' :
+        '<p class="muted">Everyone who signed up, newest first: ' + total + ' in all' + (all.length < total ? ', showing ' + all.length : '') + '. Search to find one person.</p>';
+      $('mres').innerHTML = head + (!list.length ? (q ? '<p class="muted">No members match.</p>' : '') :
+        '<div class="tablewrap"><table><tr><th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + list.map(function (m, i) {
           return '<tr><td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
+            (m.finished === false ? ' <span class="tag">PROFILE NOT FINISHED</span>' : '') +
             (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (m.banned_at ? ' <span class="tag">BANNED</span>' : m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
-            '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + '</td>' +
-            '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + '</span></td>' +
+            '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + (m.whatsapp ? '<br><span class="muted">WhatsApp ' + esc(m.whatsapp) + '</span>' : '') + '</td>' +
+            '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + (m.via ? ' · ' + esc(m.via) : '') + (m.source ? ' · ' + esc(m.source) : '') + '</span></td>' +
             '<td>' + m.posts + ' posts<br>' + m.orders + ' orders<br>' + m.open_reports + ' open reports</td>' +
             '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' +
               (canAct() && !m.staff_role && !m.banned_at ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) +
               ' <button class="btn" data-manage="' + i + '">Manage…' + (m.notes ? ' (' + m.notes + ' note' + (m.notes === 1 ? '' : 's') + ')' : '') + '</button></td></tr>';
-        }).join('') + '</table></div>';
+        }).join('') + '</table></div>') +
+        (!q && all.length < total ? '<div class="row" style="margin-top:10px"><button class="btn" id="mmore">Show more</button></div>' : '');
     }
-    function search() { q = $('mq').value.trim(); return rpc('admin_find_members', { p_query: q }).then(function (r) { items = r; draw(); }).catch(fail); }
+    function loadList(from, upTo) {
+      return rpc('admin_list_signups', { p_limit: upTo || PAGE, p_offset: from }).then(function (r) {
+        all = from ? all.concat(r) : r; total = r.length ? r[0].total : (from ? total : 0); listErr = ''; draw();
+      }).catch(function (e) {
+        // Before 0039_admin_signup_list.sql is run the function does not exist yet.
+        listErr = /admin_list_signups/.test(msg(e)) ? 'The full list appears once the latest database update (0039) is run in Supabase. Search still works.' : msg(e);
+        draw();
+      });
+    }
+    function search() {
+      q = $('mq').value.trim();
+      if (!q) return loadList(0, Math.min(Math.max(all.length, PAGE), 200));
+      return rpc('admin_find_members', { p_query: q }).then(function (r) { items = r; draw(); }).catch(fail);
+    }
     $('mgo').onclick = search;
     $('mq').onkeydown = function (e) { if (e.key === 'Enter') search(); };
-    draw();
+    draw(); loadList(0);
     var ex = $('exportMembers');
     if (ex) ex.onclick = function () {
       ex.disabled = true;
       rpc('admin_export_members').then(function (rows) { downloadCsv('tabkheen-members', rows); }).catch(fail).then(function () { ex.disabled = false; });
     };
     $('mres').onclick = function (e) {
+      var list = rows();
+      if (e.target.closest('#mmore')) { loadList(all.length); return; }
       var vf = e.target.closest('[data-verify]'), li = e.target.closest('[data-lift]'), su = e.target.closest('[data-susp]'), mg = e.target.closest('[data-manage]');
-      if (mg) manageMember(items[mg.getAttribute('data-manage')], search);
-      if (vf) { var m = items[vf.getAttribute('data-verify')]; rpc('admin_set_verified', { p_user_id: m.id, p_verified: !m.verified_at }).then(search).catch(fail); }
-      if (li) { var m2 = items[li.getAttribute('data-lift')]; rpc('admin_set_suspended', { p_user_id: m2.id, p_suspended: false, p_reason: null }).then(search).catch(fail); }
-      if (su) { var m3 = items[su.getAttribute('data-susp')]; ask('Suspend ' + who(m3.username, m3.display_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: m3.id, p_suspended: true, p_reason: why }).then(search); }).catch(fail); }
+      if (mg) manageMember(list[mg.getAttribute('data-manage')], search);
+      if (vf) { var m = list[vf.getAttribute('data-verify')]; rpc('admin_set_verified', { p_user_id: m.id, p_verified: !m.verified_at }).then(search).catch(fail); }
+      if (li) { var m2 = list[li.getAttribute('data-lift')]; rpc('admin_set_suspended', { p_user_id: m2.id, p_suspended: false, p_reason: null }).then(search).catch(fail); }
+      if (su) { var m3 = list[su.getAttribute('data-susp')]; ask('Suspend ' + who(m3.username, m3.display_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: m3.id, p_suspended: true, p_reason: why }).then(search); }).catch(fail); }
     };
   }
 
