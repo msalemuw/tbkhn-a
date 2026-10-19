@@ -1,7 +1,16 @@
 # Builds a new iPhone app (needed only when something native changes). Start it from the Actions tab.
+# "preview" is the test build; "production" is the build you upload to the App Store.
 name: Build iPhone app
 on:
   workflow_dispatch:
+    inputs:
+      profile:
+        description: preview = test build, production = build for the App Store
+        type: choice
+        options:
+          - preview
+          - production
+        default: preview
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,4 +25,4 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci
-      - run: eas build --platform ios --profile preview --non-interactive --no-wait
+      - run: eas build --platform ios --profile ${{ inputs.profile }} --non-interactive --no-wait
