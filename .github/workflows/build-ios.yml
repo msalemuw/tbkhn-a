@@ -25,4 +25,17 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci
+      # Lets Expo create and validate the Apple certificate and provisioning profile without a Mac terminal.
+      # Needs two GitHub secrets: ASC_API_KEY_P8 (contents of the .p8 file) and ASC_KEY_ID.
+      - name: Apple API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          if [ -n "$ASC_API_KEY_P8" ] && [ -n "$ASC_KEY_ID" ]; then
+            printf '%s\n' "$ASC_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+            echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+            echo "EXPO_ASC_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"
+            echo "EXPO_ASC_ISSUER_ID=0f3d6df9-773e-49f9-93ba-57dc94dcc7ba" >> "$GITHUB_ENV"
+          fi
       - run: eas build --platform ios --profile ${{ inputs.profile }} --non-interactive --no-wait
