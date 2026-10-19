@@ -59,7 +59,7 @@ tabkheen A is a neighbourhood home-cooking app in Egypt. Neighbours share what t
 - Your name and email from your Google or Apple account, and the username, photo, short bio, area and communities you choose.
 - Your InstaPay handle and phone or WhatsApp number, if you add them.
 - What you post and do in the app: posts, stories, comments, likes, messages, orders and reviews.
-- Your location while the app is open, to show how far pickup points are and to set your own pickup point. Neighbours only see an approximate distance, never your exact position.
+- Your location while the app is open, to show how far pickup points are and to set your own pickup point. We keep your phone’s last known position privately so we can work out distances. Neighbours only see an approximate distance, rounded up to the next kilometre, never your exact position.
 - Photos you choose or take, only when you add them.
 - A device token so we can send you alerts about orders, messages and likes. You can turn alerts off in your phone settings.
 - Basic technical information, such as app version and crash reports.
@@ -101,7 +101,7 @@ $ar$آخر تحديث ١٩ أكتوبر ٢٠٢٦. مسودة في انتظار �
 - اسمك وبريدك الإلكتروني من حساب جوجل أو أبل، واسم المستخدم والصورة والنبذة والمنطقة والمجتمعات التي تختارها.
 - حساب إنستاباي ورقم الهاتف أو الواتساب إذا أضفتهم.
 - ما تنشره وتفعله في التطبيق: المنشورات والقصص والتعليقات والإعجابات والرسائل والطلبات والتقييمات.
-- موقعك أثناء فتح التطبيق، لعرض بُعد نقاط الاستلام وتحديد نقطة الاستلام الخاصة بك. الجيران يرون مسافة تقريبية فقط، ولا يرون موقعك بالتحديد أبداً.
+- موقعك أثناء فتح التطبيق، لعرض بُعد نقاط الاستلام وتحديد نقطة الاستلام الخاصة بك. بنحتفظ بآخر موقع معروف لتليفونك بشكل خاص عشان نحسب المسافات. الجيران يرون مسافة تقريبية فقط، مقرّبة لأعلى لأقرب كيلومتر، ولا يرون موقعك بالتحديد أبداً.
 - الصور التي تختارها أو تلتقطها، فقط عندما تضيفها.
 - رمز الجهاز لنرسل لك تنبيهات الطلبات والرسائل والإعجابات. يمكنك إيقاف التنبيهات من إعدادات هاتفك.
 - معلومات تقنية بسيطة مثل إصدار التطبيق وتقارير الأعطال.
