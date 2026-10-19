@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tabkheen A</title>
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #28303a; --white: #ffffff; --light-blue: #cae7f1; --teal: #00c2a8; --muted: rgba(40,48,58,0.68); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--white); color: var(--navy); font: 16px/1.6 'Hanken Grotesk', 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+  html[lang="ar"] body { font-family: 'IBM Plex Sans Arabic', 'Hanken Grotesk', system-ui, sans-serif; }
+  header { background: var(--navy); }
+  header .in { max-width: 680px; margin: 0 auto; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+  header img { height: 28px; }
+  header a { color: var(--white); font-weight: 600; text-decoration: none; border: 1.5px solid rgba(255,255,255,0.4); border-radius: 999px; padding: 4px 14px; }
+  main { max-width: 680px; margin: 0 auto; padding: 8px 16px 48px; }
+  h1 { font-size: 28px; margin: 24px 0 4px; }
+  h2 { font-size: 18px; margin: 28px 0 6px; }
+  .muted { color: var(--muted); }
+  a { color: var(--navy); }
+  ul { padding-inline-start: 20px; }
+  section[hidden] { display: none; }
+  .bar { max-width: 680px; margin: 0 auto; padding: 12px 16px 0; display: flex; gap: 8px; }
+  .bar a { border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 14px; text-decoration: none; font-weight: 600; font-size: 14px; }
+  .bar a.on { background: var(--navy); color: var(--white); }
+</style>
+</head>
+<body>
+<header><div class="in"><a href="./" style="border:0;padding:0"><img src="logo.png" alt="tabkheen A"></a><a href="#" id="switch">ع</a></div></header>
+<div class="bar"><a id="t-privacy" href="?page=privacy">Privacy policy</a><a id="t-terms" href="?page=terms">Terms of use</a></div>
+<main id="page"><p class="muted">Loading…</p></main>
+<script src="config.js"></script>
+<script>
+// The store listings link here. The text is the same one shown inside the app and edited in Admin > Legal pages.
+(function () {
+  var q = new URLSearchParams(location.search);
+  var slug = q.get('page') === 'terms' ? 'terms' : 'privacy';
+  var lang = q.get('lang') === 'ar' ? 'ar' : 'en';
+  var data = null;
+  var CFG = window.TABKHEEN;
+  document.getElementById('t-' + slug).className = 'on';
+  function render() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.getElementById('switch').textContent = lang === 'ar' ? 'EN' : 'ع';
+    var main = document.getElementById('page');
+    main.textContent = '';
+    if (!data) return;
+    var title = lang === 'ar' ? data.title_ar : data.title_en;
+    document.title = title + ' · tabkheen A';
+    var h1 = document.createElement('h1'); h1.textContent = title; main.appendChild(h1);
+    var body = lang === 'ar' ? data.body_ar : data.body_en;
+    var list = null;
+    body.split('\n').forEach(function (line) {
+      line = line.trim();
+      if (line.indexOf('- ') === 0) {
+        if (!list) { list = document.createElement('ul'); main.appendChild(list); }
+        var li = document.createElement('li'); li.textContent = line.slice(2); list.appendChild(li); return;
+      }
+      list = null;
+      if (!line) return;
+      var el = line.indexOf('## ') === 0 ? document.createElement('h2') : document.createElement('p');
+      el.textContent = line.indexOf('## ') === 0 ? line.slice(3) : line;
+      main.appendChild(el);
+    });
+  }
+  document.getElementById('switch').addEventListener('click', function (e) { e.preventDefault(); lang = lang === 'ar' ? 'en' : 'ar'; render(); });
+  fetch(CFG.supabaseUrl + '/rest/v1/app_pages?slug=eq.' + slug + '&select=title_en,title_ar,body_en,body_ar', { headers: { apikey: CFG.supabaseKey } })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (rows) { if (!rows.length) return Promise.reject(); data = rows[0]; render(); })
+    .catch(function () { document.getElementById('page').textContent = 'We couldn’t load this page. Please try again, or write to ' + CFG.contactEmail + '.'; });
+})();
+</script>
+</body>
+</html>
