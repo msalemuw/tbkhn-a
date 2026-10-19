@@ -1,5 +1,6 @@
 import { dataChanged } from '@/lib/live';
 import type { LatLng } from '@/lib/format';
+import { withoutBlocked } from '@/lib/blocks';
 import type { Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
 
@@ -45,7 +46,7 @@ export async function fetchFeed(me: string | null): Promise<FeedPost[]> {
     .order('created_at', { ascending: false })
     .limit(60);
   if (error) throw error;
-  return enrich((data ?? []) as unknown as Row[], me);
+  return enrich(await withoutBlocked((data ?? []) as unknown as Row[], (r) => r.author_id), me);
 }
 
 /** One cook's signature posts, newest first (the post screen opened from a profile). */
@@ -123,7 +124,7 @@ export async function fetchComments(postId: string): Promise<Comment[]> {
     .order('created_at', { ascending: true })
     .limit(200);
   if (error) throw error;
-  return (data ?? []) as unknown as Comment[];
+  return withoutBlocked((data ?? []) as unknown as Comment[], (c) => c.author?.id);
 }
 
 /** Who liked a post, newest like first (likes are readable by everyone, like on Instagram). */

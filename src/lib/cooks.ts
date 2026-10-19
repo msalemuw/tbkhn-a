@@ -1,6 +1,7 @@
 import { distanceMeters, type LatLng } from '@/lib/format';
 import { dataChanged } from '@/lib/live';
 import { type Dish, fetchDishesBy, type Person } from '@/lib/posts';
+import { withoutBlocked } from '@/lib/blocks';
 import { supabase } from '@/lib/supabase';
 
 // Cook profile (design flow 12): who they are, follow, signature dishes, today's menu, reviews.
@@ -96,6 +97,10 @@ export type FoundCook = Person & { area: string | null };
 
 /** People search: by name or @handle. With no text: nearest first, then sellers, signature posters, newest members. */
 export async function searchCooks(text: string, me: string | null, here: LatLng | null = null): Promise<FoundCook[]> {
+  return withoutBlocked(await searchCooksAll(text, me, here), (c) => c.id);
+}
+
+async function searchCooksAll(text: string, me: string | null, here: LatLng | null): Promise<FoundCook[]> {
   const q = text.trim().replace(/^@/, '').replace(/[%,()*]/g, ' ').trim();
   const cols = 'id, username, display_name, avatar_path, area';
   if (q) {
@@ -181,7 +186,7 @@ export async function fetchPeopleList(id: string, kind: 'followers' | 'following
   if (!ids.length) return [];
   const { data: people, error: pe } = await supabase.from('profiles').select('id, username, display_name, avatar_path, area').in('id', ids);
   if (pe) throw pe;
-  return people ?? [];
+  return withoutBlocked(people ?? [], (p) => p.id);
 }
 
 /** Approved communities `id` belongs to. */

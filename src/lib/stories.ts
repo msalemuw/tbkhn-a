@@ -2,6 +2,7 @@ import { dataChanged } from '@/lib/live';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Person } from '@/lib/posts';
+import { withoutBlocked } from '@/lib/blocks';
 import { supabase } from '@/lib/supabase';
 
 // Stories (design flows 4 and 17): a photo for 24 hours, plus an automatic "On today's menu" story
@@ -40,7 +41,7 @@ export async function fetchStories(me: string | null): Promise<StoryGroup[]> {
     .order('created_at', { ascending: true })
     .limit(300);
   if (error) throw error;
-  const rows = (data ?? []) as unknown as Row[];
+  const rows = await withoutBlocked((data ?? []) as unknown as Row[], (r) => r.author_id);
   const liked = new Set<string>();
   if (me && rows.length) {
     const { data: mine } = await supabase.from('likes').select('post_id').eq('user_id', me).in('post_id', rows.map((r) => r.id));

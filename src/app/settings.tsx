@@ -50,6 +50,7 @@ export default function Settings() {
       <View style={styles.body}>
         <Row icon="receipt-long" label="My orders" onPress={() => router.push('/orders')} />
         <Row icon="edit" label="Edit profile" onPress={() => router.push('/edit-profile')} />
+        <Row icon="block" label="Blocked accounts" onPress={() => router.push('/blocked')} />
         <Row icon="help-outline" label="Help & support" onPress={() => router.push('/support')} />
         <Text style={styles.insta}>{profile?.instapay_handle ? `InstaPay: ${profile.instapay_handle}` : 'Add your InstaPay handle so buyers can pay you. Tap Edit profile.'}</Text>
         {staffRole ? <PrimaryButton label="Admin" onPress={() => router.push('/admin')} style={{ marginBottom: 10 }} /> : null}
