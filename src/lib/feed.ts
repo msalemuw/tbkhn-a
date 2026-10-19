@@ -126,6 +126,18 @@ export async function fetchComments(postId: string): Promise<Comment[]> {
   return (data ?? []) as unknown as Comment[];
 }
 
+/** Who liked a post, newest like first (likes are readable by everyone, like on Instagram). */
+export async function fetchLikers(postId: string): Promise<Person[]> {
+  const { data, error } = await supabase
+    .from('likes')
+    .select('user:profiles!user_id(id, username, display_name, avatar_path)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return ((data ?? []) as unknown as { user: Person | null }[]).map((r) => r.user).filter((u): u is Person => u != null);
+}
+
 export async function addComment(me: string, postId: string, body: string): Promise<void> {
   const { error } = await supabase.from('comments').insert({ post_id: postId, author_id: me, body: body.trim() });
   if (error) throw error;
