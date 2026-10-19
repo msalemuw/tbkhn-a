@@ -2,9 +2,10 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { BackHeader, formStyles, PickerSheet, PrimaryButton, type SheetItem } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { distanceMeters, fmtClock, fmtDist, fmtReady } from '@/lib/format';
@@ -116,7 +117,7 @@ export default function DishScreen() {
           ) : null}
 
           {photo ? <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" /> : null}
-          {dish.caption ? <Text style={styles.caption}>{dish.caption}</Text> : null}
+          {dish.caption ? <Text verbatim style={styles.caption}>{dish.caption}</Text> : null}
 
           <Text style={styles.section}>{mine ? 'YOUR OFFERING' : 'WHAT WOULD YOU LIKE?'}</Text>
           <View style={styles.dishRow}>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { danger, Field, formStyles, PrimaryButton, useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { similarNames } from '@/lib/community-names';

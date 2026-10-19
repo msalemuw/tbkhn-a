@@ -1,6 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { Avatar } from '@/components/avatar';
 import { colors, fonts, ui } from '@/constants/theme';
 import { personName } from '@/lib/posts';

@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { lang as appLang, t } from '@/lib/i18n';
+import { Text } from '@/components/text';
+import { isRTL, lang as appLang, t } from '@/lib/i18n';
 import { BackHeader } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { fetchLegalPage, type LegalPage, type LegalSlug, parseLegal } from '@/lib/legal';
@@ -36,6 +37,8 @@ export default function Legal() {
   };
 
   const rtl = lang === 'ar';
+  // The page can be in the other language than the app: then its alignment is set by hand.
+  const align = rtl === isRTL ? undefined : rtl ? styles.rtl : styles.ltr;
   const blocks = page ? parseLegal(rtl ? page.body_ar : page.body_en) : [];
 
   return (
@@ -61,14 +64,14 @@ export default function Legal() {
         <ScrollView contentContainerStyle={styles.body}>
           {blocks.map((b, i) =>
             b.kind === 'heading' ? (
-              <Text key={i} style={[styles.h, rtl && styles.rtl]}>{b.text}</Text>
+              <Text verbatim key={i} style={[styles.h, align]}>{b.text}</Text>
             ) : b.kind === 'bullet' ? (
-              <View key={i} style={[styles.bulletRow, rtl && { flexDirection: 'row-reverse' }]}>
+              <View key={i} style={[styles.bulletRow, rtl !== isRTL && { flexDirection: 'row-reverse' }]}>
                 <Text style={styles.dot}>•</Text>
-                <Text style={[styles.p, styles.flex, rtl && styles.rtl]}>{b.text}</Text>
+                <Text verbatim style={[styles.p, styles.flex, align]}>{b.text}</Text>
               </View>
             ) : (
-              <Text key={i} style={[styles.p, rtl && styles.rtl]}>{b.text}</Text>
+              <Text verbatim key={i} style={[styles.p, align]}>{b.text}</Text>
             ),
           )}
         </ScrollView>
@@ -88,6 +91,7 @@ const styles = StyleSheet.create({
   h: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginTop: 18 },
   p: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 23, color: colors.ink, marginTop: 4 },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
+  ltr: { textAlign: 'left', writingDirection: 'ltr' },
   flex: { flex: 1 },
   bulletRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   dot: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 27, color: colors.ink },

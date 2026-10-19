@@ -1,8 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text as T } from '@/components/text';
+import { isRTL } from '@/lib/i18n';
 import { colors, fonts } from '@/constants/theme';
 
 // Opened from the welcome screen. Text from the design file; Arabic wording is a draft.
@@ -43,8 +45,9 @@ export default function HowItWorks() {
   const { lang } = useLocalSearchParams<{ lang?: string }>();
   const t = COPY[lang === 'ar' ? 'ar' : 'en'];
   const rtl = t.dir === 'rtl';
-  const dir = rtl ? ('row-reverse' as const) : ('row' as const);
-  const align = rtl ? ('right' as const) : ('left' as const);
+  // Rows already run right-to-left when the app itself is Arabic; only a page language that differs from the app flips them.
+  const dir = rtl !== isRTL ? ('row-reverse' as const) : ('row' as const);
+  const align = rtl === isRTL ? ('auto' as const) : rtl ? ('right' as const) : ('left' as const);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -52,31 +55,31 @@ export default function HowItWorks() {
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back">
           <MaterialIcons name={rtl ? 'arrow-forward' : 'arrow-back'} size={28} color={colors.ink} />
         </Pressable>
-        <Text style={styles.barTitle}>{t.title}</Text>
+        <T verbatim style={styles.barTitle}>{t.title}</T>
       </View>
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={[styles.head, { textAlign: align }]}>{t.head}</Text>
-        <Text style={[styles.intro, { textAlign: align }]}>{t.intro}</Text>
+        <T verbatim style={[styles.head, { textAlign: align }]}>{t.head}</T>
+        <T verbatim style={[styles.intro, { textAlign: align }]}>{t.intro}</T>
         {t.steps.map(([icon, title, text], i) => (
           <View key={title} style={[styles.step, { flexDirection: dir }]}>
             <View style={styles.badge}>
               <MaterialIcons name={icon} size={22} color={colors.navy} />
             </View>
             <View style={styles.stepBody}>
-              <Text style={[styles.stepTitle, { textAlign: align }]}>
+              <T verbatim style={[styles.stepTitle, { textAlign: align }]}>
                 {i + 1}. {title}
-              </Text>
-              <Text style={[styles.stepText, { textAlign: align }]}>{text}</Text>
+              </T>
+              <T verbatim style={[styles.stepText, { textAlign: align }]}>{text}</T>
             </View>
           </View>
         ))}
         <View style={styles.cook}>
-          <Text style={[styles.stepTitle, { textAlign: align }]}>{t.cookHead}</Text>
-          <Text style={[styles.stepText, { textAlign: align }]}>{t.cook}</Text>
+          <T verbatim style={[styles.stepTitle, { textAlign: align }]}>{t.cookHead}</T>
+          <T verbatim style={[styles.stepText, { textAlign: align }]}>{t.cook}</T>
         </View>
       </ScrollView>
       <Pressable style={styles.ok} onPress={() => router.back()}>
-        <Text style={styles.okText}>{t.ok}</Text>
+        <T verbatim style={styles.okText}>{t.ok}</T>
       </Pressable>
     </SafeAreaView>
   );

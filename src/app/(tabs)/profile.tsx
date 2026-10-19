@@ -1,13 +1,15 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { CookProfileView } from '@/components/cook-profile';
 import { PrimaryButton } from '@/components/form';
 import { ScreenPlaceholder } from '@/components/screen-placeholder';
 import { colors, fonts } from '@/constants/theme';
 import { useSession } from '@/lib/session';
+import { tr } from '@/lib/i18n';
 
 // My profile (design): gear for settings, Edit profile and Share profile,
 // the tappable Communities / Followers / Following counts, then the usual tabs.
@@ -41,7 +43,7 @@ export default function Profile() {
           </Pressable>
           <Pressable
             style={styles.btn}
-            onPress={() => Share.share({ message: `${profile?.display_name ?? 'My profile'} on tabkheen A ${handle}`.trim() }).catch(() => {})}
+            onPress={() => Share.share({ message: tr(`${profile?.display_name ?? 'My profile'} on tabkheen A ${handle}`.trim()) }).catch(() => {})}
             accessibilityRole="button">
             <Text style={styles.btnText}>Share profile</Text>
           </Pressable>

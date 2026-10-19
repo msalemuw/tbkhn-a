@@ -1,9 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { type ComponentProps, useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { colors, fonts } from '@/constants/theme';
 import { fetchAppStatus } from '@/lib/app-status';

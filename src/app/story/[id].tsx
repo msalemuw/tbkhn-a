@@ -2,9 +2,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
@@ -219,7 +221,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
             </Text>
           </>
         ) : null}
-        {item.caption ? <Text style={[styles.caption, order && { fontSize: 15, marginTop: 2 }]}>{item.caption}</Text> : null}
+        {item.caption ? <Text verbatim style={[styles.caption, order && { fontSize: 15, marginTop: 2 }]}>{item.caption}</Text> : null}
         {mine ? (
           <View style={styles.mineRow}>
             <MaterialIcons name="favorite" size={16} color={colors.white} />

@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { FlipIcon } from '@/components/flip-icon';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { CommentsSheet } from '@/components/comments-sheet';
@@ -14,6 +16,7 @@ import { deletePost, type FeedPost, fetchPostsBy, reportPost, setLiked, updateCa
 import { confirmBlock } from '@/lib/blocks';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
+import { tr } from '@/lib/i18n';
 
 // A cook's signature posts as a feed, opened from their profile and scrolled to the post that was tapped.
 // On your own posts the "..." menu can edit the caption or delete the post.
@@ -58,7 +61,7 @@ export default function PostScreen() {
 
   function onShare(p: FeedPost) {
     const text = p.caption ? `${personName(p.author)} on tabkheen A: ${p.caption}` : `${personName(p.author)}’s signature dish on tabkheen A`;
-    Share.share({ message: text }).catch(() => null);
+    Share.share({ message: tr(text) }).catch(() => null);
   }
 
   function confirmDelete(p: FeedPost) {

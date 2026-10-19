@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
+import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
 
 /** Filter and choice chips (cuisine, ingredients, menu filters). */

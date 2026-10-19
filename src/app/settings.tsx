@@ -1,9 +1,11 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { lang, setLanguage, t } from '@/lib/i18n';
 import { FlipIcon } from '@/components/flip-icon';
 import { useFetchedStaffRole } from '@/components/admin-ui';

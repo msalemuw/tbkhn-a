@@ -1,9 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { formStyles, PrimaryButton } from '@/components/form';
@@ -157,7 +158,7 @@ export default function ChatScreen() {
             style={[styles.send, (!draft.trim() || sending) && { opacity: 0.45 }]}
             accessibilityRole="button"
             accessibilityLabel="Send">
-            {sending ? <ActivityIndicator color={colors.navy} /> : <MaterialIcons name="send" size={20} color={colors.navy} />}
+            {sending ? <ActivityIndicator color={colors.navy} /> : <FlipIcon name="send" size={20} color={colors.navy} />}
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -183,7 +184,7 @@ function Bubble({ m, mine, now }: { m: Message; mine: boolean; now: number }) {
   return (
     <View style={[styles.bubbleRow, mine && { alignItems: 'flex-end' }]}>
       <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-        <Text style={styles.body}>{m.body}</Text>
+        <Text verbatim style={styles.body}>{m.body}</Text>
       </View>
       <Text style={styles.time}>{when}</Text>
     </View>
