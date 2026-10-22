@@ -10,6 +10,7 @@ import { Alert } from '@/lib/alert';
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
+import { useMenuOff } from '@/lib/app-status';
 import { sendMessage } from '@/lib/chat';
 import { deletePost, setLiked } from '@/lib/feed';
 import { fmtAgo, fmtReady } from '@/lib/format';
@@ -113,6 +114,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
   const [sent, setSent] = useState(false);
   const photo = mediaUrl(item.media_path);
   const order = item.kind === 'cooking_today';
+  const menuOff = useMenuOff();
 
   useEffect(() => {
     markSeen([item.id]);
@@ -207,7 +209,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
         </View>
       </View>
       <View style={[styles.bottom, { paddingBottom: keyboard ? keyboard + 8 : insets.bottom + 16 }]} pointerEvents="box-none">
-        {order ? (
+        {order && !menuOff ? (
           <View style={styles.tagRow}>
             <Text style={styles.tag}>ON TODAY’S MENU</Text>
           </View>
@@ -245,7 +247,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
             <Pressable onPress={toggleLike} style={styles.round} accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'}>
               <MaterialIcons name={liked ? 'favorite' : 'favorite-border'} size={22} color={colors.white} />
             </Pressable>
-            {order ? (
+            {order && !menuOff ? (
               <Pressable style={styles.reserve} onPress={() => router.replace({ pathname: '/dish/[id]', params: { id: item.id } })} accessibilityRole="button">
                 <MaterialIcons name="soup-kitchen" size={18} color={colors.navy} />
                 <Text style={styles.reserveText}>Reserve</Text>

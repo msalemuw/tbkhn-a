@@ -10,6 +10,7 @@ import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts, ui } from '@/constants/theme';
+import { useMenuOff } from '@/lib/app-status';
 import type { FeedPost } from '@/lib/feed';
 import { fmtAgo, fmtLive } from '@/lib/format';
 import { mediaUrl, personName } from '@/lib/posts';
@@ -39,6 +40,7 @@ export function PostCard({
   onMore: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const menuOff = useMenuOff();
   const photo = mediaUrl(post.media_path);
   const meta = ['Signature dish', meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at))].join(' · ');
   const long = (post.caption?.length ?? 0) > 90;
@@ -59,7 +61,7 @@ export function PostCard({
             {post.rating != null ? `★ ${post.rating.toFixed(1)} · ` : ''}
             {meta}
           </Text>
-          {post.cookingDishId ? (
+          {post.cookingDishId && !menuOff ? (
             <Pressable
               style={styles.cooking}
               onPress={() => router.push({ pathname: '/dish/[id]', params: { id: post.cookingDishId! } })}
