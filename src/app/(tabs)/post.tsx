@@ -20,20 +20,20 @@ const OPTIONS: { title: string; note: string; icon: IconName; href?: Href }[] = 
 ];
 
 export default function Post() {
-  // While staff have the Menu switched off, "Today's menu" is not offered (a failed check leaves it available).
+  // While staff have the Menu switched off, "Today's menu" is greyed out and can't be tapped (a failed check leaves it available).
   const [menuOff, setMenuOff] = useState(false);
   useFocusEffect(
     useCallback(() => {
       fetchAppStatus().then((s) => setMenuOff(!!s && s.menu_enabled === false));
     }, []),
   );
-  const options = menuOff ? OPTIONS.filter((o) => o.href !== '/compose/today') : OPTIONS;
+  const off = (o: (typeof OPTIONS)[number]) => menuOff && o.href === '/compose/today';
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={styles.title}>What do you want to share?</Text>
       <View style={styles.list}>
-        {options.map((o) => (
-          <Pressable key={o.title} style={[styles.row, !o.href && { opacity: 0.5 }]} disabled={!o.href} onPress={() => o.href && router.push(o.href)}>
+        {OPTIONS.map((o) => (
+          <Pressable key={o.title} style={[styles.row, (!o.href || off(o)) && { opacity: 0.5 }]} disabled={!o.href || off(o)} onPress={() => o.href && router.push(o.href)}>
             <View style={styles.icon}>
               <MaterialIcons name={o.icon} size={22} color={colors.teal} />
             </View>

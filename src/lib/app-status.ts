@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
@@ -51,3 +52,22 @@ export function blockReason(status: AppStatus | null): { title: string; text: st
 }
 
 export const MENU_CLOSED_FALLBACK = 'Today’s menu is coming soon. We are getting our cooks ready. Stay tuned!';
+
+let cached: { at: number; status: Promise<AppStatus | null> } | null = null;
+
+/** Shares one status read between all feed cards for 30 seconds. */
+function recentStatus(): Promise<AppStatus | null> {
+  if (!cached || Date.now() - cached.at > 30_000) cached = { at: Date.now(), status: fetchAppStatus() };
+  return cached.status;
+}
+
+/** True while staff have the Menu switched off; a failed check leaves the menu on, like the Menu tab. */
+export function useMenuOff(): boolean {
+  const [off, setOff] = useState(false);
+  useEffect(() => {
+    let live = true;
+    recentStatus().then((s) => live && setOff(!!s && s.menu_enabled === false));
+    return () => { live = false; };
+  }, []);
+  return off;
+}
