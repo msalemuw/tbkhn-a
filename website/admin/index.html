@@ -1125,7 +1125,8 @@
 
   // Sign-up funnel: where new people stop, by day, by ad, plus who signed in but never finished
   var FUNNEL_STEPS = [
-    ['welcome_viewed', 'Opened the welcome screen', true], ['signup_method_chosen', 'Chose how to sign in', true], ['phone_entered', 'Entered a phone number', false],
+    ['welcome_viewed', 'Opened the welcome screen', true], ['early_button_tapped', 'Tapped “Early sign-up: join now”', false], ['signup_card_seen', 'Scrolled to the sign-up card', true],
+    ['google_button_tapped', 'Tapped the Google button', false], ['apple_button_tapped', 'Tapped the Apple button', false], ['signup_method_chosen', 'Chose how to sign in', true], ['phone_entered', 'Entered a phone number', false],
     ['code_sent', 'Was sent a code', false], ['code_entered', 'Entered the code', false], ['profile_started', 'Started their profile', true],
     ['communities_selected', 'Picked communities', true], ['signup_completed', 'Finished sign-up', true]
   ];

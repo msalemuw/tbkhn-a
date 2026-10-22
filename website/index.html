@@ -433,6 +433,7 @@
     var card = ['stepStart', 'stepProfile', 'stepDone'].map(function (id) { return document.getElementById(id); })
       .filter(function (el) { return el && !el.hidden; })[0];
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    logFunnel('early_button_tapped');
   });
 
   // Footer: contact email and the social links filled in config.js (empty ones are left out).
@@ -645,6 +646,26 @@
     });
   }
   var gsiReady = false;
+  // Google draws its own button inside an iframe, so a tap is seen as the page losing focus to that iframe. If the page
+  // is back in front a moment later and no sign-in came through, the person left Google's window without finishing.
+  var flow = { tapAt: 0, credential: false };
+  window.addEventListener('blur', function () {
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (!flow.tapAt && a && a.tagName === 'IFRAME' && $('gbtn').contains(a)) { flow.tapAt = Date.now(); flow.credential = false; logFunnel('google_button_tapped'); }
+    }, 0);
+  });
+  function googleReturned() {
+    if (!flow.tapAt || document.visibilityState === 'hidden') return;
+    var tapped = flow.tapAt;
+    setTimeout(function () {
+      if (flow.tapAt !== tapped) return;
+      flow.tapAt = 0;
+      if (!flow.credential) logFunnel('google_returned_no_sign_in', { secs: Math.round((Date.now() - tapped) / 1000), app: inApp || 'browser' });
+    }, 2500);
+  }
+  window.addEventListener('focus', googleReturned);
+  document.addEventListener('visibilitychange', googleReturned);
   function renderGoogleButton() {
     var el = $('gbtn');
     if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(renderGoogleButton, 300); return; }
@@ -663,6 +684,7 @@
   }
   function onGoogleCredential(resp) {
     var started = Date.now();
+    flow.credential = true;
     $('errStart').classList.remove('show');
     sb.auth.signInWithIdToken({ provider: 'google', token: resp.credential, nonce: state.rawNonce }).then(function (res) {
       if (!res.error) store('tabkheen.method', 'google');
@@ -695,6 +717,7 @@
   }
   $('abtn').addEventListener('click', function () {
     var btn = $('abtn'), started = Date.now(), raw = crypto.getRandomValues(new Uint32Array(4)).join('-');
+    logFunnel('apple_button_tapped');
     $('errStart').classList.remove('show');
     btn.disabled = true;
     loadApple().then(function () { return sha256Hex(raw); }).then(function (hashed) {
@@ -712,7 +735,7 @@
       return afterSignIn(res.data.user);
     }).catch(function (err) {
       // Closing Apple's window is not an error.
-      if (err && (err.error === 'popup_closed_by_user' || err.error === 'user_cancelled_authorize')) return;
+      if (err && (err.error === 'popup_closed_by_user' || err.error === 'user_cancelled_authorize')) { logFunnel('apple_cancelled', { app: inApp || 'browser' }); return; }
       var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show');
     }).then(function () { btn.disabled = false; });
   });
@@ -1018,7 +1041,18 @@
   }
 
   render();
-  logFunnel('welcome_viewed', { lang: lang });
+  // Who opened the page: language, browser (Instagram and Facebook's own browsers show as such), screen width and where
+  // the visit came from. No IP address or location is stored.
+  var browserName = inApp || (/SamsungBrowser/.test(ua) ? 'samsung' : /Edg\//.test(ua) ? 'edge' : /Chrome|CriOS/.test(ua) ? 'chrome' : /Safari/.test(ua) ? 'safari' : 'other');
+  var refHost = ''; try { refHost = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) { refHost = ''; }
+  logFunnel('welcome_viewed', { lang: lang, browser: browserName, width: window.innerWidth, ref: refHost });
+  // Did the visit ever bring the sign-up card on screen? (The page opens on the hero, so many may never scroll to it.)
+  if ('IntersectionObserver' in window) {
+    var cardSeen = new IntersectionObserver(function (entries) {
+      if (entries.some(function (e) { return e.isIntersecting; })) { logFunnel('signup_card_seen'); cardSeen.disconnect(); }
+    }, { threshold: 0.5 });
+    cardSeen.observe($('stepStart'));
+  }
   // Coming back on the same browser: carry on where they left off.
   sb.auth.getSession().then(function (res) {
     var s = res.data && res.data.session;
