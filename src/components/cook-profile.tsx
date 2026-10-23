@@ -1,11 +1,13 @@
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { type ReactNode, useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { SOCIALS } from '@/lib/social';
 import { Alert } from '@/lib/alert';
 import { FlipIcon } from '@/components/flip-icon';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
@@ -168,6 +170,15 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
           </View>
         </View>
         {cook.bio ? <Text verbatim style={styles.bio}>{cook.bio}</Text> : null}
+        {SOCIALS.some((x) => cook[x.column]) ? (
+          <View style={styles.socials}>
+            {SOCIALS.filter((x) => cook[x.column]).map((x) => (
+              <Pressable key={x.kind} style={styles.social} onPress={() => Linking.openURL(cook[x.column]!).catch(() => null)} accessibilityRole="link" accessibilityLabel={x.label}>
+                <FontAwesome5 name={x.kind} size={18} color={colors.navy} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         {mine ? (
           actions ? <View style={styles.btns}>{actions}</View> : null
@@ -296,6 +307,8 @@ const styles = StyleSheet.create({
   area: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 2 },
   rating: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink, marginTop: 3 },
   muted: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted },
+  socials: { flexDirection: 'row', gap: 10, paddingHorizontal: 22, paddingTop: 10 },
+  social: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   bio: { fontFamily: fonts.medium, fontSize: 13.5, lineHeight: 19, color: colors.ink, paddingHorizontal: 22, paddingTop: 12 },
   btns: { flexDirection: 'row', gap: 8, paddingHorizontal: 22, paddingTop: 14 },
   btn: { borderRadius: 12, paddingVertical: 11, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },

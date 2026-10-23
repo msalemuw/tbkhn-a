@@ -13,6 +13,9 @@ export type MyProfile = {
   governorate: string | null;
   area: string | null;
   instapay_handle: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  tiktok_url: string | null;
   lang: 'en' | 'ar';
 };
 
