@@ -165,7 +165,7 @@
       <p class="already" id="already" hidden></p>
       <div id="signin">
       <div class="gbtn" id="gbtn"></div>
-      <button type="button" class="abtn" id="abtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg>Continue with Apple</button>
+      <button type="button" class="abtn" id="abtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg><span data-t="appleBtn"></span></button>
       </div>
       <!-- Inside Instagram or Facebook sign-in sometimes fails (Google may refuse that browser), so offer the way out under the buttons. -->
       <div class="iab" id="iab" hidden>
@@ -306,6 +306,7 @@
       soonTitle: 'App launching <span>soon</span>',
       lead: 'Early sign-up is open. Make your account now and you’re ready the moment the app launches.',
       pitch: 'The biggest communities get our focus first, and the most prizes.',
+      appleBtn: 'Sign up with Apple',
       startTitle: 'Create your account now',
       startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
       iabTitle: 'Trouble signing in inside Instagram or Facebook?',
@@ -368,6 +369,7 @@
       soonTitle: 'التطبيق نازل <span>قريب</span>',
       lead: 'التسجيل المبكر بدأ. اعمل حسابك دلوقتي وتبقى جاهز أول ما التطبيق ينزل.',
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
+      appleBtn: 'سجّل بحساب Apple',
       startTitle: 'اعمل حسابك دلوقتي',
       startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
       iabTitle: 'تسجيل الدخول مش راضي يشتغل جوه إنستجرام أو فيسبوك؟',
@@ -679,7 +681,7 @@
     if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(renderGoogleButton, 300); return; }
     var draw = function () {
       el.innerHTML = '';
-      google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'continue_with', logo_alignment: 'left', locale: lang, width: Math.min(360, el.clientWidth || 320) });
+      google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'signup_with', logo_alignment: 'left', locale: lang, width: Math.min(360, el.clientWidth || 320) });
     };
     if (gsiReady) return draw();
     // Google gets the hash of a one-time value; Supabase checks the original against the token, like the app does.
