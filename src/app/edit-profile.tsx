@@ -14,10 +14,13 @@ import { uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
-// Edit your own profile: name, bio, social links and the InstaPay handle neighbors pay you on.
+const USERNAME_DAYS = 30;
+
+// Edit your own profile: username (once every 30 days), name, bio, social links and the InstaPay handle neighbors pay you on.
 export default function EditProfile() {
   const { session, profile, refreshProfile } = useSession();
   const [name, setName] = useState(profile?.display_name ?? '');
+  const [username, setUsername] = useState(profile?.username ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [instapay, setInstapay] = useState(profile?.instapay_handle ?? '');
   const [socials, setSocials] = useState<Record<string, string>>(() => Object.fromEntries(SOCIALS.map((x) => [x.kind, profile?.[x.column] ?? ''])));
@@ -30,9 +33,22 @@ export default function EditProfile() {
     if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
   }
 
-  const ok = name.trim().length >= 1;
+  // A username can change once every 30 days; the database enforces it, this just explains it.
+  const nextChange = profile?.username_changed_at ? new Date(Date.parse(profile.username_changed_at) + USERNAME_DAYS * 86400000) : null;
+  const [now] = useState(() => Date.now());
+  const locked = nextChange != null && nextChange.getTime() > now;
+  const userChanged = username !== (profile?.username ?? '');
+  const userValid = /^[a-z0-9._]{3,20}$/.test(username);
+  const ok = name.trim().length >= 1 && (!userChanged || userValid);
   const save = async () => {
     if (!session) return;
+    if (userChanged) {
+      const { data: free } = await supabase.rpc('username_available', { candidate: username });
+      if (free === false) {
+        setError('That username is taken. Try another one.');
+        return;
+      }
+    }
     const links: Record<string, string | null> = {};
     for (const x of SOCIALS) {
       const v = normalizeSocial(x.kind, socials[x.kind] ?? '');
@@ -55,11 +71,20 @@ export default function EditProfile() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({ display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
+      .update({ ...(userChanged ? { username } : {}), display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
       .eq('id', session.user.id);
     setBusy(false);
     if (saveError) {
-      setError('We couldn’t save your changes. Please try again.');
+      const text = `${saveError.message} ${saveError.code}`;
+      setError(
+        text.includes('username_change_too_soon')
+          ? 'You changed your username recently. You can change it again after 30 days.'
+          : saveError.code === '23505'
+            ? 'That username is taken. Try another one.'
+            : saveError.code === '23514'
+              ? 'That username can’t be used. Try another one.'
+              : 'We couldn’t save your changes. Please try again.',
+      );
       return;
     }
     await refreshProfile();
@@ -75,6 +100,26 @@ export default function EditProfile() {
             {photo ? <Image source={{ uri: photo.uri }} style={styles.preview} contentFit="cover" /> : <Avatar person={profile ? { id: profile.id, username: profile.username, display_name: profile.display_name, avatar_path: profile.avatar_path ?? null } : null} size={96} />}
             <Text style={styles.photoText}>Change photo</Text>
           </Pressable>
+          <Field label="USERNAME">
+            <TextInput
+              value={username}
+              onChangeText={(t) => setUsername(t.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+              editable={!locked}
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={20}
+              placeholderTextColor={colors.faint}
+              style={[formStyles.input, locked && { opacity: 0.5 }]}
+              accessibilityLabel="Username"
+            />
+          </Field>
+          <Text style={[formStyles.hint, { color: userChanged && !userValid ? danger : colors.muted }]}>
+            {locked
+              ? `You can change your username again on ${nextChange!.toLocaleDateString()}.`
+              : userChanged && !userValid
+                ? '3–20 letters, numbers, . or _'
+                : 'You can change your username once every 30 days.'}
+          </Text>
           <Field label="NAME" required>
             <TextInput value={name} onChangeText={setName} maxLength={60} placeholderTextColor={colors.faint} style={formStyles.input} accessibilityLabel="Name" />
           </Field>

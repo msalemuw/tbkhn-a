@@ -7,6 +7,7 @@ import { supabase, supabaseConfigured } from '@/lib/supabase';
 export type MyProfile = {
   id: string;
   username: string | null;
+  username_changed_at: string | null;
   display_name: string | null;
   avatar_path: string | null;
   bio: string | null;
