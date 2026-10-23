@@ -9,6 +9,9 @@ import { supabase } from '@/lib/supabase';
 export type CookProfile = Person & {
   bio: string | null;
   area: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  tiktok_url: string | null;
 };
 
 export type Review = {
@@ -26,7 +29,7 @@ export type CookStats = { followers: number; following: number; communities: num
 export async function fetchCookProfile(id: string): Promise<CookProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, display_name, avatar_path, bio, area')
+    .select('id, username, display_name, avatar_path, bio, area, instagram_url, facebook_url, tiktok_url')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;

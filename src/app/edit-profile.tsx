@@ -9,16 +9,18 @@ import { Text, TextInput } from '@/components/text';
 import { BackHeader, danger, Field, formStyles, PrimaryButton } from '@/components/form';
 import { Avatar } from '@/components/avatar';
 import { colors, fonts } from '@/constants/theme';
+import { normalizeSocial, SOCIALS } from '@/lib/social';
 import { uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
-// Edit your own profile: name, bio and the InstaPay handle neighbors pay you on.
+// Edit your own profile: name, bio, social links and the InstaPay handle neighbors pay you on.
 export default function EditProfile() {
   const { session, profile, refreshProfile } = useSession();
   const [name, setName] = useState(profile?.display_name ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [instapay, setInstapay] = useState(profile?.instapay_handle ?? '');
+  const [socials, setSocials] = useState<Record<string, string>>(() => Object.fromEntries(SOCIALS.map((x) => [x.kind, profile?.[x.column] ?? ''])));
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,15 @@ export default function EditProfile() {
   const ok = name.trim().length >= 1;
   const save = async () => {
     if (!session) return;
+    const links: Record<string, string | null> = {};
+    for (const x of SOCIALS) {
+      const v = normalizeSocial(x.kind, socials[x.kind] ?? '');
+      if (v === undefined) {
+        setError(`That ${x.label} link doesn’t look right. Type your username or paste your ${x.label} link.`);
+        return;
+      }
+      links[x.column] = v;
+    }
     setBusy(true);
     setError(null);
     let avatarPath: string | undefined;
@@ -44,7 +55,7 @@ export default function EditProfile() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({ display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
+      .update({ display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
       .eq('id', session.user.id);
     setBusy(false);
     if (saveError) {
@@ -70,6 +81,12 @@ export default function EditProfile() {
           <Field label="BIO">
             <TextInput value={bio} onChangeText={setBio} maxLength={300} multiline placeholder="Tell neighbors about your cooking" placeholderTextColor={colors.faint} style={[formStyles.input, { minHeight: 70 }]} accessibilityLabel="Bio" />
           </Field>
+          {SOCIALS.map((x) => (
+            <Field key={x.kind} label={x.label.toUpperCase()}>
+              <TextInput value={socials[x.kind]} onChangeText={(t) => setSocials((o) => ({ ...o, [x.kind]: t }))} placeholder="Username or link" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={200} style={formStyles.input} accessibilityLabel={x.label} />
+            </Field>
+          ))}
+          <Text style={[formStyles.hint, { color: colors.muted }]}>Optional. Shown on your profile so neighbors can find you.</Text>
           <Field label="INSTAPAY HANDLE">
             <TextInput value={instapay} onChangeText={setInstapay} placeholder="example: nour@instapay" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={60} style={formStyles.input} accessibilityLabel="InstaPay handle" />
           </Field>
