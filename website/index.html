@@ -51,6 +51,12 @@
   .more > summary::-webkit-details-marker { display: none; }
   .more > summary::after { content: ' +'; }
   .more[open] > summary::after { content: ' −'; }
+  /* Founder note under the sign-in cards. */
+  .founder { display: flex; align-items: center; gap: 14px; margin: 26px 0 0; padding: 14px; border: 1.5px solid var(--light-blue); border-radius: 18px; }
+  .founder img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: none; }
+  .founder p { margin: 0; font: 400 14px/1.5 var(--sans); }
+  .founder b { display: block; font-size: 16px; margin-bottom: 2px; }
+  .founder a { color: var(--yellow); font-weight: 700; }
   /* Phone showing the app's welcome screen, with "launching soon" under it. */
   .soon { margin: 32px 0 26px; text-align: center; }
   .phone { position: relative; width: min(270px, 72vw); aspect-ratio: 9 / 19.5; margin: 0 auto; border-radius: 46px;
@@ -270,6 +276,11 @@
       <button class="textlink" type="button" data-signout data-t="signOut"></button>
     </div>
 
+    <div class="founder">
+      <img src="founder.jpg" alt="" width="72" height="72">
+      <p><b data-t="founderName"></b><span data-t="founderText"></span> <a href="https://instagram.com/tabkheen.a" target="_blank" rel="noopener" data-t="founderLink"></a></p>
+    </div>
+
     <div class="soon">
       <div class="phone">
         <div class="screen">
@@ -303,6 +314,9 @@
   var T = {
     en: {
       // Tagline from the app's welcome screen (src/lib/welcome-copy.ts).
+      founderName: 'Hi, I’m Moustafa.',
+      founderText: 'I’m an Egyptian consultant who loves food. I’m building tabkheen A to make good food fun and affordable, so everyone can eat better. Questions?',
+      founderLink: 'Message me on Instagram.',
       headline: 'Good food brings us <b>closer</b>',
       soonTitle: 'App launching <span>soon</span>',
       lead: 'Early sign-up is open. Make your account now and you’re ready the moment the app launches.',
@@ -366,6 +380,9 @@
       privacy: 'Privacy notice', contact: 'Questions?', follow: 'Follow us'
     },
     ar: {
+      founderName: 'أهلاً، أنا مصطفى.',
+      founderText: 'مستشار مصري بحب الأكل. بعمل tabkheen A عشان الأكل الحلو يبقى ممتع وفي متناول الكل، وكلنا ناكل أحسن. عندك سؤال؟',
+      founderLink: 'ابعتلي على إنستجرام.',
       headline: 'الأكل الحلو بيقرّبنا <b>أكتر</b>',
       soonTitle: 'التطبيق نازل <span>قريب</span>',
       lead: 'التسجيل المبكر بدأ. اعمل حسابك دلوقتي وتبقى جاهز أول ما التطبيق ينزل.',
