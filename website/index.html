@@ -77,8 +77,9 @@
   .card .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; line-height: 1.5; }
   .gbtn { display: flex; justify-content: center; min-height: 44px; margin-top: 6px; }
   .abtn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 360px; min-height: 44px; margin: 10px auto 0;
-          border: 0; border-radius: 999px; background: var(--navy); color: var(--white); font: 600 15px/1 'Hanken Grotesk', system-ui, sans-serif; cursor: pointer; direction: ltr; }
+          border: 1px solid #dadce0; border-radius: 999px; background: var(--white); color: var(--navy); font: 600 15px/1 'Hanken Grotesk', system-ui, sans-serif; cursor: pointer; direction: ltr; }
   .abtn svg { width: 18px; height: 18px; fill: currentColor; }
+  html[lang="ar"] .abtn span { direction: rtl; unicode-bidi: isolate; }
   .abtn[disabled] { opacity: .6; cursor: default; }
   .iab { background: rgba(202,231,241,0.45); border-radius: 14px; padding: 14px; margin-top: 6px; }
   .iab .t { font-weight: 700; font-size: 16px; margin: 0 0 6px; }
@@ -308,7 +309,7 @@
       pitch: 'The biggest communities get our focus first, and the most prizes.',
       appleBtn: 'Sign up with Apple',
       startTitle: 'Create your account now',
-      startSub: 'The app is almost in the App Store and Google Play. Make your account today, and on launch day you just sign in.',
+      startSub: 'Home-cooked food from cooks in your neighbourhood, picked up by you. The app is almost in the <span dir="ltr">App Store</span> and <span dir="ltr">Google Play</span>: make your account today, and on launch day you just sign in.',
       iabTitle: 'Trouble signing in inside Instagram or Facebook?',
       iabBody: 'Open this page in your phone’s browser and sign in there:',
       iabOpen: 'Open in my browser',
@@ -371,7 +372,7 @@
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
       appleBtn: 'سجّل بحساب Apple',
       startTitle: 'اعمل حسابك دلوقتي',
-      startSub: 'التطبيق قرّب ينزل على App Store وGoogle Play. اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
+      startSub: 'أكل بيتي من طباخين في منطقتك، وبتستلمه بنفسك. التطبيق قرّب ينزل على <span dir="ltr">App Store</span> و<span dir="ltr">Google Play</span>: اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
       iabTitle: 'تسجيل الدخول مش راضي يشتغل جوه إنستجرام أو فيسبوك؟',
       iabBody: 'افتح الصفحة دي في متصفح الموبايل وسجّل من هناك:',
       iabOpen: 'افتحها في المتصفح',
@@ -468,7 +469,7 @@
 
   var params = new URLSearchParams(location.search);
   function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
-  var lang = params.get('lang') === 'en' || params.get('lang') === 'ar' ? params.get('lang') : (store('tabkheen.lang') || 'ar');
+  var lang = params.get('lang') === 'en' || params.get('lang') === 'ar' ? params.get('lang') : (store('tabkheen.lang') || (/^ar/i.test(navigator.language || '') ? 'ar' : 'en'));
   var $ = function (id) { return document.getElementById(id); };
   function t(k) { return T[lang][k]; }
 
@@ -568,7 +569,7 @@
     document.querySelectorAll('[data-t]').forEach(function (el) {
       var v = t(el.getAttribute('data-t'));
       if (typeof v !== 'string') return;
-      if (/<b>|<a |<span>/.test(v)) el.innerHTML = v; else el.textContent = v;
+      if (/<b>|<a |<span/.test(v)) el.innerHTML = v; else el.textContent = v;
     });
     document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
     $('privacyLink').href = 'privacy.html?lang=' + lang;
@@ -723,6 +724,8 @@
   function renderAppleButton() {
     if (!CFG.appleServiceId) return;
     $('abtn').hidden = false;
+    // Apple first on iPhone and iPad, Google first everywhere else.
+    if (/iPhone|iPad|iPod/.test(ua)) $('signin').insertBefore($('abtn'), $('gbtn'));
     loadApple().catch(function () { /* retried on click */ });
   }
   $('abtn').addEventListener('click', function () {
