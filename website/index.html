@@ -40,10 +40,19 @@
   .brand .ar { font: 600 34px 'IBM Plex Sans Arabic', sans-serif; }
   h1 { font: 400 40px/1.08 var(--serif); margin: 20px 0 14px; }
   h1 b { color: var(--yellow); font-weight: inherit; }
-  .early { display: block; width: 100%; margin-top: 28px; border: 0; border-radius: 18px; background: var(--yellow); color: var(--navy);
-    font: 800 21px var(--sans); padding: 18px 16px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+  /* First screen: the logo and the tagline, then straight to the sign-in card (no button to tap first). */
+  .top { align-items: center; justify-content: space-between; }
+  .top .toplogo { height: 34px; width: auto; }
+  .topline { font: 400 30px/1.12 var(--serif); margin: 18px 0 0; }
+  .topline b { color: var(--yellow); font-weight: inherit; }
+  html[lang="ar"] .topline { font-weight: 600; font-size: 26px; line-height: 1.35; }
+  .more { margin-top: 18px; border-top: 1.5px solid var(--light-blue); padding-top: 4px; }
+  .more > summary { cursor: pointer; font: 700 15px var(--sans); padding: 12px 0; list-style: none; }
+  .more > summary::-webkit-details-marker { display: none; }
+  .more > summary::after { content: ' +'; }
+  .more[open] > summary::after { content: ' −'; }
   /* Phone showing the app's welcome screen, with "launching soon" under it. */
-  .soon { margin: 26px 0 26px; text-align: center; }
+  .soon { margin: 32px 0 26px; text-align: center; }
   .phone { position: relative; width: min(270px, 72vw); aspect-ratio: 9 / 19.5; margin: 0 auto; border-radius: 46px;
     padding: 10px; background: var(--navy); box-shadow: 0 0 0 2px var(--light-blue), 0 24px 60px rgba(0,0,0,0.45); }
   .phone .screen { position: relative; height: 100%; border-radius: 37px; overflow: hidden;
@@ -141,32 +150,13 @@
 <div class="hero">
   <div class="wrap">
     <div class="top">
+      <img class="toplogo" src="logo.png" alt="tabkheen A">
       <div class="lang" role="group" aria-label="Language">
         <button type="button" data-lang="en">EN</button>
         <button type="button" data-lang="ar">ع</button>
       </div>
     </div>
-    <button type="button" class="early" id="earlyBtn" data-t="earlyBtn"></button>
-
-    <div class="soon">
-      <div class="phone">
-        <div class="screen">
-          <span class="island" aria-hidden="true"></span>
-          <img class="logo" src="logo.png" alt="tabkheen A">
-          <span class="ar">طابخين إيه</span>
-          <span class="tag" data-t="headline"></span>
-          <div class="bottom">
-          <span class="soonline" data-t="soonTitle"></span>
-          <div class="stores">
-            <span><svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.8c1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.4-.9-2.4-3.9zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></svg>App Store</span>
-            <span><svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.2.2-.3.6-.3 1v17.4c0 .4.1.8.3 1l9.7-9.7L3.6 2.3zm10.7 8.7 2.9-2.9L5.4 1.4c-.3-.2-.7-.2-1 0l9.9 9.6zm0 2-9.9 9.6c.3.2.7.2 1 0l11.8-6.7-2.9-2.9zm6.8-2.4-3-1.7-3.1 3.1 3.1 3.1 3-1.7c.8-.5.8-1.6 0-2.8z"/></svg>Google Play</span>
-          </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <p class="lead" data-t="lead"></p>
-    <p class="pitch" data-t="pitch"></p>
+    <p class="topline" data-t="headline"></p>
 
     <!-- Step 1: sign in with Google or Apple, the same account the app uses -->
     <div class="card" id="stepStart">
@@ -233,6 +223,8 @@
           <p class="hint" data-t="areaTypedHint"></p>
         </div>
 
+        <details class="more" id="more">
+        <summary data-t="moreOpt"></summary>
         <div id="optional"></div>
         <p class="hint" data-t="moreLater"></p>
 
@@ -240,6 +232,7 @@
         <label class="f" for="instapay" data-t="fInstapay"></label>
         <div class="ltr"><input id="instapay" type="text" autocapitalize="none" autocorrect="off" maxlength="60" placeholder="nour@instapay"></div>
         <p class="hint" data-t="instapayHint"></p>
+        </details>
 
         <h3 class="sec" data-t="secHeard"></h3>
         <label class="f" for="heard" data-t="fHeard"></label>
@@ -276,6 +269,26 @@
       <button class="textlink" type="button" data-signout data-t="signOut"></button>
     </div>
 
+    <div class="soon">
+      <div class="phone">
+        <div class="screen">
+          <span class="island" aria-hidden="true"></span>
+          <img class="logo" src="logo.png" alt="tabkheen A">
+          <span class="ar">طابخين إيه</span>
+          <span class="tag" data-t="headline"></span>
+          <div class="bottom">
+          <span class="soonline" data-t="soonTitle"></span>
+          <div class="stores">
+            <span><svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.2.8c1.3 0 2.1-1.2 2.9-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.4-.9-2.4-3.9zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.6 2.8-1.4z"/></svg>App Store</span>
+            <span><svg viewBox="0 0 24 24"><path d="M3.6 2.3c-.2.2-.3.6-.3 1v17.4c0 .4.1.8.3 1l9.7-9.7L3.6 2.3zm10.7 8.7 2.9-2.9L5.4 1.4c-.3-.2-.7-.2-1 0l9.9 9.6zm0 2-9.9 9.6c.3.2.7.2 1 0l11.8-6.7-2.9-2.9zm6.8-2.4-3-1.7-3.1 3.1 3.1 3.1 3-1.7c.8-.5.8-1.6 0-2.8z"/></svg>Google Play</span>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="lead" data-t="lead"></p>
+    <p class="pitch" data-t="pitch"></p>
+
   </div>
 </div>
 <footer>
@@ -290,7 +303,6 @@
     en: {
       // Tagline from the app's welcome screen (src/lib/welcome-copy.ts).
       headline: 'Good food brings us <b>closer</b>',
-      earlyBtn: 'Early sign-up: join now ↓',
       soonTitle: 'App launching <span>soon</span>',
       lead: 'Early sign-up is open. Make your account now and you’re ready the moment the app launches.',
       pitch: 'The biggest communities get our focus first, and the most prizes.',
@@ -325,6 +337,7 @@
       optional: { club: 'CLUB', sahel: 'SAHEL', school: 'SCHOOL', work: 'WORK' },
       notListedOpt: { club: 'Can’t find your club? Type it', sahel: 'Can’t find your Sahel community? Type it', school: 'Can’t find your school? Type it', work: 'Can’t find your workplace? Type it' },
       optTypedPh: 'Type the name', errOptTyped: 'Please type the name of the community you want to add.',
+      moreOpt: 'More details (optional): club, school, work, InstaPay',
       moreLater: 'You can join more communities anytime in the app.',
       secPaid: 'GETTING PAID', fInstapay: 'INSTAPAY HANDLE (OPTIONAL)',
       instapayHint: 'Needed when you cook, so neighbours can pay you directly. Add it later if you like.',
@@ -352,7 +365,6 @@
     },
     ar: {
       headline: 'الأكل الحلو بيقرّبنا <b>أكتر</b>',
-      earlyBtn: 'تسجيل مبكر: سجّل دلوقتي ↓',
       soonTitle: 'التطبيق نازل <span>قريب</span>',
       lead: 'التسجيل المبكر بدأ. اعمل حسابك دلوقتي وتبقى جاهز أول ما التطبيق ينزل.',
       pitch: 'المجتمعات الأكبر هي اللي هنركّز عليها الأول، وليها أكبر جوايز.',
@@ -387,6 +399,7 @@
       optional: { club: 'النادي', sahel: 'الساحل', school: 'المدرسة', work: 'الشغل' },
       notListedOpt: { club: 'ناديك مش موجود؟ اكتبه', sahel: 'مكانك في الساحل مش موجود؟ اكتبه', school: 'مدرستك مش موجودة؟ اكتبها', work: 'شغلك مش موجود؟ اكتبه' },
       optTypedPh: 'اكتب الاسم', errOptTyped: 'اكتب اسم المجتمع اللي عايز تضيفه.',
+      moreOpt: 'تفاصيل زيادة (اختياري): نادي، مدرسة، شغل، إنستاباي',
       moreLater: 'تقدر تنضم لمجتمعات تانية في أي وقت من التطبيق.',
       secPaid: 'استلام الفلوس', fInstapay: 'حساب إنستاباي (اختياري)',
       instapayHint: 'محتاجه لما تطبخ، عشان جيرانك يدفعولك على طول. تقدر تضيفه بعدين.',
@@ -427,13 +440,6 @@
     { value: 'other', en: 'Something else', ar: 'حاجة تانية', detail: { kind: 'text', en: 'TELL US MORE', ar: 'قولنا أكتر' } }
   ];
   var OPTIONAL = ['club', 'sahel', 'school', 'work'];
-
-  // "Early sign-up" button above the phone: scrolls to whichever sign-up step is showing.
-  document.getElementById('earlyBtn').addEventListener('click', function () {
-    var card = ['stepStart', 'stepProfile', 'stepDone'].map(function (id) { return document.getElementById(id); })
-      .filter(function (el) { return el && !el.hidden; })[0];
-    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
 
   // Footer: contact email and the social links filled in config.js (empty ones are left out).
   var email = CFG.contactEmail || 'help@tabkheen-a.com';
@@ -580,6 +586,9 @@
     if (doneUser) $('already').innerHTML = t('already')(escapeHtml(doneUser));
     if (showIab && !state.iabLogged) { state.iabLogged = true; logFunnel('inapp_browser_shown', { app: inApp }); }
     if (state.step === 'start') { renderGoogleButton(); renderAppleButton(); }
+    // The sign-in card is at the top of the page, so each later step starts at the top too.
+    if (state.shownStep && state.shownStep !== state.step && state.step !== 'start') window.scrollTo(0, 0);
+    state.shownStep = state.step;
     if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
@@ -645,6 +654,26 @@
     });
   }
   var gsiReady = false;
+  // Google draws its own button inside an iframe, so a tap is seen as the page losing focus to that iframe. If the page
+  // is back in front a moment later and no sign-in came through, the person left Google's window without finishing.
+  var flow = { tapAt: 0, credential: false };
+  window.addEventListener('blur', function () {
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (!flow.tapAt && a && a.tagName === 'IFRAME' && $('gbtn').contains(a)) { flow.tapAt = Date.now(); flow.credential = false; logFunnel('google_button_tapped'); }
+    }, 0);
+  });
+  function googleReturned() {
+    if (!flow.tapAt || document.visibilityState === 'hidden') return;
+    var tapped = flow.tapAt;
+    setTimeout(function () {
+      if (flow.tapAt !== tapped) return;
+      flow.tapAt = 0;
+      if (!flow.credential) logFunnel('google_returned_no_sign_in', { secs: Math.round((Date.now() - tapped) / 1000), app: inApp || 'browser' });
+    }, 2500);
+  }
+  window.addEventListener('focus', googleReturned);
+  document.addEventListener('visibilitychange', googleReturned);
   function renderGoogleButton() {
     var el = $('gbtn');
     if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(renderGoogleButton, 300); return; }
@@ -663,6 +692,7 @@
   }
   function onGoogleCredential(resp) {
     var started = Date.now();
+    flow.credential = true;
     $('errStart').classList.remove('show');
     sb.auth.signInWithIdToken({ provider: 'google', token: resp.credential, nonce: state.rawNonce }).then(function (res) {
       if (!res.error) store('tabkheen.method', 'google');
@@ -695,6 +725,7 @@
   }
   $('abtn').addEventListener('click', function () {
     var btn = $('abtn'), started = Date.now(), raw = crypto.getRandomValues(new Uint32Array(4)).join('-');
+    logFunnel('apple_button_tapped');
     $('errStart').classList.remove('show');
     btn.disabled = true;
     loadApple().then(function () { return sha256Hex(raw); }).then(function (hashed) {
@@ -712,7 +743,7 @@
       return afterSignIn(res.data.user);
     }).catch(function (err) {
       // Closing Apple's window is not an error.
-      if (err && (err.error === 'popup_closed_by_user' || err.error === 'user_cancelled_authorize')) return;
+      if (err && (err.error === 'popup_closed_by_user' || err.error === 'user_cancelled_authorize')) { logFunnel('apple_cancelled', { app: inApp || 'browser' }); return; }
       var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show');
     }).then(function () { btn.disabled = false; });
   });
@@ -736,6 +767,10 @@
       state.step = 'profile';
       var meta = user.user_metadata || {};
       if (!$('name').value) $('name').value = (state.profile && state.profile.display_name) || meta.full_name || meta.name || appleName || '';
+      // A starting username from the email (letters, digits, dot, underscore), checked for availability like a typed one;
+      // the person can change it. It saves one of the two fields people have to think about.
+      var local = String(user.email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
+      if (!$('username').value && local.length >= 3) { state.autoName = local; $('username').value = local; onUsernameInput(); }
       if (ref && !$('heard').value) { prefillHeard = { heard: 'friend', inviter: '@' + ref }; }
       logFunnel('profile_started');
       return loadLists().then(render);
@@ -842,7 +877,7 @@
       sb.rpc('username_available', { candidate: clean }).then(function (res) {
         if ($('username').value !== clean) return;
         state.taken = res.data === false;
-        if (state.taken) logFunnel('profile_field_error', { field: 'username_taken' });
+        if (state.taken && clean !== state.autoName) logFunnel('profile_field_error', { field: 'username_taken' });
         renderUsername();
       });
     }, 400);
@@ -1018,7 +1053,18 @@
   }
 
   render();
-  logFunnel('welcome_viewed', { lang: lang });
+  // Who opened the page: language, browser (Instagram and Facebook's own browsers show as such), screen width and where
+  // the visit came from. No IP address or location is stored.
+  var browserName = inApp || (/SamsungBrowser/.test(ua) ? 'samsung' : /Edg\//.test(ua) ? 'edge' : /Chrome|CriOS/.test(ua) ? 'chrome' : /Safari/.test(ua) ? 'safari' : 'other');
+  var refHost = ''; try { refHost = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) { refHost = ''; }
+  logFunnel('welcome_viewed', { lang: lang, browser: browserName, width: window.innerWidth, ref: refHost });
+  // Did the visit ever bring the sign-up card on screen? (The page opens on the hero, so many may never scroll to it.)
+  if ('IntersectionObserver' in window) {
+    var cardSeen = new IntersectionObserver(function (entries) {
+      if (entries.some(function (e) { return e.isIntersecting; })) { logFunnel('signup_card_seen'); cardSeen.disconnect(); }
+    }, { threshold: 0.5 });
+    cardSeen.observe($('stepStart'));
+  }
   // Coming back on the same browser: carry on where they left off.
   sb.auth.getSession().then(function (res) {
     var s = res.data && res.data.session;
