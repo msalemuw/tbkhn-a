@@ -119,6 +119,10 @@ export const fetchOpenReports = () => call<ReportGroup[]>('admin_open_reports');
 export const dismissReports = (g: ReportGroup, note?: string) =>
   call<number>('admin_dismiss_reports', { p_post_id: g.post_id, p_profile_id: g.profile_id, p_note: note ?? null });
 export const removePost = (postId: string, reason: string) => call('admin_remove_post', { p_post_id: postId, p_reason: reason });
+export type MemberFilter = 'all' | 'new' | 'suspended';
+/** One page of members, newest first. `total` is how many match in all, so the screen can say "Showing 50 of 212". */
+export const listMembers = (filter: MemberFilter, query: string, offset = 0) =>
+  call<(Member & { total: number })[]>('admin_list_members', { p_filter: filter, p_query: query, p_limit: 50, p_offset: offset });
 export const findMembers = (query: string) => call<Member[]>('admin_find_members', { p_query: query });
 export const setSuspended = (userId: string, suspended: boolean, reason?: string) =>
   call('admin_set_suspended', { p_user_id: userId, p_suspended: suspended, p_reason: reason ?? null });

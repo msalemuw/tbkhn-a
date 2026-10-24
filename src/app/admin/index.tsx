@@ -6,7 +6,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 import { FlipIcon } from '@/components/flip-icon';
 import { AdminScreen, ErrorLine, useStaffRole } from '@/components/admin-ui';
 import { colors, fonts } from '@/constants/theme';
-import { fetchOverview, type Overview } from '@/lib/admin';
+import { fetchOverview, type MemberFilter, type Overview } from '@/lib/admin';
 
 const ROLE_LABEL = { owner: 'Owner', moderator: 'Moderator', support: 'Support' } as const;
 
@@ -50,9 +50,9 @@ export default function AdminHome() {
         <ErrorLine text={error} />
         {data ? (
           <View style={styles.stats}>
-            <Stat label="Members" value={data.members} />
-            <Stat label="New this week" value={data.signups_7d} />
-            <Stat label="Suspended" value={data.suspended_members} />
+            <Stat label="Members" value={data.members} filter="all" />
+            <Stat label="New this week" value={data.signups_7d} filter="new" />
+            <Stat label="Suspended" value={data.suspended_members} filter="suspended" />
           </View>
         ) : null}
         {rows.map((r) => (
@@ -68,12 +68,12 @@ export default function AdminHome() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, filter }: { label: string; value: number; filter: MemberFilter }) {
   return (
-    <View style={styles.stat}>
+    <Pressable style={styles.stat} onPress={() => router.push({ pathname: '/admin/members', params: { filter } })} accessibilityRole="button" accessibilityLabel={`${label}: ${value}. Show the list`}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
