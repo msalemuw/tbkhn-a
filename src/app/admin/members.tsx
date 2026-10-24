@@ -1,33 +1,44 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { FlatList, Text, TextInput, View } from 'react-native';
 
 import { AdminScreen, adminStyles, Card, ErrorLine, ReasonModal, SmallButton, useStaffRole } from '@/components/admin-ui';
 import { Field, formStyles } from '@/components/form';
-import { canAct, findMembers, type Member, setStaffRole, setSuspended, setVerified, type StaffRole } from '@/lib/admin';
+import { canAct, listMembers, type Member, type MemberFilter, setStaffRole, setSuspended, setVerified, type StaffRole } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { refreshVerified } from '@/lib/verified';
 
-// Find a member by username, name, phone or email; suspend or lift it; switch the verified tick; the owner sets staff roles.
+// The member list (newest first), opened from the Admin tiles as all, new this week or suspended; search by username, name, phone or email; suspend or lift it; switch the verified tick; the owner sets staff roles.
 const ROLES: StaffRole[] = ['moderator', 'support', 'owner'];
 
 export default function Members() {
   const role = useStaffRole();
   const { session } = useSession();
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const filter: MemberFilter = params.filter === 'new' || params.filter === 'suspended' ? params.filter : 'all';
   const [query, setQuery] = useState('');
-  const [items, setItems] = useState<Member[] | null>(null);
+  const [items, setItems] = useState<(Member & { total: number })[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ask, setAsk] = useState<Parameters<typeof ReasonModal>[0]['ask']>(null);
 
-  const search = async (q = query) => {
+  // Loads the first page, or the next one when `more` is set.
+  const search = async (more = false) => {
     try {
-      setItems(await findMembers(q));
+      const page = await listMembers(filter, query.trim(), more ? (items?.length ?? 0) : 0);
+      setItems(more ? [...(items ?? []), ...page] : page);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not search');
+      setError(e instanceof Error ? e.message : 'Could not load');
     }
   };
+
+  // Opens on the list; typing searches after a short pause.
+  useEffect(() => {
+    const id = setTimeout(() => search(), query ? 350 : 0);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, filter]);
 
   const act = async (run: () => Promise<unknown>) => {
     try {
@@ -39,7 +50,7 @@ export default function Members() {
   };
 
   return (
-    <AdminScreen title="Members">
+    <AdminScreen title={filter === 'new' ? 'New this week' : filter === 'suspended' ? 'Suspended' : 'Members'}>
       <View style={{ paddingHorizontal: 22, paddingBottom: 12 }}>
         <Field label="USERNAME, NAME, PHONE OR EMAIL">
           <TextInput
@@ -59,7 +70,9 @@ export default function Members() {
         keyExtractor={(m) => m.id}
         contentContainerStyle={adminStyles.list}
         keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={items && items.length ? <Text style={adminStyles.muted}>Showing {items.length} of {items[0].total}</Text> : null}
         ListEmptyComponent={items === null ? null : <Text style={adminStyles.empty}>No members match.</Text>}
+        ListFooterComponent={items && items.length < (items[0]?.total ?? 0) ? <SmallButton label="Show more" onPress={() => search(true)} /> : null}
         renderItem={({ item }) => {
           const name = item.display_name ?? (item.username ? `@${item.username}` : 'No name yet');
           const isMe = item.id === session?.user.id;
