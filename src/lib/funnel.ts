@@ -17,6 +17,11 @@ export type FunnelStep =
   | 'community_requested'
   | 'community_request_duplicate'
   | 'signup_completed'
+  | 'basics_saved'
+  | 'details_started'
+  | 'extras_started'
+  | 'extras_saved'
+  | 'extras_skipped'
   | 'identifier_conflict'
   | 'help_opened';
 
