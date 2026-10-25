@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AppState } from 'react-native';
 
 import { distanceMeters, type LatLng } from '@/lib/format';
+import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -25,10 +26,10 @@ const FOLLOW_METERS = 300;
 
 const PlaceContext = createContext<Ctx>({ place: null, ready: false, setPlace: () => {} });
 
-/** Current GPS position, asking for permission once. Null when denied or unavailable. */
-export async function getMyLocation(): Promise<LatLng | null> {
+/** Current GPS position, asking for permission once. Null when denied or unavailable. `prompt: false` only uses a permission already given, so background callers never open a system dialog. */
+export async function getMyLocation({ prompt = true }: { prompt?: boolean } = {}): Promise<LatLng | null> {
   try {
-    const { granted } = await Location.requestForegroundPermissionsAsync();
+    const { granted } = prompt ? await Location.requestForegroundPermissionsAsync() : await Location.getForegroundPermissionsAsync();
     if (!granted) return null;
     const last = await Location.getLastKnownPositionAsync({ maxAge: 5 * 60_000 });
     const pos = last ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
@@ -44,8 +45,8 @@ let lastReport = 0;
  * The member's current GPS position, also saved as their last known position (at most every 2 minutes) so other
  * members' feeds can show a live distance. Null when permission is denied or the position is unavailable.
  */
-export async function reportMyPosition(): Promise<LatLng | null> {
-  const pos = await getMyLocation();
+export async function reportMyPosition(opts: { prompt?: boolean } = {}): Promise<LatLng | null> {
+  const pos = await getMyLocation(opts);
   if (pos && Date.now() - lastReport > 120_000) {
     const { data } = await supabase.auth.getSession();
     const id = data.session?.user.id;
@@ -142,6 +143,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   // Read by the GPS follower, which outlives renders.
   const placeRef = useRef<Place | null>(null);
+  // The system permission dialog is asked once per launch, and only once sign-up is finished: on Android a dialog
+  // over the sign-up form closes the keyboard, and asking again every time the app comes back loops the dialog.
+  const { profile } = useSession();
+  const signedUp = !!profile?.username;
+  const mayAsk = useRef(false);
+  const asked = useRef(false);
 
   const apply = useCallback((p: Place) => {
     placeRef.current = p;
@@ -152,7 +159,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   /** Moves the place to where the phone is now, unless the member pinned a spot by hand. */
   const followGps = useCallback(async () => {
     if (placeRef.current?.manual) return;
-    const gps = await getMyLocation();
+    const prompt = mayAsk.current && !asked.current;
+    if (prompt) asked.current = true;
+    const gps = await getMyLocation({ prompt });
     const cur = placeRef.current;
     if (!gps || cur?.manual) return;
     if (cur && distanceMeters(cur, gps) < FOLLOW_METERS) return;
@@ -182,6 +191,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       sub.remove();
     };
   }, [followGps]);
+
+  // Sign-up just finished: now it is fine to ask.
+  useEffect(() => {
+    mayAsk.current = signedUp;
+    if (signedUp) followGps().catch(() => {});
+  }, [signedUp, followGps]);
 
   const setPlace = useCallback((p: Place) => {
     apply(p);
