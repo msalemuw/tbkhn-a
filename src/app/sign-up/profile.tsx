@@ -41,6 +41,21 @@ const OPTIONAL: { kind: Optional; label: string; noun: string }[] = [
 ];
 
 
+// first.last from the name, never from the email (which would show part of it on the public profile). Names that are
+// not in Latin letters give nothing and the member types one. The website does the same.
+function nameToUsername(full: string): string {
+  const words = full
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.replace(/[^a-z0-9]/g, ''))
+    .filter(Boolean);
+  if (!words.length) return '';
+  const u = (words.length > 1 ? `${words[0]}.${words[words.length - 1]}` : words[0]).slice(0, 20);
+  return u.length >= 3 ? u : '';
+}
+
 type UsernameState = { msg: string; color: string; icon?: 'error' | 'check-circle'; ok: boolean; suggestions: string[] };
 
 function usernameState(u: string, taken: boolean | null): UsernameState {
@@ -56,12 +71,16 @@ function usernameState(u: string, taken: boolean | null): UsernameState {
 }
 
 export default function ProfileStep() {
-  const { session, refreshProfile } = useSession();
+  const { session, profile, refreshProfile } = useSession();
+  // Three steps (founder, 2026-10-25): 1 photo, name and username; 2 the required details (loves, country, governorate,
+  // area); 3 the optional extras. Each is saved on its own; someone who stopped after step 1 comes back to step 2.
+  const [part, setPart] = useState<1 | 2 | 3>(profile?.username ? 2 : 1);
   // Google and Apple share the member's name, so it starts filled in.
   // Optional profile photo (founder, 2026-10-11); the website sign-up has the same circle.
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [name, setName] = useState(() => String(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? ''));
-  const [username, setUsername] = useState('');
+  // Starts from the name (first.last), checked for availability like a typed one; same as the website.
+  const [username, setUsername] = useState(() => nameToUsername(name));
   const [loves, setLoves] = useState<Loves | null>(null);
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -88,7 +107,7 @@ export default function ProfileStep() {
   const phoneDigits = (session?.user.phone ?? '').replace(/^\+?20/, '');
 
   useEffect(() => {
-    logFunnel('profile_started', {}, { userRef: session?.user.id });
+    logFunnel(part === 2 ? 'details_started' : 'profile_started', {}, { userRef: session?.user.id });
     // Approved communities, plus this member's own pending requests, so a request made before going back still shows up.
     const mine = session?.user.id ? `,requested_by.eq.${session.user.id}` : '';
     supabase
@@ -101,6 +120,8 @@ export default function ProfileStep() {
       );
     // If the countries table is not there yet, the form falls back to Egypt only.
     fetchCountries().then(setCountries, () => {});
+    // Once per visit: moving from step 1 to step 2 must not reload the lists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -144,7 +165,8 @@ export default function ProfileStep() {
   const heardDef = HEARD.find((h) => h.value === heard);
   const heardDetail = heardDef?.detail.kind === 'pick' ? (heardPick && heardPick !== OTHER_DETAIL ? heardPick : heardText.trim() || null) : heardDef?.detail.kind === 'text' ? heardText.trim() || null : null;
 
-  const canSubmit = name.trim().length > 0 && un.ok && loves !== null && Boolean(gov?.trim() && areaId);
+  const canContinue = name.trim().length > 0 && un.ok;
+  const canSubmit = loves !== null && Boolean(gov?.trim() && areaId);
 
   function openPicker(
     title: string,
@@ -192,11 +214,11 @@ export default function ProfileStep() {
     if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
   }
 
+  // Step 1: the account basics are saved first, so the account exists even if step 2 is never finished.
   async function onContinue() {
-    if (!session || !canSubmit) return;
+    if (!session || !canContinue) return;
     setBusy(true);
     setError(null);
-    const area = byId(areaId)!;
     // The photo is optional, so a failed upload never blocks sign-up; it can be added later in Edit profile.
     let avatarPath: string | null = null;
     if (photo) {
@@ -208,19 +230,7 @@ export default function ProfileStep() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({
-        display_name: name.trim(),
-        username,
-        loves,
-        ...(avatarPath ? { avatar_path: avatarPath } : {}),
-        country_code: countries.length ? country : undefined,
-        governorate: gov?.trim(),
-        area: area.name,
-        instapay_handle: instapay.trim() || null,
-        heard_from: heard,
-        heard_detail: heardDetail,
-        inviter_name: heard === 'friend' || heard === 'family' ? inviter.trim() || null : null,
-      })
+      .update({ display_name: name.trim(), username, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
       .eq('id', session.user.id);
     if (saveError) {
       setBusy(false);
@@ -232,15 +242,90 @@ export default function ProfileStep() {
       }
       return;
     }
-    // Requested communities are still pending: the database adds the member when an admin approves.
-    const joined = [areaId, ...Object.values(optional)].filter((id): id is string => Boolean(id) && !byId(id)?.pending);
+    logFunnel('basics_saved', { photo: Boolean(avatarPath) }, { userRef: session.user.id });
+    logFunnel('details_started', {}, { userRef: session.user.id });
+    // The account still has no area, so the app keeps sending this member to step 2 until it is finished.
+    await refreshProfile();
+    setBusy(false);
+    setPart(2);
+  }
+
+  // Step 2: the required details. The account counts as created from here (a username and an area).
+  async function onDetails() {
+    if (!session || !canSubmit) return;
+    setBusy(true);
+    setError(null);
+    const area = byId(areaId)!;
+    // How they heard is saved as it stands (a friend by default), so skipping step 3 loses nothing.
+    const { error: saveError } = await supabase
+      .from('profiles')
+      .update({
+        loves,
+        country_code: countries.length ? country : undefined,
+        governorate: gov?.trim(),
+        area: area.name,
+        heard_from: heard,
+        heard_detail: heardDetail,
+        inviter_name: heard === 'friend' || heard === 'family' ? inviter.trim() || null : null,
+      })
+      .eq('id', session.user.id);
+    if (saveError) {
+      setBusy(false);
+      setError('We couldn’t save your profile. Check your connection and try again.');
+      return;
+    }
+    // A requested area is still pending: the database adds the member when an admin approves.
+    const joined = [areaId].filter((id): id is string => Boolean(id) && !byId(id)?.pending);
     await supabase
       .from('community_members')
       .upsert(joined.map((community_id) => ({ community_id, user_id: session.user.id })), { ignoreDuplicates: true });
     logFunnel('communities_selected', { count: joined.length, kinds: joined.map((id) => byId(id)?.kind), pending: requested.length }, { userRef: session.user.id });
     logFunnel('signup_completed', { heard_from: heard, heard_detail: heardPick && heardPick !== OTHER_DETAIL ? heardPick : null }, { userRef: session.user.id });
+    logFunnel('extras_started', {}, { userRef: session.user.id });
     await refreshProfile();
     setBusy(false);
+    setPart(3);
+  }
+
+  // Step 3: the optional extras (club, Sahel, school, work, InstaPay, how they heard). Skipping it is fine.
+  async function onExtras() {
+    if (!session) return;
+    setBusy(true);
+    setError(null);
+    const { error: saveError } = await supabase
+      .from('profiles')
+      .update({
+        instapay_handle: instapay.trim() || null,
+        heard_from: heard,
+        heard_detail: heardDetail,
+        inviter_name: heard === 'friend' || heard === 'family' ? inviter.trim() || null : null,
+      })
+      .eq('id', session.user.id);
+    if (saveError) {
+      setBusy(false);
+      setError('We couldn’t save your profile. Check your connection and try again.');
+      return;
+    }
+    const joined = Object.values(optional).filter((id): id is string => Boolean(id) && !byId(id)?.pending);
+    await supabase
+      .from('community_members')
+      .upsert(joined.map((community_id) => ({ community_id, user_id: session.user.id })), { ignoreDuplicates: true });
+    logFunnel('extras_saved', { communities: joined.length }, { userRef: session.user.id });
+    await markExtrasDone(session.user.id);
+    setBusy(false);
+    router.replace('/home');
+  }
+
+  // Marks step 3 as reached (saved or skipped) for the admin. Best effort: it never blocks the member.
+  async function markExtrasDone(id: string) {
+    await supabase.from('profiles').update({ extras_done_at: new Date().toISOString() }).eq('id', id);
+  }
+
+  async function onSkip() {
+    if (session) {
+      logFunnel('extras_skipped', {}, { userRef: session.user.id });
+      await markExtrasDone(session.user.id);
+    }
     router.replace('/home');
   }
 
@@ -249,17 +334,20 @@ export default function ProfileStep() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           <BackHeader
-            title="Create your account"
+            title={part === 1 ? 'Create your account' : part === 2 ? 'Nearly there' : 'A little more (optional)'}
             onBack={async () => {
+              if (part > 1) return setPart(part === 3 ? 2 : 1);
               // The welcome screen sends a signed-in account straight back here, so going back means signing out.
               await supabase.auth.signOut();
               router.replace('/');
             }}
           />
           <Text style={styles.required}>
-            <Text style={{ color: colors.muted }}>*</Text> Required
+            Step {part} of 3 · <Text style={{ color: colors.muted }}>*</Text> Required
           </Text>
 
+          {part === 1 ? (
+            <>
           <Pressable style={styles.photo} onPress={pickPhoto} accessibilityRole="button" accessibilityLabel={photo ? 'Change photo' : 'Add a profile photo'}>
             {photo ? (
               <Image source={{ uri: photo.uri }} style={styles.photoCircle} contentFit="cover" />
@@ -320,6 +408,9 @@ export default function ProfileStep() {
             </View>
           </View>
 
+            </>
+          ) : part === 2 ? (
+            <>
           <Text style={styles.section}>
             ABOUT YOU <Text style={{ color: colors.muted }}>*</Text>
           </Text>
@@ -401,6 +492,12 @@ export default function ProfileStep() {
                 })
               }
             />
+          </View>
+            </>
+          ) : (
+            <>
+          <Text style={styles.section}>YOUR OTHER COMMUNITIES</Text>
+          <View style={styles.group}>
             {OPTIONAL.map(({ kind, label: heading, noun }) => (
               <SelectField
                 key={kind}
@@ -475,8 +572,22 @@ export default function ProfileStep() {
             ) : null}
           </View>
 
+            </>
+          )}
+
           {error ? <Text style={formStyles.error}>{error}</Text> : null}
-          <PrimaryButton label="Continue" onPress={onContinue} busy={busy} disabled={!canSubmit} style={{ marginTop: 22 }} />
+          <PrimaryButton
+            label={part === 1 ? 'Continue' : part === 2 ? 'Create my account' : 'Save and finish'}
+            onPress={part === 1 ? onContinue : part === 2 ? onDetails : onExtras}
+            busy={busy}
+            disabled={part === 1 ? !canContinue : part === 2 ? !canSubmit : false}
+            style={{ marginTop: 22 }}
+          />
+          {part === 3 ? (
+            <Text style={styles.skip} onPress={onSkip} accessibilityRole="button">
+              Skip for now
+            </Text>
+          ) : null}
           <BuildInfo />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -515,6 +626,7 @@ const styles = StyleSheet.create({
   chip: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, backgroundColor: colors.lightBlue, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, overflow: 'hidden' },
   section: { fontFamily: fonts.extraBold, fontSize: 12, letterSpacing: 0.6, color: colors.ink, marginTop: 28 },
   sectionSub: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted, lineHeight: 19, marginTop: 4 },
+  skip: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, textAlign: 'center', textDecorationLine: 'underline', paddingVertical: 14, marginTop: 6 },
   note: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.tealSoft, borderRadius: 14, padding: 14, marginTop: 14 },
   noteText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, lineHeight: 18, color: colors.ink },
 });

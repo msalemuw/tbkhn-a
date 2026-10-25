@@ -1,5 +1,4 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,9 +7,9 @@ import { t } from '@/lib/i18n';
 import { BackHeader, formStyles } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
-import { APPLE_SIGNIN, GOOGLE_SIGNIN, type OAuthMethod, type OAuthResult, PHONE_SIGNIN, signInWithApple, signInWithGoogle } from '@/lib/oauth';
+import { APPLE_SIGNIN, GOOGLE_SIGNIN, PHONE_SIGNIN } from '@/lib/oauth';
 import { type AuthMode } from '@/lib/otp';
-import { supabase, supabaseConfigured } from '@/lib/supabase';
+import { useOAuthFlow } from '@/lib/use-oauth-flow';
 
 // Screens s61 (Create your account) and s10 (Welcome back): Google and Apple at launch. The same
 // button creates the account the first time and logs in after that. Phone code is hidden until
@@ -34,30 +33,8 @@ const copy = {
 
 export function AuthChoice({ mode }: { mode: AuthMode }) {
   const c = copy[mode];
-  const [busy, setBusy] = useState<OAuthMethod | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, go } = useOAuthFlow(mode);
   const none = !GOOGLE_SIGNIN && !APPLE_SIGNIN && !PHONE_SIGNIN;
-
-  async function go(method: OAuthMethod) {
-    if (busy) return;
-    if (!supabaseConfigured) {
-      setError(t('The app isn’t connected to the server yet.'));
-      return;
-    }
-    setBusy(method);
-    setError(null);
-    logFunnel('signup_method_chosen', { method, mode });
-    const res: OAuthResult = await (method === 'google' ? signInWithGoogle() : signInWithApple());
-    if (!res.ok) {
-      setBusy(null);
-      if (!res.cancelled) setError(res.message);
-      return;
-    }
-    const { data: profile } = await supabase.rpc('my_profile');
-    setBusy(null);
-    const done = Boolean((profile as { username: string | null } | null)?.username);
-    router.replace(done ? '/home' : '/sign-up/profile');
-  }
 
   function onHelp() {
     logFunnel('help_opened', { from: mode === 'signup' ? 'signup' : 'login' });

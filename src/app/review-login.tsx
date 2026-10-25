@@ -6,8 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 import { BackHeader, Field, formStyles, PrimaryButton } from '@/components/form';
 import { colors } from '@/constants/theme';
-import { signInWithEmail } from '@/lib/oauth';
-import { supabase, supabaseConfigured } from '@/lib/supabase';
+import { routeAfterSignIn, signInWithEmail } from '@/lib/oauth';
+import { supabaseConfigured } from '@/lib/supabase';
 
 /** Demo sign-in for the App Store and Google Play reviewers (listed in their review notes). Not for members. */
 export default function ReviewLogin() {
@@ -26,9 +26,9 @@ export default function ReviewLogin() {
       setBusy(false);
       return setError(res.message);
     }
-    const { data: profile } = await supabase.rpc('my_profile');
+    const next = await routeAfterSignIn();
     setBusy(false);
-    router.replace((profile as { username: string | null } | null)?.username ? '/home' : '/sign-up/profile');
+    router.replace(next);
   }
 
   return (
