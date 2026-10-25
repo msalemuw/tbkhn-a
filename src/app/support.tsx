@@ -1,6 +1,6 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
@@ -95,7 +95,7 @@ function NewMessage({ signedIn, onSent, onCancel }: { signedIn: boolean; onSent:
   const ready = subject.trim().length > 0 && body.trim().length > 0 && (signedIn || contact.trim().length >= 5);
   return (
     <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           <BackHeader title="Help & support" onBack={onCancel} />
           <Text style={[formStyles.sub, { marginBottom: 16 }]}>Tell us what happened and we will answer here{signedIn ? '' : ', on the email or phone you leave'}.</Text>
@@ -140,7 +140,7 @@ function Thread({ id, subject, onBack }: { id: string; subject?: string; onBack:
   }
   return (
     <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           <BackHeader title={subject ?? 'Help & support'} onBack={onBack} />
           {messages === null && !error ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.teal} /> : null}

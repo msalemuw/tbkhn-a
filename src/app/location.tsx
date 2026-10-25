@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Keyboard, KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -269,7 +269,7 @@ export default function LocationPicker() {
         {finding ? <ActivityIndicator color={colors.ink} /> : <MaterialIcons name="my-location" size={22} color={colors.ink} />}
       </Pressable>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheetWrap} pointerEvents="box-none">
+      <KeyboardAvoidingView behavior="padding" style={styles.sheetWrap} pointerEvents="box-none">
       {pickup && hits ? (
         <View style={[styles.hits, styles.hitsAbove]}>
           {hits.length ? (

@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
@@ -102,7 +102,7 @@ export function ReasonModal({
   return (
     <Modal visible={ask !== null} transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.scrim} onPress={close} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView behavior="padding">
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <Text style={styles.sheetTitle}>{ask?.title}</Text>
           <TextInput
