@@ -759,20 +759,24 @@
     draw(); dlg.showModal(); load();
   }
 
+  // Where each person is in the three-step sign-up (database update 0044). Before it is run, only "finished" exists.
+  var STAGES = ['Signed in only', 'Step 1 done', 'Step 2 done', 'All 3 steps'];
+  var STAGE_HELP = ['signed in with Google or Apple but did not save a username', 'photo, name and username saved, required details not yet', 'required details saved (the account is complete), optional extras not yet', 'optional extras saved or skipped'];
   // Members: everyone who signed up (newest first), search, verify, suspend, download
   function viewMembers(v) {
-    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '';
+    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '', stages = null;
     v.innerHTML = '<div class="row"><h2 class="grow">Members</h2>' + (role === 'owner' ? '<button class="btn" id="exportMembers">Download all members (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="mq" placeholder="Username, name, phone or email" autocomplete="off"><button class="btn strong" id="mgo">Search</button></div><div id="mres"></div></div>';
     function rows() { return q ? items : all; }
     function draw() {
       var list = rows(), head = '';
       if (!q) head = listErr ? '<p class="muted">' + esc(listErr) + '</p>' :
-        '<p class="muted">Everyone who signed up, newest first: ' + total + ' in all' + (all.length < total ? ', showing ' + all.length : '') + '. Search to find one person.</p>';
+        '<p class="muted">Everyone who signed up, newest first: ' + total + ' in all' + (all.length < total ? ', showing ' + all.length : '') + '. Search to find one person.</p>' +
+        (stages ? '<p class="muted" style="margin-top:-6px">' + STAGES.map(function (n, k) { return '<span title="' + esc(STAGE_HELP[k]) + '"><b>' + (stages[k] || 0) + '</b> ' + esc(n.toLowerCase()) + '</span>'; }).join(' · ') + '</p>' : '');
       $('mres').innerHTML = head + (!list.length ? (q ? '<p class="muted">No members match.</p>' : '') :
         '<div class="tablewrap"><table><tr><th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + list.map(function (m, i) {
           return '<tr><td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
-            (m.finished === false ? ' <span class="tag">PROFILE NOT FINISHED</span>' : '') +
+            (m.stage !== undefined && m.stage !== null ? ' <span class="tag" title="' + esc(STAGE_HELP[m.stage] || '') + '">' + esc((STAGES[m.stage] || '').toUpperCase()) + '</span>' : m.finished === false ? ' <span class="tag">PROFILE NOT FINISHED</span>' : '') +
             (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (m.banned_at ? ' <span class="tag">BANNED</span>' : m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
             '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + (m.whatsapp ? '<br><span class="muted">WhatsApp ' + esc(m.whatsapp) + '</span>' : '') + '</td>' +
             '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + (m.via ? ' · ' + esc(m.via) : '') + (m.source ? ' · ' + esc(m.source) : '') + '</span></td>' +
@@ -786,6 +790,8 @@
     function loadList(from, upTo) {
       return rpc('admin_list_signups', { p_limit: upTo || PAGE, p_offset: from }).then(function (r) {
         all = from ? all.concat(r) : r; total = r.length ? r[0].total : (from ? total : 0); listErr = ''; draw();
+        // The counts per step come from 0044; without it the list still works.
+        return rpc('admin_signup_stages').then(function (c) { stages = {}; c.forEach(function (x) { stages[x.stage] = Number(x.members); }); draw(); }).catch(function () { stages = null; });
       }).catch(function (e) {
         // Before 0039_admin_signup_list.sql is run the function does not exist yet.
         listErr = /admin_list_signups/.test(msg(e)) ? 'The full list appears once the latest database update (0039) is run in Supabase. Search still works.' : msg(e);
@@ -1141,7 +1147,7 @@
       '<div class="card"><h2>Day by day</h2><div id="fdaily"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h2>Where people get stuck</h2><div class="tablewrap" id="fprob"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h2>By ad</h2><p class="muted" style="margin-top:0">Visits per ad campaign and placement. “Finished” is visits that completed sign-up.</p><div class="tablewrap" id="fsrc"><p class="muted">Loading…</p></div></div>' +
-      '<div class="card"><h2>Signed in but never finished</h2><p class="muted" style="margin-top:0">People who created an account and did not finish their profile, at least 30 minutes ago. Their last step shows where they stopped.</p><div class="tablewrap" id="funf"><p class="muted">Loading…</p></div></div>';
+      '<div class="card"><h2>Signed in but never finished</h2><p class="muted" style="margin-top:0">People who created an account and did not finish the required details (step 2), at least 30 minutes ago. Their last step and the step they completed show where they stopped.</p><div class="tablewrap" id="funf"><p class="muted">Loading…</p></div></div>';
     function chips() {
       $('fdays').innerHTML = [7, 14, 30, 90].map(function (d) { return '<button class="chip" data-days="' + d + '" aria-pressed="' + (d === days) + '">' + d + ' days</button>'; }).join('');
       $('fvia').innerHTML = VIAS.map(function (x) { return '<button class="chip" data-via="' + (x[0] || '') + '" aria-pressed="' + (x[0] === via) + '">' + x[1] + '</button>'; }).join('');
@@ -1188,8 +1194,8 @@
     function loadUnfinished() {
       return rpc('admin_unfinished_signups').then(function (rows) {
         var LABEL = {}; FUNNEL_STEPS.forEach(function (st) { LABEL[st[0]] = st[1]; });
-        $('funf').innerHTML = rows.length ? '<table><tr><th>Contact</th><th>Signed in</th><th>From</th><th>Last step</th></tr>' + rows.map(function (r) {
-          return '<tr><td>' + esc(r.email || '') + '<br>' + esc(r.phone || '') + '</td><td>' + esc(when(r.created_at)) + '</td><td>' + esc(r.source || '') + (r.campaign ? '<br><span class="muted">' + esc(r.campaign) + '</span>' : '') + '</td><td>' + esc(r.last_step ? (LABEL[r.last_step] || r.last_step) : 'Nothing recorded') + (r.last_step_at ? '<br><span class="muted">' + esc(when(r.last_step_at)) + '</span>' : '') + '</td></tr>';
+        $('funf').innerHTML = rows.length ? '<table><tr><th>Contact</th><th>Signed in</th><th>From</th><th>Where they stopped</th></tr>' + rows.map(function (r) {
+          return '<tr><td>' + esc(r.email || '') + '<br>' + esc(r.phone || '') + '</td><td>' + esc(when(r.created_at)) + '</td><td>' + esc(r.source || '') + (r.campaign ? '<br><span class="muted">' + esc(r.campaign) + '</span>' : '') + '</td><td>' + esc(r.last_step ? (LABEL[r.last_step] || r.last_step) : 'Nothing recorded') + (r.last_step_at ? '<br><span class="muted">' + esc(when(r.last_step_at)) + '</span>' : '') + (r.stage !== undefined && r.stage !== null ? '<br><span class="tag">' + esc((STAGES[r.stage] || '').toUpperCase()) + '</span>' : '') + '</td></tr>';
         }).join('') + '</table><p class="muted">Showing the latest ' + rows.length + '.</p>' : '<p class="muted">Everyone who signed in has finished.</p>';
       });
     }

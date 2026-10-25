@@ -1101,14 +1101,18 @@
       return join(chosen);
     }).then(function (n) {
       logFunnel('extras_saved', { communities: n });
+      markExtrasDone(uid);
       state.step = 'done'; render();
       $('stepDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }).catch(function (err) {
       fail(err && err.msg ? err.msg : 'errNet');
     }).then(reset);
   });
+  // Marks step 3 as reached (saved or skipped) for the admin. Best effort: it never blocks the person.
+  function markExtrasDone(uid) { sb.update('profiles', 'id=eq.' + uid, { extras_done_at: new Date().toISOString() }).then(function () {}, function () {}); }
   $('skip').addEventListener('click', function () {
     logFunnel('extras_skipped');
+    markExtrasDone(state.user.id);
     state.step = 'done'; render();
     $('stepDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
   });

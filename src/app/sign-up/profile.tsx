@@ -311,12 +311,21 @@ export default function ProfileStep() {
       .from('community_members')
       .upsert(joined.map((community_id) => ({ community_id, user_id: session.user.id })), { ignoreDuplicates: true });
     logFunnel('extras_saved', { communities: joined.length }, { userRef: session.user.id });
+    await markExtrasDone(session.user.id);
     setBusy(false);
     router.replace('/home');
   }
 
-  function onSkip() {
-    if (session) logFunnel('extras_skipped', {}, { userRef: session.user.id });
+  // Marks step 3 as reached (saved or skipped) for the admin. Best effort: it never blocks the member.
+  async function markExtrasDone(id: string) {
+    await supabase.from('profiles').update({ extras_done_at: new Date().toISOString() }).eq('id', id);
+  }
+
+  async function onSkip() {
+    if (session) {
+      logFunnel('extras_skipped', {}, { userRef: session.user.id });
+      await markExtrasDone(session.user.id);
+    }
     router.replace('/home');
   }
 
