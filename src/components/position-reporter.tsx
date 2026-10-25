@@ -9,14 +9,15 @@ import { useSession } from '@/lib/session';
  * every time it comes back to the front, not only when Home is on screen. Renders nothing.
  */
 export function PositionReporter() {
-  const { session } = useSession();
-  const signedIn = !!session;
+  const { session, profile } = useSession();
+  // Not while the sign-up form is open, and only with a permission already given (the Home and location screens ask).
+  const signedIn = !!session && !!profile?.username;
 
   useEffect(() => {
     if (!signedIn) return;
-    reportMyPosition().catch(() => {});
+    reportMyPosition({ prompt: false }).catch(() => {});
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') reportMyPosition().catch(() => {});
+      if (state === 'active') reportMyPosition({ prompt: false }).catch(() => {});
     });
     return () => sub.remove();
   }, [signedIn]);
