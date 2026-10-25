@@ -4,7 +4,7 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
 
 ## Steps (event names)
 1. `welcome_viewed`
-2. `signup_method_chosen` — `method`: phone | google | apple
+2. `signup_method_chosen` — `method`: phone | google | apple; in the app `mode` is `welcome` when tapped on the welcome screen (Google and Apple sit there since 2026-10-25, so there is no separate "Create account" screen before them; "More sign-in options" opens the old choice screen with phone, demo sign-in and help)
 3. `phone_entered` — `valid`: bool, `attempts`
 4. `code_sent` — `channel`: whatsapp (no SMS since 2026-10-04), `provider_status`
 5. `code_entered` — `attempts`, `result`: ok | wrong | expired

@@ -12,6 +12,8 @@ import { BuildInfo } from '@/components/build-info';
 import { Logo } from '@/components/logo';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
+import { APPLE_SIGNIN, GOOGLE_SIGNIN } from '@/lib/oauth';
+import { useOAuthFlow } from '@/lib/use-oauth-flow';
 import { useSession } from '@/lib/session';
 import { type Lang, welcomeCopy } from '@/lib/welcome-copy';
 
@@ -22,6 +24,7 @@ const ART_NAVY = '#0f2330';
 export default function Welcome() {
   const { loading, session, needsProfile } = useSession();
   const [lang, setLang] = useState<Lang>(appLang);
+  const { busy, error, go } = useOAuthFlow('welcome');
   const t = welcomeCopy[lang];
   const showWelcome = !loading && !session;
 
@@ -71,11 +74,19 @@ export default function Welcome() {
         </View>
 
         <View style={styles.actions}>
-          <Pressable style={styles.primary} onPress={() => router.push('/sign-up')}>
-            <Text style={styles.primaryText}>{t.create}</Text>
-          </Pressable>
-          <Pressable style={styles.secondary} onPress={() => router.push('/log-in')}>
-            <Text style={styles.secondaryText}>{t.login}</Text>
+          {GOOGLE_SIGNIN ? (
+            <Pressable style={[styles.primary, busy && { opacity: 0.6 }]} disabled={busy !== null} onPress={() => go('google')} accessibilityRole="button">
+              <Text style={styles.primaryText}>{t.google}</Text>
+            </Pressable>
+          ) : null}
+          {APPLE_SIGNIN ? (
+            <Pressable style={[styles.secondary, busy && { opacity: 0.6 }]} disabled={busy !== null} onPress={() => go('apple')} accessibilityRole="button">
+              <Text style={styles.secondaryText}>{t.apple}</Text>
+            </Pressable>
+          ) : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <Pressable onPress={() => router.push('/log-in')} accessibilityRole="link" style={styles.otherLink}>
+            <Text style={styles.otherText}>{t.other}</Text>
           </Pressable>
         </View>
 
@@ -113,6 +124,9 @@ const styles = StyleSheet.create({
   primaryText: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.navy },
   secondary: { borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.45)', paddingVertical: 16, alignItems: 'center' },
   secondaryText: { fontFamily: fonts.bold, fontSize: 18, color: colors.white },
+  error: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.white, textAlign: 'center' },
+  otherLink: { alignItems: 'center', paddingVertical: 4 },
+  otherText: { fontFamily: fonts.bold, fontSize: 14, color: 'rgba(255,255,255,.85)', textDecorationLine: 'underline' },
   legal: { fontFamily: fonts.medium, fontSize: 12.5, lineHeight: 18, color: 'rgba(255,255,255,.75)', textAlign: 'center', marginHorizontal: 16 },
   legalLink: { fontFamily: fonts.bold, color: colors.white, textDecorationLine: 'underline' },
   how: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 40, marginBottom: 16, marginHorizontal: 20, borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.35)', paddingVertical: 14 },

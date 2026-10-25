@@ -85,3 +85,13 @@ export async function signInWithEmail(email: string, password: string): Promise<
   if (error || !data.user) return { ok: false, message: t('That email or password isn’t right.') };
   return { ok: true, userId: data.user.id };
 }
+
+/**
+ * Where a member goes right after signing in: home once the sign-up is finished (a username from step 1 and an area
+ * from step 2), otherwise back to the profile screen, which opens on the step they still need.
+ */
+export async function routeAfterSignIn(): Promise<'/home' | '/sign-up/profile'> {
+  const { data } = await supabase.rpc('my_profile');
+  const p = data as { username: string | null; area: string | null } | null;
+  return p?.username && p?.area ? '/home' : '/sign-up/profile';
+}

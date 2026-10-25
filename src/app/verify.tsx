@@ -10,7 +10,7 @@ import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
 import { type AuthMode, sendCode, verifyCode } from '@/lib/otp';
 import { formatPhone } from '@/lib/phone';
-import { supabase } from '@/lib/supabase';
+import { routeAfterSignIn } from '@/lib/oauth';
 
 // Flows 1 and 2, screen s4: Enter the code.
 const CODE_LENGTH = 6;
@@ -44,10 +44,9 @@ export default function Verify() {
       setError(res.message);
       return;
     }
-    const { data: profile } = await supabase.rpc('my_profile');
+    const next = await routeAfterSignIn();
     setBusy(false);
-    const done = Boolean((profile as { username: string | null } | null)?.username);
-    router.replace(done ? '/home' : '/sign-up/profile');
+    router.replace(next);
   }
 
   async function resend() {
