@@ -56,12 +56,18 @@ function usernameState(u: string, taken: boolean | null): UsernameState {
 }
 
 export default function ProfileStep() {
-  const { session, refreshProfile } = useSession();
+  const { session, profile, refreshProfile } = useSession();
+  // Step 1 (photo, name, username) is saved on its own; someone who stopped after it comes back to step 2 (founder, 2026-10-25).
+  const [part, setPart] = useState<1 | 2>(profile?.username ? 2 : 1);
   // Google and Apple share the member's name, so it starts filled in.
   // Optional profile photo (founder, 2026-10-11); the website sign-up has the same circle.
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [name, setName] = useState(() => String(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? ''));
-  const [username, setUsername] = useState('');
+  // Starts from the email (letters, digits, dot, underscore), checked for availability like a typed one; same as the website.
+  const [username, setUsername] = useState(() => {
+    const local = String(session?.user.email ?? '').split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
+    return local.length >= 3 ? local : '';
+  });
   const [loves, setLoves] = useState<Loves | null>(null);
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -88,7 +94,7 @@ export default function ProfileStep() {
   const phoneDigits = (session?.user.phone ?? '').replace(/^\+?20/, '');
 
   useEffect(() => {
-    logFunnel('profile_started', {}, { userRef: session?.user.id });
+    logFunnel(part === 2 ? 'details_started' : 'profile_started', {}, { userRef: session?.user.id });
     // Approved communities, plus this member's own pending requests, so a request made before going back still shows up.
     const mine = session?.user.id ? `,requested_by.eq.${session.user.id}` : '';
     supabase
@@ -101,6 +107,8 @@ export default function ProfileStep() {
       );
     // If the countries table is not there yet, the form falls back to Egypt only.
     fetchCountries().then(setCountries, () => {});
+    // Once per visit: moving from step 1 to step 2 must not reload the lists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user.id]);
 
   useEffect(() => {
@@ -144,7 +152,8 @@ export default function ProfileStep() {
   const heardDef = HEARD.find((h) => h.value === heard);
   const heardDetail = heardDef?.detail.kind === 'pick' ? (heardPick && heardPick !== OTHER_DETAIL ? heardPick : heardText.trim() || null) : heardDef?.detail.kind === 'text' ? heardText.trim() || null : null;
 
-  const canSubmit = name.trim().length > 0 && un.ok && loves !== null && Boolean(gov?.trim() && areaId);
+  const canContinue = name.trim().length > 0 && un.ok;
+  const canSubmit = loves !== null && Boolean(gov?.trim() && areaId);
 
   function openPicker(
     title: string,
@@ -192,11 +201,11 @@ export default function ProfileStep() {
     if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
   }
 
+  // Step 1: the account basics are saved first, so the account exists even if step 2 is never finished.
   async function onContinue() {
-    if (!session || !canSubmit) return;
+    if (!session || !canContinue) return;
     setBusy(true);
     setError(null);
-    const area = byId(areaId)!;
     // The photo is optional, so a failed upload never blocks sign-up; it can be added later in Edit profile.
     let avatarPath: string | null = null;
     if (photo) {
@@ -208,11 +217,36 @@ export default function ProfileStep() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
+      .update({ display_name: name.trim(), username, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
+      .eq('id', session.user.id);
+    if (saveError) {
+      setBusy(false);
+      if (saveError.code === '23505') {
+        setTaken(true);
+        logFunnel('identifier_conflict', { type: 'username' }, { userRef: session.user.id });
+      } else {
+        setError('We couldn’t save your profile. Check your connection and try again.');
+      }
+      return;
+    }
+    logFunnel('basics_saved', { photo: Boolean(avatarPath) }, { userRef: session.user.id });
+    logFunnel('details_started', {}, { userRef: session.user.id });
+    // The account still has no area, so the app keeps sending this member to step 2 until it is finished.
+    await refreshProfile();
+    setBusy(false);
+    setPart(2);
+  }
+
+  // Step 2: where you belong, how you heard about us, and getting paid.
+  async function onFinish() {
+    if (!session || !canSubmit) return;
+    setBusy(true);
+    setError(null);
+    const area = byId(areaId)!;
+    const { error: saveError } = await supabase
+      .from('profiles')
       .update({
-        display_name: name.trim(),
-        username,
         loves,
-        ...(avatarPath ? { avatar_path: avatarPath } : {}),
         country_code: countries.length ? country : undefined,
         governorate: gov?.trim(),
         area: area.name,
@@ -224,12 +258,7 @@ export default function ProfileStep() {
       .eq('id', session.user.id);
     if (saveError) {
       setBusy(false);
-      if (saveError.code === '23505') {
-        setTaken(true);
-        logFunnel('identifier_conflict', { type: 'username' }, { userRef: session.user.id });
-      } else {
-        setError('We couldn’t save your profile. Check your connection and try again.');
-      }
+      setError('We couldn’t save your profile. Check your connection and try again.');
       return;
     }
     // Requested communities are still pending: the database adds the member when an admin approves.
@@ -249,7 +278,7 @@ export default function ProfileStep() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           <BackHeader
-            title="Create your account"
+            title={part === 1 ? 'Create your account' : 'Nearly there'}
             onBack={async () => {
               // The welcome screen sends a signed-in account straight back here, so going back means signing out.
               await supabase.auth.signOut();
@@ -257,9 +286,11 @@ export default function ProfileStep() {
             }}
           />
           <Text style={styles.required}>
-            <Text style={{ color: colors.muted }}>*</Text> Required
+            Step {part} of 2 · <Text style={{ color: colors.muted }}>*</Text> Required
           </Text>
 
+          {part === 1 ? (
+            <>
           <Pressable style={styles.photo} onPress={pickPhoto} accessibilityRole="button" accessibilityLabel={photo ? 'Change photo' : 'Add a profile photo'}>
             {photo ? (
               <Image source={{ uri: photo.uri }} style={styles.photoCircle} contentFit="cover" />
@@ -320,6 +351,9 @@ export default function ProfileStep() {
             </View>
           </View>
 
+            </>
+          ) : (
+            <>
           <Text style={styles.section}>
             ABOUT YOU <Text style={{ color: colors.muted }}>*</Text>
           </Text>
@@ -475,8 +509,17 @@ export default function ProfileStep() {
             ) : null}
           </View>
 
+            </>
+          )}
+
           {error ? <Text style={formStyles.error}>{error}</Text> : null}
-          <PrimaryButton label="Continue" onPress={onContinue} busy={busy} disabled={!canSubmit} style={{ marginTop: 22 }} />
+          <PrimaryButton
+            label={part === 1 ? 'Continue' : 'Create my account'}
+            onPress={part === 1 ? onContinue : onFinish}
+            busy={busy}
+            disabled={part === 1 ? !canContinue : !canSubmit}
+            style={{ marginTop: 22 }}
+          />
           <BuildInfo />
         </ScrollView>
       </KeyboardAvoidingView>

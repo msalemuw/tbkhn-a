@@ -191,7 +191,9 @@
     <div class="card" id="stepProfile" hidden>
       <h2 data-t="profileTitle"></h2>
       <p class="sub" id="signedInAs"></p>
+      <p class="hint" id="partNote"></p>
       <form id="form" novalidate>
+        <div id="part1">
         <label class="photo" for="photo">
           <span class="circle" id="photoCircle"><svg width="32" height="32" viewBox="0 0 24 24" fill="#28303a" aria-hidden="true"><path d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3zm7 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-3.2-5c0 1.77 1.43 3.2 3.2 3.2s3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2z"/></svg></span>
           <span id="photoText" data-t="photoAdd"></span>
@@ -205,7 +207,9 @@
         <div class="ltr"><span class="pre">@</span><input id="username" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" placeholder="nour.s"></div>
         <p class="hint" id="usernameHint"></p>
         <div class="chips" id="usernameChips"></div>
+        </div>
 
+        <div id="part2" hidden>
         <label class="f" for="whatsapp"><span data-t="fWhatsapp"></span> <span class="req">*</span></label>
         <div class="ltr"><span class="pre">+20</span><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="14"></div>
         <p class="hint" data-t="whatsappHint"></p>
@@ -255,6 +259,8 @@
         <div id="inviterBox" hidden>
           <label class="f" for="inviter" data-t="fInviter"></label>
           <input id="inviter" type="text" maxlength="60">
+        </div>
+
         </div>
 
         <p class="agree" data-t="consent"></p>
@@ -338,7 +344,8 @@
       doneTitleBack: function (u) { return 'You’re already signed up, @' + u + '!'; },
       iabCopy: 'Copy the link',
       startNote: '<b>Use your Google or Apple account.</b> On launch day, open the app and tap the same button with the same account.',
-      profileTitle: 'Create your account',
+      profileTitle: 'Create your account', profileTitle2: 'Nearly there', next: 'Continue',
+      stepOf: function (n) { return 'Step ' + n + ' of 2'; },
       signedInAs: function (p) { return 'Signed in with ' + p + ' as '; },
       photoAdd: 'Add a profile photo (optional)', photoChange: 'Change photo',
       fName: 'FULL NAME', fUsername: 'USERNAME', fWhatsapp: 'WHATSAPP NUMBER',
@@ -404,7 +411,8 @@
       doneTitleBack: function (u) { return 'إنت مسجّل بالفعل يا @' + u + '!'; },
       iabCopy: 'انسخ الرابط',
       startNote: '<b>استخدم حساب Google أو Apple بتاعك.</b> يوم الإطلاق افتح التطبيق ودوس على نفس الزرار بنفس الحساب.',
-      profileTitle: 'اعمل حسابك',
+      profileTitle: 'اعمل حسابك', profileTitle2: 'قربنا نخلّص', next: 'كمّل',
+      stepOf: function (n) { return 'الخطوة ' + n + ' من ٢'; },
       signedInAs: function (p) { return 'داخل بحساب ' + p + ': '; },
       photoAdd: 'ضيف صورتك (اختياري)', photoChange: 'غيّر الصورة',
       fName: 'الاسم بالكامل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الواتساب',
@@ -609,7 +617,13 @@
     // The sign-in card is at the top of the page, so each later step starts at the top too.
     if (state.shownStep && state.shownStep !== state.step && state.step !== 'start') window.scrollTo(0, 0);
     state.shownStep = state.step;
-    if (state.step === 'profile') { fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
+    if (state.step === 'profile') {
+      var part = state.part === 2 ? 2 : 1;
+      $('part1').hidden = part !== 1; $('part2').hidden = part !== 2;
+      document.querySelector('#stepProfile h2').textContent = t(part === 1 ? 'profileTitle' : 'profileTitle2');
+      $('partNote').textContent = t('stepOf')(part);
+      $('submit').textContent = t(part === 1 ? 'next' : 'submit');
+      fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
       store('tabkheen.doneUser', state.profile.username);
@@ -785,7 +799,9 @@
     saveSource(user.id);
     return sb.rpc('my_profile').then(function (res) {
       state.profile = res.data || null;
-      if (state.profile && state.profile.username) { state.returning = true; state.step = 'done'; render(); return; }
+      if (state.profile && state.profile.username && state.profile.area) { state.returning = true; state.step = 'done'; render(); return; }
+      // Step 1 (photo, name, username) is saved on its own; someone who stopped after it comes back to step 2.
+      state.part = state.profile && state.profile.username ? 2 : 1;
       state.step = 'profile';
       var meta = user.user_metadata || {};
       if (!$('name').value) $('name').value = (state.profile && state.profile.display_name) || meta.full_name || meta.name || appleName || '';
@@ -794,7 +810,7 @@
       var local = String(user.email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
       if (!$('username').value && local.length >= 3) { state.autoName = local; $('username').value = local; onUsernameInput(); }
       if (ref && !$('heard').value) { prefillHeard = { heard: 'friend', inviter: '@' + ref }; }
-      logFunnel('profile_started');
+      logFunnel(state.part === 2 ? 'details_started' : 'profile_started');
       return loadLists().then(render);
     });
   }
@@ -964,10 +980,32 @@
   $('form').addEventListener('submit', function (e) {
     e.preventDefault();
     $('err').classList.remove('show');
-    var name = $('name').value.trim(), username = $('username').value, whatsapp = normalizePhone($('whatsapp').value);
+    var name = $('name').value.trim(), username = $('username').value;
+    // Step 1: photo, name and username are saved first, so the account exists even if step 2 is never finished.
+    if (state.part !== 2) {
+      if (!name) return fail('errName');
+      if (username.length < 3 || state.taken !== false) return fail('errUsername');
+      var b1 = $('submit'), uid1 = state.user.id;
+      b1.disabled = true; b1.textContent = t('sending');
+      return saveSource(uid1).then(function (res) {
+        return uploadAvatar(uid1).then(function (avatar) { return { sourceFailed: !!(res && res.error), avatar: avatar }; });
+      }).then(function (step) {
+        var row = { display_name: name, username: username, lang: lang };
+        if (step.avatar) row.avatar_path = step.avatar;
+        if (step.sourceFailed) row.signup_source = source;
+        return sb.update('profiles', 'id=eq.' + uid1, row);
+      }).then(function (res) {
+        if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
+        if (res.error) throw res.error;
+        logFunnel('basics_saved', { photo: !!photoBlob });
+        logFunnel('details_started');
+        state.part = 2; render(); window.scrollTo(0, 0);
+      }).catch(function (err) {
+        fail(err && err.msg ? err.msg : 'errNet');
+      }).then(function () { b1.disabled = false; b1.textContent = t(state.part === 2 ? 'submit' : 'next'); });
+    }
+    var whatsapp = normalizePhone($('whatsapp').value);
     var gov = $('gov').value, areaId = $('area').value, typed = $('areaTyped').value.trim();
-    if (!name) return fail('errName');
-    if (username.length < 3 || state.taken !== false) return fail('errUsername');
     if (!whatsapp) return fail('errPhone');
     if (!state.loves) return fail('errLoves');
     if (!gov) return fail('errGov');
@@ -1012,21 +1050,16 @@
     }
 
     areaStep.then(requestOptional).then(function (area) {
-      return saveSource(uid).then(function (res) {
-        return uploadAvatar(uid).then(function (avatar) { return { area: area, sourceFailed: !!(res && res.error), avatar: avatar }; });
-      });
+      return { area: area };
     }).then(function (step) {
       var area = step.area, row = {
-        display_name: name, username: username, loves: state.loves, country_code: 'EG', governorate: gov, area: area.name,
+        loves: state.loves, country_code: 'EG', governorate: gov, area: area.name,
         instapay_handle: $('instapay').value.trim() || null,
         heard_from: d ? d.value : null, heard_detail: heardDetail,
         inviter_name: d && d.detail.kind === 'person' ? $('inviter').value.trim() || null : null,
         whatsapp: whatsapp, lang: lang
       };
-      if (step.avatar) row.avatar_path = step.avatar;
-      if (step.sourceFailed) row.signup_source = source; // the first-touch save did not go through: keep this visit's
       return sb.update('profiles', 'id=eq.' + uid, row).then(function (res) {
-        if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
         if (res.error) throw res.error;
         var ids = [area].concat(OPTIONAL.map(function (k) { var v = $('opt-' + k).value; return state.communities.filter(function (c) { return c.id === v; })[0]; }))
           .concat(typedOptional).filter(function (c) { return c && c.status === 'approved'; }).map(function (c) { return c.id; });
@@ -1042,7 +1075,7 @@
       $('stepDone').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }).catch(function (err) {
       fail(err && err.msg ? err.msg : 'errNet');
-    }).then(function () { btn.disabled = false; btn.textContent = t('submit'); });
+    }).then(function () { btn.disabled = false; btn.textContent = t(state.part === 2 ? 'submit' : 'next'); });
   });
 
   // ---------- step 3: done ----------

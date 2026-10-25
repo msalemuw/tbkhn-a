@@ -24,7 +24,7 @@ type SessionState = {
   loading: boolean;
   session: Session | null;
   profile: MyProfile | null;
-  /** Phone verified but the profile step is not finished yet. */
+  /** Signed in but the sign-up is not finished: no username yet (step 1) or no area yet (step 2). */
   needsProfile: boolean;
   refreshProfile: () => Promise<void>;
 };
@@ -66,7 +66,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     loading,
     session,
     profile,
-    needsProfile: Boolean(session && profile && !profile.username),
+    needsProfile: Boolean(session && profile && (!profile.username || !profile.area)),
     refreshProfile,
   };
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

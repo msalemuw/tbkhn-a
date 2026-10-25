@@ -9,6 +9,7 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
 4. `code_sent` — `channel`: whatsapp (no SMS since 2026-10-04), `provider_status`
 5. `code_entered` — `attempts`, `result`: ok | wrong | expired
 6. `profile_started` / `profile_field_error` — `field` (username_taken, invalid_format, photo_upload …); a failed optional photo upload is logged and sign-up continues without it
+   - Two-step profile (founder, 2026-10-25, app and website): `profile_started` opens step 1 (photo, name, username; the username starts from the email); `basics_saved` (prop `photo`) means step 1 is saved on the account; `details_started` opens step 2 (communities, how you heard, InstaPay; WhatsApp on the website). Someone who stops between the steps has a username but no area: they count as not finished (`finished` = username and area) and come back to step 2 when they sign in again.
 7. `communities_selected`
    - `community_requested`: a member asked for a community that was not in the list (props: kind, country)
    - `community_request_matched` (web): a typed name matched one already in the list, which is used instead (props: kind, status)
