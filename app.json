@@ -40,7 +40,11 @@
         {
           "backgroundColor": "#28303a",
           "image": "./assets/images/splash-logo.png",
-          "imageWidth": 260
+          "imageWidth": 260,
+          "android": {
+            "image": "./assets/images/splash-icon-android.png",
+            "imageWidth": 288
+          }
         }
       ],
       [
