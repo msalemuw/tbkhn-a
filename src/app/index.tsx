@@ -20,6 +20,8 @@ import { type Lang, welcomeCopy } from '@/lib/welcome-copy';
 // Flow 1/2, screen s1: Welcome. The food artwork carries its own dark navy, used on this screen only.
 const ART = require('@/assets/images/welcome-art.jpg');
 const ART_NAVY = '#0f2330';
+const GOOGLE_G = require('@/assets/images/google-g.png');
+const APPLE_LOGO = require('@/assets/images/apple-white.png');
 
 export default function Welcome() {
   const { loading, session, needsProfile } = useSession();
@@ -76,11 +78,15 @@ export default function Welcome() {
         <View style={styles.actions}>
           {GOOGLE_SIGNIN ? (
             <Pressable style={[styles.primary, busy && { opacity: 0.6 }]} disabled={busy !== null} onPress={() => go('google')} accessibilityRole="button">
+              <View style={styles.googleBadge}>
+                <Image source={GOOGLE_G} style={styles.icon} accessible={false} />
+              </View>
               <Text style={styles.primaryText}>{t.google}</Text>
             </Pressable>
           ) : null}
           {APPLE_SIGNIN ? (
             <Pressable style={[styles.secondary, busy && { opacity: 0.6 }]} disabled={busy !== null} onPress={() => go('apple')} accessibilityRole="button">
+              <Image source={APPLE_LOGO} style={styles.appleIcon} accessible={false} />
               <Text style={styles.secondaryText}>{t.apple}</Text>
             </Pressable>
           ) : null}
@@ -120,9 +126,12 @@ const styles = StyleSheet.create({
   tagline: { fontFamily: fonts.bold, fontSize: 20, color: colors.white, textAlign: 'center' },
   taglineAccent: { color: colors.yellow },
   actions: { gap: 16, paddingHorizontal: 12 },
-  primary: { backgroundColor: colors.teal, borderRadius: 999, paddingVertical: 18, alignItems: 'center' },
+  primary: { backgroundColor: colors.teal, borderRadius: 999, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  googleBadge: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 17, height: 17 },
+  appleIcon: { width: 24, height: 24 },
   primaryText: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.navy },
-  secondary: { borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.45)', paddingVertical: 16, alignItems: 'center' },
+  secondary: { borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.45)', paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   secondaryText: { fontFamily: fonts.bold, fontSize: 18, color: colors.white },
   error: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.white, textAlign: 'center' },
   otherLink: { alignItems: 'center', paddingVertical: 4 },

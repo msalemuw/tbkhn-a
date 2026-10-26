@@ -36,6 +36,8 @@ export const ar: Record<string, string> = {
   'Already have an account?': 'عندك حساب؟',
   'Log in': 'سجّل دخول',
   'Welcome back': 'أهلاً بيك تاني',
+  'More sign-in options': 'طرق دخول تانية',
+  'Other ways to get into your account.': 'طرق تانية تدخل بيها على حسابك.',
   'Log in with the account you joined with.': 'سجّل دخول بنفس الحساب اللي اشتركت بيه.',
   'New to tabkheen A?': 'جديد على tabkheen A؟',
   'Sign up': 'اعمل حساب',
