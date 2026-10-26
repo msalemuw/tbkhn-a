@@ -111,6 +111,7 @@ async function searchCooksAll(text: string, me: string | null, here: LatLng | nu
       .from('profiles')
       .select(cols)
       .or(`display_name.ilike.%${q}%,username.ilike.%${q}%`)
+      .not('username', 'is', null)
       .limit(20);
     if (error) throw error;
     return (data ?? []).filter((p) => p.id !== me);
@@ -119,7 +120,7 @@ async function searchCooksAll(text: string, me: string | null, here: LatLng | nu
   const [today, sig, newest] = await Promise.all([
     supabase.from('posts').select('author_id').eq('kind', 'cooking_today').order('created_at', { ascending: false }).limit(60),
     supabase.from('posts').select('author_id').eq('kind', 'signature').order('created_at', { ascending: false }).limit(60),
-    supabase.from('profiles').select(cols).order('created_at', { ascending: false }).limit(40),
+    supabase.from('profiles').select(cols).not('username', 'is', null).order('created_at', { ascending: false }).limit(40),
   ]);
   if (today.error) throw today.error;
   if (sig.error) throw sig.error;
@@ -129,7 +130,7 @@ async function searchCooksAll(text: string, me: string | null, here: LatLng | nu
   const ids = [...new Set([...sellers, ...posters, ...(newest.data ?? []).map((p) => p.id as string)])].filter((id) => id !== me);
   if (!ids.length) return [];
   const [profiles, points] = await Promise.all([
-    supabase.from('profiles').select(cols).in('id', ids),
+    supabase.from('profiles').select(cols).not('username', 'is', null).in('id', ids),
     here ? supabase.from('pickup_points').select('owner_id, lat, lng').in('owner_id', ids) : Promise.resolve({ data: [], error: null }),
   ]);
   if (profiles.error) throw profiles.error;

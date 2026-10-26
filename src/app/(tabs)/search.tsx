@@ -78,7 +78,12 @@ export default function Search() {
             if (!live) return;
             setFailed(false);
             setFollowed((prev) => new Set([...prev, ...f]));
-            setFound({ q: text, people, communities });
+            // With nothing typed, the screen is half cooks and half communities: five of each, communities nearest the member first.
+            const mine = profile?.governorate;
+            const suggested = text
+              ? communities
+              : [...communities].sort((a, b) => Number(b.governorate === mine) - Number(a.governorate === mine)).slice(0, 5);
+            setFound({ q: text, people: text ? people : people.slice(0, 5), communities: suggested });
             fetchBadges(people.map((p) => p.id)).then((b) => live && setBadges(b), () => {});
           })
           .catch(() => live && setFailed(true));
@@ -89,7 +94,7 @@ export default function Search() {
       live = false;
       clearTimeout(t);
     };
-  }, [text, me, place]);
+  }, [text, me, place, profile?.governorate]);
 
   const loading = !failed && found?.q !== text;
 
