@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -66,10 +66,13 @@ export default function Search() {
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requested, setRequested] = useState<string | null>(null);
 
-  useEffect(() => {
-    const ids = found?.communities.map((c) => c.id) ?? [];
-    fetchCommunityLogos(ids).then(setLogos, () => {});
-  }, [found]);
+  // Refetched whenever the tab is focused again, so a logo changed on the community page shows here.
+  useFocusEffect(
+    useCallback(() => {
+      const ids = found?.communities.map((c) => c.id) ?? [];
+      fetchCommunityLogos(ids).then(setLogos, () => {});
+    }, [found]),
+  );
   useEffect(() => {
     if (me) fetchMyCommunities(me).then((c) => setJoined(new Set(c.map((x) => x.id))), () => {});
   }, [me]);
