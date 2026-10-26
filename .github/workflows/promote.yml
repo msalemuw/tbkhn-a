@@ -21,10 +21,12 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+      # EAS reads the app config, which needs the installed packages (the first run failed without this).
+      - run: npm ci
       - name: Make sure the real-user branch and channel exist
         run: |
           eas branch:create production --non-interactive || true
-          eas channel:create production --branch production --non-interactive || true
+          eas channel:edit production --branch production --non-interactive || true
       - name: Find the newest tested update
         id: latest
         run: |
