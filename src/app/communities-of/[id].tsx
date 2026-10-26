@@ -1,16 +1,16 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { Pill } from '@/components/pill';
 import { colors, fonts } from '@/constants/theme';
-import { fetchMemberCounts } from '@/lib/community';
+import { fetchCommunityLogos, fetchMemberCounts } from '@/lib/community';
 import { fetchCommunitiesOf, type FoundCommunity, setMembership } from '@/lib/cooks';
-import { fetchMyCommunities } from '@/lib/posts';
+import { fetchMyCommunities, mediaUrl } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
 const KIND_LABEL: Record<string, string> = { area: 'Area', compound: 'Compound', club: 'Club', sahel: 'Sahel', school: 'School', work: 'Workplace', other: 'Community' };
@@ -34,12 +34,14 @@ export default function CommunitiesOf() {
   const [counts, setCounts] = useState<Map<string, number>>(new Map());
   const [q, setQ] = useState('');
   const [failed, setFailed] = useState(false);
+  const [logos, setLogos] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchCommunitiesOf(id).then(
       (l) => {
         setList(l);
         fetchMemberCounts(l.map((c) => c.id)).then(setCounts, () => {});
+        fetchCommunityLogos(l.map((c) => c.id)).then(setLogos, () => {});
       },
       () => setFailed(true),
     );
@@ -87,7 +89,11 @@ export default function CommunitiesOf() {
           renderItem={({ item: c }) => (
             <Pressable style={styles.row} onPress={() => router.push({ pathname: '/community/[id]', params: { id: c.id } })} accessibilityRole="button">
               <View style={styles.icon}>
-                <MaterialIcons name={KIND_ICON[c.kind] ?? 'groups'} size={22} color={colors.teal} />
+                {logos.get(c.id) ? (
+                  <Image source={{ uri: mediaUrl(logos.get(c.id)!) ?? undefined }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                ) : (
+                  <MaterialIcons name={KIND_ICON[c.kind] ?? 'groups'} size={22} color={colors.teal} />
+                )}
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.name} numberOfLines={1}>{c.name}</Text>
@@ -109,7 +115,7 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 16, paddingHorizontal: 15, paddingVertical: 11, marginHorizontal: 22, marginTop: 12 },
   input: { flex: 1, minWidth: 0, fontFamily: fonts.medium, fontSize: 15, color: colors.ink, padding: 0 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },
-  icon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   name: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },
   sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 1 },
   empty: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center', padding: 22 },
