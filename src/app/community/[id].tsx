@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -9,11 +10,11 @@ import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { DishCard } from '@/components/dish-card';
 import { colors, fonts } from '@/constants/theme';
-import { type CommunityOverview, fetchCommunityOverview, fetchCommunityPeople, KIND_LABEL } from '@/lib/community';
+import { type CommunityOverview, fetchCommunityCover, fetchCommunityOverview, fetchCommunityPeople, KIND_LABEL, setCommunityCover } from '@/lib/community';
 import { setMembership } from '@/lib/cooks';
 import { useMyLocation } from '@/lib/location';
 import { useLive } from '@/lib/live';
-import { fetchMyCommunities, type Person, personName } from '@/lib/posts';
+import { fetchMyCommunities, mediaUrl, type Person, personName, uploadPhoto } from '@/lib/posts';
 import { fetchTop, type TopCook } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { VerifiedTick } from '@/lib/verified';
@@ -42,6 +43,8 @@ export default function CommunityScreen() {
   const [top, setTop] = useState<Top | null>(null);
   const [joined, setJoined] = useState(false);
   const [members, setMembers] = useState(0);
+  const [cover, setCover] = useState<{ path: string | null; canEdit: boolean }>({ path: null, canEdit: false });
+  const [savingCover, setSavingCover] = useState(false);
 
   const load = useCallback(() => {
     fetchCommunityOverview(id).then(
@@ -56,6 +59,7 @@ export default function CommunityScreen() {
       const people = await fetchCommunityPeople([...t.service, ...t.likes].map((r) => r.cook_id));
       setTop({ ...t, people });
     })().catch(() => setTop({ service: [], likes: [], people: new Map() }));
+    fetchCommunityCover(id).then(setCover, () => {});
     if (me) fetchMyCommunities(me).then((c) => setJoined(c.some((x) => x.id === id)), () => {});
   }, [id, me]);
   useLive(load);
@@ -69,6 +73,23 @@ export default function CommunityScreen() {
       setJoined(!next);
       setMembers((n) => Math.max(0, n + (next ? -1 : 1)));
     });
+  }
+
+  async function onEditCover() {
+    if (!me || savingCover) return;
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [16, 9] });
+    if (res.canceled || !res.assets[0]) return;
+    setSavingCover(true);
+    try {
+      const a = res.assets[0];
+      const path = await uploadPhoto(me, a.uri, a.mimeType ?? 'image/jpeg');
+      await setCommunityCover(id, path);
+      setCover((c) => ({ ...c, path }));
+    } catch {
+      Alert.alert(tr('Couldn’t change the cover photo'), tr('Please try again.'));
+    } finally {
+      setSavingCover(false);
+    }
   }
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/home'));
@@ -98,12 +119,18 @@ export default function CommunityScreen() {
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.cover}>
-          <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={120} color="rgba(255,255,255,0.08)" style={styles.coverIcon} />
+          {cover.path ? <Image source={{ uri: mediaUrl(cover.path) ?? undefined }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+          {cover.path ? null : <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={120} color="rgba(255,255,255,0.08)" style={styles.coverIcon} />}
           <SafeAreaView edges={['top']}>
             <Pressable onPress={back} hitSlop={10} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Back">
               <FlipIcon name="arrow-back" size={28} color={colors.white} />
             </Pressable>
           </SafeAreaView>
+          {cover.canEdit ? (
+            <Pressable onPress={onEditCover} disabled={savingCover} style={styles.editCover} accessibilityRole="button" accessibilityLabel="Change cover photo">
+              {savingCover ? <ActivityIndicator size="small" color={colors.ink} /> : <MaterialIcons name="photo-camera" size={18} color={colors.ink} />}
+            </Pressable>
+          ) : null}
         </View>
         <View style={styles.tile}>
           <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={34} color={colors.teal} />
@@ -208,6 +235,7 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: 22 },
   cover: { height: 170, backgroundColor: colors.navy, overflow: 'hidden' },
   coverIcon: { position: 'absolute', right: 24, bottom: 18 },
+  editCover: { position: 'absolute', right: 14, bottom: 14, width: 38, height: 38, borderRadius: 19, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   backBtn: { padding: 18, alignSelf: 'flex-start' },
   tile: { zIndex: 1, width: 76, height: 76, borderRadius: 22, backgroundColor: colors.lightBlue, borderWidth: 3, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -38 },
   name: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.ink, textAlign: 'center' },
