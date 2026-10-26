@@ -31,6 +31,20 @@ export async function fetchCommunityOverview(id: string): Promise<CommunityOverv
   return { info: c.data, members: members.count ?? 0, cookIds, today: dishes.filter((d) => d.community_ids.includes(id)) };
 }
 
+/** The community's cover photo path and whether the caller may change it (creator or admin). Never throws: before the migration it is just no cover and no edit. */
+export async function fetchCommunityCover(id: string): Promise<{ path: string | null; canEdit: boolean }> {
+  const [c, can] = await Promise.all([
+    supabase.from('communities').select('cover_path').eq('id', id).maybeSingle(),
+    supabase.rpc('can_edit_community_cover', { p_community: id }),
+  ]);
+  return { path: (c.data as { cover_path?: string | null } | null)?.cover_path ?? null, canEdit: can.data === true };
+}
+
+export async function setCommunityCover(id: string, path: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_community_cover', { p_community: id, p_path: path ?? '' });
+  if (error) throw error;
+}
+
 /** Members (joined) or cooks (posted a dish or signature dish for it) of a community, as people rows. */
 export async function fetchCommunityPeopleList(id: string, kind: 'members' | 'cooks'): Promise<FoundCook[]> {
   const ids =
