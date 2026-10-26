@@ -32,12 +32,27 @@ export async function fetchCommunityOverview(id: string): Promise<CommunityOverv
 }
 
 /** The community's cover photo path and whether the caller may change it (creator or admin). Never throws: before the migration it is just no cover and no edit. */
-export async function fetchCommunityCover(id: string): Promise<{ path: string | null; canEdit: boolean }> {
+export async function fetchCommunityCover(id: string): Promise<{ path: string | null; logo: string | null; canEdit: boolean }> {
   const [c, can] = await Promise.all([
-    supabase.from('communities').select('cover_path').eq('id', id).maybeSingle(),
+    supabase.from('communities').select('cover_path, logo_path').eq('id', id).maybeSingle(),
     supabase.rpc('can_edit_community_cover', { p_community: id }),
   ]);
-  return { path: (c.data as { cover_path?: string | null } | null)?.cover_path ?? null, canEdit: can.data === true };
+  const row = c.data as { cover_path?: string | null; logo_path?: string | null } | null;
+  return { path: row?.cover_path ?? null, logo: row?.logo_path ?? null, canEdit: can.data === true };
+}
+
+/** Logo paths for a set of communities. Never throws: before the migration there are simply no logos. */
+export async function fetchCommunityLogos(ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!ids.length) return out;
+  const { data } = await supabase.from('communities').select('id, logo_path').in('id', ids);
+  for (const r of (data ?? []) as { id: string; logo_path: string | null }[]) if (r.logo_path) out.set(r.id, r.logo_path);
+  return out;
+}
+
+export async function setCommunityLogo(id: string, path: string | null): Promise<void> {
+  const { error } = await supabase.rpc('set_community_logo', { p_community: id, p_path: path ?? '' });
+  if (error) throw error;
 }
 
 export async function setCommunityCover(id: string, path: string | null): Promise<void> {

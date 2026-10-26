@@ -10,7 +10,7 @@ import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { DishCard } from '@/components/dish-card';
 import { colors, fonts } from '@/constants/theme';
-import { type CommunityOverview, fetchCommunityCover, fetchCommunityOverview, fetchCommunityPeople, KIND_LABEL, setCommunityCover } from '@/lib/community';
+import { type CommunityOverview, fetchCommunityCover, fetchCommunityOverview, fetchCommunityPeople, KIND_LABEL, setCommunityCover, setCommunityLogo } from '@/lib/community';
 import { setMembership } from '@/lib/cooks';
 import { useMyLocation } from '@/lib/location';
 import { useLive } from '@/lib/live';
@@ -43,7 +43,7 @@ export default function CommunityScreen() {
   const [top, setTop] = useState<Top | null>(null);
   const [joined, setJoined] = useState(false);
   const [members, setMembers] = useState(0);
-  const [cover, setCover] = useState<{ path: string | null; canEdit: boolean }>({ path: null, canEdit: false });
+  const [cover, setCover] = useState<{ path: string | null; logo: string | null; canEdit: boolean }>({ path: null, logo: null, canEdit: false });
   const [savingCover, setSavingCover] = useState(false);
 
   const load = useCallback(() => {
@@ -92,6 +92,23 @@ export default function CommunityScreen() {
     }
   }
 
+  async function onEditLogo() {
+    if (!me || savingCover) return;
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    if (res.canceled || !res.assets[0]) return;
+    setSavingCover(true);
+    try {
+      const a = res.assets[0];
+      const path = await uploadPhoto(me, a.uri, a.mimeType ?? 'image/jpeg');
+      await setCommunityLogo(id, path);
+      setCover((c) => ({ ...c, logo: path }));
+    } catch {
+      Alert.alert(tr('Couldn’t change the logo'), tr('Please try again.'));
+    } finally {
+      setSavingCover(false);
+    }
+  }
+
   const back = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
   if (data === undefined) {
@@ -132,9 +149,18 @@ export default function CommunityScreen() {
             </Pressable>
           ) : null}
         </View>
-        <View style={styles.tile}>
-          <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={34} color={colors.teal} />
-        </View>
+        <Pressable style={styles.tile} onPress={cover.canEdit ? onEditLogo : undefined} disabled={!cover.canEdit || savingCover} accessibilityRole={cover.canEdit ? 'button' : undefined} accessibilityLabel={cover.canEdit ? 'Change logo' : undefined}>
+          {cover.logo ? (
+            <Image source={{ uri: mediaUrl(cover.logo) ?? undefined }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : (
+            <MaterialIcons name={KIND_ICON[info.kind] ?? 'groups'} size={34} color={colors.teal} />
+          )}
+          {cover.canEdit ? (
+            <View style={styles.editLogo}>
+              <MaterialIcons name="photo-camera" size={14} color={colors.ink} />
+            </View>
+          ) : null}
+        </Pressable>
         <View style={{ alignItems: 'center', marginTop: 10, paddingHorizontal: 22 }}>
           <Text style={styles.name}>{info.name}</Text>
           <Text style={styles.sub}>{sub}</Text>
@@ -237,7 +263,8 @@ const styles = StyleSheet.create({
   coverIcon: { position: 'absolute', right: 24, bottom: 18 },
   editCover: { position: 'absolute', right: 14, bottom: 14, width: 38, height: 38, borderRadius: 19, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   backBtn: { padding: 18, alignSelf: 'flex-start' },
-  tile: { zIndex: 1, width: 76, height: 76, borderRadius: 22, backgroundColor: colors.lightBlue, borderWidth: 3, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -38 },
+  tile: { zIndex: 1, width: 76, height: 76, borderRadius: 22, backgroundColor: colors.lightBlue, borderWidth: 3, borderColor: colors.paper, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -38, overflow: 'hidden' },
+  editLogo: { position: 'absolute', right: 0, bottom: 0, width: 26, height: 26, borderTopLeftRadius: 13, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: fonts.extraBold, fontSize: 20, color: colors.ink, textAlign: 'center' },
   sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 2 },
   stats: { flexDirection: 'row', justifyContent: 'center', gap: 26, marginTop: 14 },

@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
@@ -20,7 +20,8 @@ import {
   setMembership,
 } from '@/lib/cooks';
 import { usePlace } from '@/lib/location';
-import { fetchMyCommunities, personName } from '@/lib/posts';
+import { fetchCommunityLogos } from '@/lib/community';
+import { fetchMyCommunities, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -54,6 +55,7 @@ export default function Search() {
   const { place } = usePlace();
   const [text, setText] = useState('');
   const [found, setFound] = useState<Found | null>(null);
+  const [logos, setLogos] = useState<Map<string, string>>(new Map());
   const [failed, setFailed] = useState(false);
   const [followed, setFollowed] = useState<Set<string>>(new Set());
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
@@ -64,6 +66,10 @@ export default function Search() {
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requested, setRequested] = useState<string | null>(null);
 
+  useEffect(() => {
+    const ids = found?.communities.map((c) => c.id) ?? [];
+    fetchCommunityLogos(ids).then(setLogos, () => {});
+  }, [found]);
   useEffect(() => {
     if (me) fetchMyCommunities(me).then((c) => setJoined(new Set(c.map((x) => x.id))), () => {});
   }, [me]);
@@ -219,7 +225,11 @@ export default function Search() {
           {found?.communities.map((c) => (
             <Pressable key={c.id} style={styles.row} onPress={() => router.push({ pathname: '/community/[id]', params: { id: c.id } })} accessibilityRole="button">
               <View style={styles.commIcon}>
-                <MaterialIcons name={KIND_ICON[c.kind] ?? 'groups'} size={22} color={colors.teal} />
+                {logos.get(c.id) ? (
+                  <Image source={{ uri: mediaUrl(logos.get(c.id)!) ?? undefined }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                ) : (
+                  <MaterialIcons name={KIND_ICON[c.kind] ?? 'groups'} size={22} color={colors.teal} />
+                )}
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.name} numberOfLines={1}>{c.name}</Text>
@@ -282,7 +292,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   name: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },
   sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, marginTop: 1 },
-  commIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
+  commIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   pill: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 },
   pillText: { fontFamily: fonts.extraBold, fontSize: 12.5, color: colors.ink },
   request: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.teal, borderRadius: 14, paddingVertical: 13, backgroundColor: colors.lightBlue },
