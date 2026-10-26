@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -41,11 +41,15 @@ export default function CommunitiesOf() {
       (l) => {
         setList(l);
         fetchMemberCounts(l.map((c) => c.id)).then(setCounts, () => {});
-        fetchCommunityLogos(l.map((c) => c.id)).then(setLogos, () => {});
       },
       () => setFailed(true),
     );
   }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCommunityLogos((list ?? []).map((c) => c.id)).then(setLogos, () => {});
+    }, [list]),
+  );
   useEffect(() => {
     if (me) fetchMyCommunities(me).then((c) => setJoined(new Set(c.map((x) => x.id))), () => {});
   }, [me]);
