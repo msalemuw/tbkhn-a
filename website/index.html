@@ -718,7 +718,7 @@
     if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(renderGoogleButton, 300); return; }
     var draw = function () {
       el.innerHTML = '';
-      google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'signup_with', logo_alignment: 'left', locale: lang, width: Math.min(360, el.clientWidth || 320) });
+      google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', shape: 'pill', text: 'signup_with', logo_alignment: 'center', locale: lang, width: Math.min(360, el.clientWidth || 320) });
     };
     if (gsiReady) return draw();
     // Google gets the hash of a one-time value; Supabase checks the original against the token, like the app does.
