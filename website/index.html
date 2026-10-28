@@ -92,6 +92,8 @@
   .iab .t { font-weight: 700; font-size: 16px; margin: 0 0 6px; }
   .iab p { margin: 0; font-size: 14.5px; line-height: 1.5; }
   .iab .cta { margin-top: 12px; }
+  .iab.first { background: var(--white); border: 2px solid var(--teal); margin: 0 0 6px; }
+  .or { text-align: center; color: var(--muted); font-size: 13.5px; margin: 14px 0 0; }
   .iab .steps { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
   .iab .steps.nudge { color: var(--navy); font-size: 15px; font-weight: 600; background: var(--white); border: 2px solid var(--teal); border-radius: 12px; padding: 10px 12px; }
   .already { background: var(--white); border: 1.5px solid var(--teal); border-radius: 14px; padding: 12px; margin: 0 0 14px; font-size: 14.5px; line-height: 1.5; }
@@ -171,18 +173,18 @@
       <h2 data-t="startTitle"></h2>
       <p class="sub" data-t="startSub"></p>
       <p class="already" id="already" hidden></p>
+      <!-- Inside Instagram or Facebook sign-in often fails (Google may refuse that browser), so the way out comes first and the buttons stay below it. -->
+      <div class="iab first" id="iab" hidden>
+        <p class="t" data-t="iabTitle"></p>
+        <p data-t="iabBody"></p>
+        <button class="cta" id="iabOpen" type="button" data-t="iabOpen"></button>
+        <p class="steps" id="iabSteps"></p>
+        <button class="ghost" id="iabCopy" type="button" data-t="iabCopy"></button>
+      </div>
+      <p class="or" id="iabOr" data-t="iabOr" hidden></p>
       <div id="signin">
       <div class="gbtn" id="gbtn"></div>
       <button type="button" class="abtn" id="abtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.1zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 2-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg><span data-t="appleBtn"></span></button>
-      </div>
-      <!-- Inside Instagram or Facebook sign-in sometimes fails (Google may refuse that browser), so offer the way out under the buttons. -->
-      <div class="iab" id="iab" hidden>
-        <p class="t" data-t="iabTitle"></p>
-        <p data-t="iabBody"></p>
-        <button class="ghost" id="iabOpen" type="button" data-t="iabOpen"></button>
-        <p class="steps" id="iabSteps"></p>
-        <button class="ghost" id="iabCopy" type="button" data-t="iabCopy"></button>
-        <p class="steps" data-t="iabAlready"></p>
       </div>
       <div class="note"><span>ⓘ</span><span data-t="startNote"></span></div>
       <div class="err" id="errStart" role="alert"></div>
@@ -337,8 +339,9 @@
       appleBtn: 'Sign up with Apple',
       startTitle: 'Create your account now',
       startSub: 'Home-cooked food from cooks in your neighbourhood, picked up by you. The app is almost in the <span dir="ltr">App Store</span> and <span dir="ltr">Google Play</span>: make your account today, and on launch day you just sign in.',
-      iabTitle: 'Trouble signing in inside Instagram or Facebook?',
-      iabBody: 'Open this page in your phone’s browser and sign in there:',
+      iabTitle: 'Sign up in your browser',
+      iabBody: 'Google sign-in often fails inside Instagram and Facebook. Open this page in your browser (one tap):',
+      iabOr: 'or try signing in here',
       iabOpen: 'Open in my browser',
       iabSteps: {
         instagram: 'Or tap ⋯ at the top right of the screen, then “Open in external browser”.',
@@ -346,7 +349,6 @@
         android: 'Or tap ⋮ at the top right of the screen, then “Open in Chrome” or “Open in external browser”.'
       },
       iabNudge: 'It didn’t open by itself. We copied the link: open Safari or Chrome and paste it in the address bar. ',
-      iabAlready: 'Already signed up before? You’re all set: nothing more to do. We’ll message you on WhatsApp on launch day.',
       already: function (u) { return '<b>You’re already signed up on this phone as @' + u + '.</b> Nothing more to do: we’ll message you on WhatsApp on launch day.'; },
       doneTitleBack: function (u) { return 'You’re already signed up, @' + u + '!'; },
       iabCopy: 'Copy the link',
@@ -404,8 +406,9 @@
       appleBtn: 'سجّل بحساب Apple',
       startTitle: 'اعمل حسابك دلوقتي',
       startSub: 'أكل بيتي من طباخين في منطقتك، وبتستلمه بنفسك. التطبيق قرّب ينزل على <span dir="ltr">App Store</span> و<span dir="ltr">Google Play</span>: اعمل حسابك النهارده، ويوم الإطلاق تسجّل دخول بس.',
-      iabTitle: 'تسجيل الدخول مش راضي يشتغل جوه إنستجرام أو فيسبوك؟',
-      iabBody: 'افتح الصفحة دي في متصفح الموبايل وسجّل من هناك:',
+      iabTitle: 'سجّل من المتصفح',
+      iabBody: 'تسجيل Google كتير مش بيشتغل جوه إنستجرام وفيسبوك. افتح الصفحة دي في المتصفح (بدوسة واحدة):',
+      iabOr: 'أو جرّب تسجّل من هنا',
       iabOpen: 'افتحها في المتصفح',
       iabSteps: {
         instagram: 'أو دوس على ⋯ فوق على اليمين، واختار «Open in external browser» أو «فتح في متصفح خارجي».',
@@ -413,7 +416,6 @@
         android: 'أو دوس على ⋮ فوق على اليمين، واختار «Open in Chrome» أو «فتح في متصفح خارجي».'
       },
       iabNudge: 'الصفحة ما اتفتحتش لوحدها. نسخنالك الرابط: افتح Safari أو Chrome والزقه في خانة العنوان. ',
-      iabAlready: 'سجّلت قبل كده؟ كده تمام ومش محتاج تعمل حاجة تاني. هنبعتلك على واتساب يوم الإطلاق.',
       already: function (u) { return '<b>إنت مسجّل بالفعل على الموبايل ده باسم @' + u + '.</b> مش محتاج تعمل حاجة تاني: هنبعتلك على واتساب يوم الإطلاق.'; },
       doneTitleBack: function (u) { return 'إنت مسجّل بالفعل يا @' + u + '!'; },
       iabCopy: 'انسخ الرابط',
@@ -584,7 +586,7 @@
   // Sign-up funnel (docs/SIGNUP-FUNNEL.md), same table as the app. Fire and forget.
   // The ad's place and message ride on every event, so started-vs-finished can be read per place.
   var adTags = {};
-  ['utm_campaign', 'utm_term', 'utm_content', 'placement'].forEach(function (k) { if (source[k]) adTags[k] = source[k]; });
+  ['utm_campaign', 'utm_term', 'utm_content', 'placement', 'inapp'].forEach(function (k) { if (source[k]) adTags[k] = source[k]; });
   var funnelSession = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   function logFunnel(step, props) {
     sb.insert('signup_events', {
@@ -610,9 +612,10 @@
     $('stepProfile').hidden = state.step !== 'profile';
     $('stepDone').hidden = state.step !== 'done';
     if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
-    // Sign-in inside Instagram/Facebook works for many people, so the buttons stay; the way out sits under them.
+    // Inside Instagram/Facebook the way out (open the browser) comes first; the sign-in buttons stay below it for those who can use them.
     var showIab = state.step === 'start' && !!inApp;
     $('iab').hidden = !showIab;
+    $('iabOr').hidden = !showIab;
     var steps = t('iabSteps');
     $('iabSteps').textContent = (state.iabNudge ? t('iabNudge') : '') + (/Android/.test(ua) ? steps.android : steps[inApp] || steps.instagram);
     $('iabSteps').classList.toggle('nudge', !!state.iabNudge);
