@@ -475,7 +475,7 @@ export default function ProfileStep() {
           </Text>
           <Text style={styles.sectionSub}>Tell us where you belong: this decides who sees your posts and whose posts you see.</Text>
           <View style={styles.group}>
-            {countries.length > 1 ? (
+            {countries.length > 0 ? (
               <SelectField
                 label="COUNTRY"
                 required

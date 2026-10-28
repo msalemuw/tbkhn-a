@@ -225,6 +225,9 @@
         <h3 class="sec"><span data-t="secCommunities"></span> <span class="req">*</span></h3>
         <p class="secsub" data-t="secCommunitiesSub"></p>
 
+        <label class="f" for="country"><span data-t="fCountry"></span> <span class="req">*</span></label>
+        <select id="country"></select>
+
         <label class="f" for="gov"><span data-t="fGov"></span> <span class="req">*</span></label>
         <select id="gov"></select>
 
@@ -358,7 +361,7 @@
       errLoves: 'Please choose what you love: cooking, eating or both.',
       secCommunities: 'YOUR COMMUNITIES',
       secCommunitiesSub: 'Tell us where you belong: this decides who sees your posts and whose posts you see.',
-      fGov: 'GOVERNORATE', fArea: 'AREA', choose: 'Choose', chooseGovFirst: 'Choose a governorate first', none: 'None',
+      fCountry: 'COUNTRY', fGov: 'GOVERNORATE', fArea: 'AREA', choose: 'Choose', chooseGovFirst: 'Choose a governorate first', none: 'None',
       notListedArea: 'Can’t find your area? Type it', areaTypedPh: 'example: Rehab City',
       areaTypedHint: 'We’ll add it after a quick check, and you’ll join it automatically.',
       optional: { club: 'CLUB', sahel: 'SAHEL', school: 'SCHOOL', work: 'WORK' },
@@ -425,7 +428,7 @@
       errLoves: 'من فضلك اختار: بتحب الطبخ، الأكل، ولا الاتنين.',
       secCommunities: 'مجتمعاتك',
       secCommunitiesSub: 'قولنا إنت منين: ده بيحدد مين يشوف بوستاتك وإنت تشوف بوستات مين.',
-      fGov: 'المحافظة', fArea: 'المنطقة', choose: 'اختار', chooseGovFirst: 'اختار المحافظة الأول', none: 'لا يوجد',
+      fCountry: 'الدولة', fGov: 'المحافظة', fArea: 'المنطقة', choose: 'اختار', chooseGovFirst: 'اختار المحافظة الأول', none: 'لا يوجد',
       notListedArea: 'منطقتك مش موجودة؟ اكتبها', areaTypedPh: 'مثال: مدينة الرحاب',
       areaTypedHint: 'هنضيفها بعد مراجعة سريعة، وهتنضم لها تلقائيًا.',
       optional: { club: 'النادي', sahel: 'الساحل', school: 'المدرسة', work: 'الشغل' },
@@ -576,7 +579,7 @@
       }
     };
   })();
-  var state = { loves: null, step: 'start', user: null, profile: null, regions: [], communities: [], taken: null, usernameTimer: null, rawNonce: null };
+  var state = { country: 'EG', countries: [], allCommunities: [], loves: null, step: 'start', user: null, profile: null, regions: [], communities: [], taken: null, usernameTimer: null, rawNonce: null };
 
   // Sign-up funnel (docs/SIGNUP-FUNNEL.md), same table as the app. Fire and forget.
   // The ad's place and message ride on every event, so started-vs-finished can be read per place.
@@ -628,7 +631,7 @@
       $('partNote').textContent = t('stepOf')(part);
       $('submit').textContent = t(part === 3 ? 'save' : part === 2 ? 'submit' : 'next');
       $('skip').hidden = part !== 3; $('back').hidden = part === 1;
-      fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
+      fillCountries(); fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
       store('tabkheen.doneUser', state.profile.username);
@@ -834,14 +837,25 @@
     if (listsLoaded) return listsLoaded;
     var mine = state.user ? ',requested_by.eq.' + state.user.id : '';
     listsLoaded = Promise.all([
-      sb.get('regions?select=name,name_ar&country_code=eq.EG&enabled=eq.true&order=sort,name'),
-      sb.get('communities?select=id,name,kind,governorate,country_code,status&or=(status.eq.approved' + mine + ')&order=name')
+      sb.get('regions?select=name,name_ar&country_code=eq.' + state.country + '&enabled=eq.true&order=sort,name'),
+      sb.get('communities?select=id,name,kind,governorate,country_code,status&or=(status.eq.approved' + mine + ')&order=name'),
+      sb.get('countries?select=code,name&enabled=eq.true&order=sort,name')
     ]).then(function (res) {
       if (res[0].error || res[1].error) throw new Error('load');
       state.regions = res[0].data || [];
-      state.communities = (res[1].data || []).filter(function (c) { return c.status !== 'rejected' && (c.country_code || 'EG') === 'EG'; });
+      state.allCommunities = (res[1].data || []).filter(function (c) { return c.status !== 'rejected'; });
+      state.countries = (!res[2].error && res[2].data && res[2].data.length) ? res[2].data : [{ code: 'EG', name: 'Egypt' }];
+      applyCountry();
     }).catch(function () { listsLoaded = null; fail('errLoad'); });
     return listsLoaded;
+  }
+  // The communities of the chosen country; Egypt is chosen to start with and anyone can change it.
+  function applyCountry() {
+    state.communities = state.allCommunities.filter(function (c) { return (c.country_code || 'EG') === state.country; });
+  }
+  function fillCountries() {
+    var items = state.countries.map(function (c) { return { value: c.code, label: lang === 'ar' && c.code === 'EG' ? 'مصر' : c.name }; });
+    fillSelect($('country'), items, state.country);
   }
   function communityLabel(c) { return c.status === 'pending' ? c.name + (lang === 'ar' ? ' (مستني المراجعة)' : ' (pending approval)') : c.name; }
 
@@ -877,6 +891,12 @@
       box.appendChild(label); box.appendChild(sel); box.appendChild(inp);
     });
   }
+  $('country').addEventListener('change', function () {
+    state.country = this.value; applyCountry(); $('gov').value = ''; $('area').value = '';
+    sb.get('regions?select=name,name_ar&country_code=eq.' + state.country + '&enabled=eq.true&order=sort,name').then(function (res) {
+      state.regions = (res && res.data) || []; fillGovernorates(); fillAreas(); fillOptional();
+    });
+  });
   $('gov').addEventListener('change', function () { $('area').value = ''; fillAreas(); });
   $('area').addEventListener('change', function () { $('areaTypedBox').hidden = $('area').value !== OTHER; });
 
@@ -1056,7 +1076,7 @@
         return c.kind === kind && c.governorate.toLowerCase() === gov.toLowerCase() && nameKey(c.name) === key;
       })[0];
       if (match) { logFunnel('community_request_matched', { kind: kind, status: match.status }); return Promise.resolve(match); }
-      return sb.insertOne('communities', { name: typedName, kind: kind, governorate: gov, area: areaName || typedName, requested_by: uid, status: 'pending', country_code: 'EG' },
+      return sb.insertOne('communities', { name: typedName, kind: kind, governorate: gov, area: areaName || typedName, requested_by: uid, status: 'pending', country_code: state.country },
         'id,name,kind,governorate,status').then(function (res) {
           if (res.error && res.error.code === '23505') {
             logFunnel('community_request_duplicate', { kind: kind });
@@ -1064,7 +1084,7 @@
           }
           if (res.error) throw res.error;
           state.communities.push(res.data);
-          logFunnel('community_requested', { kind: kind, country: 'EG' });
+          logFunnel('community_requested', { kind: kind, country: state.country });
           return res.data;
         });
     }
@@ -1083,7 +1103,7 @@
       var areaStep = areaId !== OTHER ? Promise.resolve(state.communities.filter(function (c) { return c.id === areaId; })[0]) : requestCommunity('area', typed, null, gov);
       var heard = heardRow();
       return areaStep.then(function (area) {
-        var row = { loves: state.loves, country_code: 'EG', governorate: gov, area: area.name, lang: lang };
+        var row = { loves: state.loves, country_code: state.country, governorate: gov, area: area.name, lang: lang };
         Object.keys(heard).forEach(function (k) { row[k] = heard[k]; });
         return sb.update('profiles', 'id=eq.' + uid, row).then(function (res) {
           if (res.error) throw res.error;
