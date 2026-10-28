@@ -14,7 +14,7 @@ import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
 import { HEARD, OTHER_DETAIL } from '@/lib/heard';
-import { formatPhone } from '@/lib/phone';
+import { cleanPhoneInput, formatPhone, isValidPhone, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
 import { type Country, fetchCountries, fetchRegions, type Region } from '@/lib/regions';
 import { useSession } from '@/lib/session';
@@ -81,6 +81,8 @@ export default function ProfileStep() {
   const [name, setName] = useState(() => String(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? ''));
   // Starts from the name (first.last), checked for availability like a typed one; same as the website.
   const [username, setUsername] = useState(() => nameToUsername(name));
+  // Google and Apple do not share a phone number, so it is asked here (digits after +20) and saved as it is typed.
+  const [mobile, setMobile] = useState('');
   const [loves, setLoves] = useState<Loves | null>(null);
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -105,6 +107,7 @@ export default function ProfileStep() {
   const [error, setError] = useState<string | null>(null);
 
   const phoneDigits = (session?.user.phone ?? '').replace(/^\+?20/, '');
+  const needsMobile = !phoneDigits;
 
   useEffect(() => {
     logFunnel(part === 2 ? 'details_started' : 'profile_started', {}, { userRef: session?.user.id });
@@ -131,6 +134,30 @@ export default function ProfileStep() {
       live = false;
     };
   }, [country]);
+
+  // A number saved earlier (a returning visitor) fills the box again.
+  useEffect(() => {
+    if (!session?.user.id) return;
+    supabase.rpc('my_profile').then(({ data }) => {
+      const saved = (Array.isArray(data) ? data[0] : data)?.whatsapp as string | null | undefined;
+      if (saved?.startsWith('+20')) setMobile((cur) => cur || saved.slice(3));
+    }, () => {});
+  }, [session?.user.id]);
+
+  // Typed details are saved the moment they are valid, not on Next, so a person who leaves still has a number and name
+  // on file. Best effort and silent: a failure here never blocks typing, Next saves everything again.
+  useEffect(() => {
+    if (!session?.user.id || !needsMobile) return;
+    const row: { whatsapp?: string; display_name?: string } = {};
+    if (isValidPhone(mobile)) row.whatsapp = toE164(mobile);
+    if (name.trim().length >= 2) row.display_name = name.trim();
+    if (!row.whatsapp && !row.display_name) return;
+    const id = setTimeout(() => {
+      supabase.from('profiles').update(row).eq('id', session.user.id).then(() => {}, () => {});
+      if (row.whatsapp) logFunnel('phone_entered', { valid: true, saved: 'autosave' }, { userRef: session.user.id });
+    }, 600);
+    return () => clearTimeout(id);
+  }, [mobile, name, needsMobile, session?.user.id]);
 
   // Live, advisory username check; the unique index decides on save.
   useEffect(() => {
@@ -165,7 +192,9 @@ export default function ProfileStep() {
   const heardDef = HEARD.find((h) => h.value === heard);
   const heardDetail = heardDef?.detail.kind === 'pick' ? (heardPick && heardPick !== OTHER_DETAIL ? heardPick : heardText.trim() || null) : heardDef?.detail.kind === 'text' ? heardText.trim() || null : null;
 
-  const canContinue = name.trim().length > 0 && un.ok;
+  // Not required, so nobody drops out here, and nothing on screen says it is optional; a half-typed number must be finished.
+  const mobileOk = !needsMobile || mobile === '' || isValidPhone(mobile);
+  const canContinue = name.trim().length > 0 && un.ok && mobileOk;
   const canSubmit = loves !== null && Boolean(gov?.trim() && areaId);
 
   function openPicker(
@@ -230,7 +259,7 @@ export default function ProfileStep() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({ display_name: name.trim(), username, ...(avatarPath ? { avatar_path: avatarPath } : {}) })
+      .update({ display_name: name.trim(), username, ...(needsMobile && isValidPhone(mobile) ? { whatsapp: toE164(mobile) } : {}), ...(avatarPath ? { avatar_path: avatarPath } : {}) })
       .eq('id', session.user.id);
     if (saveError) {
       setBusy(false);
@@ -370,11 +399,32 @@ export default function ProfileStep() {
                   <MaterialIcons name="verified" size={18} color={colors.teal} />
                 </View>
               </Field>
-            ) : session?.user.email ? (
-              <Field label="EMAIL">
-                <Text style={formStyles.input}>{session.user.email}</Text>
-              </Field>
-            ) : null}
+            ) : (
+              <>
+                {session?.user.email ? (
+                  <Field label="EMAIL">
+                    <Text style={formStyles.input}>{session.user.email}</Text>
+                  </Field>
+                ) : null}
+                <Field label="MOBILE NUMBER" borderColor={mobile ? (mobileOk ? colors.teal : danger) : undefined}>
+                  <View style={styles.row}>
+                    <Text style={[formStyles.input, { color: colors.muted }]}>+20</Text>
+                    <TextInput
+                      value={mobile}
+                      onChangeText={(v) => setMobile(cleanPhoneInput(v))}
+                      placeholder="example: 1234567890"
+                      placeholderTextColor={colors.faint}
+                      keyboardType="number-pad"
+                      textContentType="telephoneNumber"
+                      autoComplete="tel"
+                      maxLength={13}
+                      style={[formStyles.input, { flex: 1 }]}
+                      accessibilityLabel="Mobile number"
+                    />
+                  </View>
+                </Field>
+              </>
+            )}
             <View>
               <Field label="USERNAME" required borderColor={username ? (un.ok ? colors.teal : un.icon === 'error' ? danger : undefined) : undefined}>
                 <View style={styles.row}>
