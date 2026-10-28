@@ -760,26 +760,41 @@
     });
     return appleReady;
   }
+  // Apple's window must open straight from the tap, or iPhone Safari blocks it. So the sign-in is set up (with a fresh
+  // random value and its hash) ahead of time, and the click only calls signIn() with no waiting before it.
+  var applePair = null;
+  function prepareApple() {
+    var raw = crypto.getRandomValues(new Uint32Array(4)).join('-');
+    return loadApple().then(function () { return sha256Hex(raw); }).then(function (hashed) {
+      AppleID.auth.init({ clientId: CFG.appleServiceId, scope: 'name email', redirectURI: location.origin + '/', nonce: hashed, usePopup: true });
+      applePair = { raw: raw };
+    }).catch(function () { applePair = null; });
+  }
   function renderAppleButton() {
     if (!CFG.appleServiceId) return;
     $('abtn').hidden = false;
     // Apple first on iPhone and iPad, Google first everywhere else.
     if (/iPhone|iPad|iPod/.test(ua)) $('signin').insertBefore($('abtn'), $('gbtn'));
-    loadApple().catch(function () { /* retried on click */ });
+    if (!applePair) prepareApple();
   }
   $('abtn').addEventListener('click', function () {
-    var btn = $('abtn'), started = Date.now(), raw = crypto.getRandomValues(new Uint32Array(4)).join('-');
-    logFunnel('apple_button_tapped');
+    var btn = $('abtn'), started = Date.now(), pair = applePair;
+    logFunnel('apple_button_tapped', { ready: !!pair });
     $('errStart').classList.remove('show');
+    // Still loading (slow network): set it up and ask for one more tap, never open the window late.
+    if (!pair || !window.AppleID) {
+      prepareApple().then(function () { var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show'); });
+      return;
+    }
     btn.disabled = true;
-    loadApple().then(function () { return sha256Hex(raw); }).then(function (hashed) {
-      AppleID.auth.init({ clientId: CFG.appleServiceId, scope: 'name email', redirectURI: location.origin + '/', nonce: hashed, usePopup: true });
-      return AppleID.auth.signIn();
-    }).then(function (resp) {
+    applePair = null;
+    var signing;
+    try { signing = AppleID.auth.signIn(); } catch (err) { signing = Promise.reject(err); }
+    signing.then(function (resp) {
       // Apple sends the name only the first time someone signs in, so keep it for the form.
       var n = resp.user && resp.user.name;
       if (n) appleName = [n.firstName, n.lastName].filter(Boolean).join(' ');
-      return sb.auth.signInWithIdToken({ provider: 'apple', token: resp.authorization.id_token, nonce: raw });
+      return sb.auth.signInWithIdToken({ provider: 'apple', token: resp.authorization.id_token, nonce: pair.raw });
     }).then(function (res) {
       if (!res.error) store('tabkheen.method', 'apple');
       logFunnel('signup_method_chosen', { method: 'apple', result: res.error ? 'error' : 'ok', latency_ms: Date.now() - started });
@@ -788,8 +803,9 @@
     }).catch(function (err) {
       // Closing Apple's window is not an error.
       if (err && (err.error === 'popup_closed_by_user' || err.error === 'user_cancelled_authorize')) { logFunnel('apple_cancelled', { app: inApp || 'browser' }); return; }
+      logFunnel('apple_failed', { reason: String((err && (err.error || err.message || err.code)) || 'unknown').slice(0, 80) });
       var e = $('errStart'); e.textContent = t('errSignIn'); e.classList.add('show');
-    }).then(function () { btn.disabled = false; });
+    }).then(function () { btn.disabled = false; prepareApple(); });
   });
   // The button used on this device wins; one account can have both Google and Apple linked by the same email.
   function providerName() {
