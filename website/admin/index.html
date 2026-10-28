@@ -1147,7 +1147,8 @@
       '<div class="card"><h2>Day by day</h2><div id="fdaily"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h2>Where people get stuck</h2><div class="tablewrap" id="fprob"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h2>By ad</h2><p class="muted" style="margin-top:0">Visits per ad campaign and placement. “Finished” is visits that completed sign-up.</p><div class="tablewrap" id="fsrc"><p class="muted">Loading…</p></div></div>' +
-      '<div class="card"><h2>Signed in but never finished</h2><p class="muted" style="margin-top:0">People who created an account and did not finish the required details (step 2), at least 30 minutes ago. Their last step and the step they completed show where they stopped.</p><div class="tablewrap" id="funf"><p class="muted">Loading…</p></div></div>';
+      '<div class="card"><h2>Signed in but never finished</h2><p class="muted" style="margin-top:0">People who created an account and did not finish the required details (step 2), at least 30 minutes ago. Their last step and the step they completed show where they stopped.</p><div class="tablewrap" id="funf"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h2>Android testers</h2><p class="muted" style="margin-top:0">People who signed in from the Android app (the Google Play closed test). Google Play only shows how many testers joined, not who, so compare this list with your tester emails to see who is missing.</p><div class="tablewrap" id="fand"><p class="muted">Loading…</p></div></div>';
     function chips() {
       $('fdays').innerHTML = [7, 14, 30, 90].map(function (d) { return '<button class="chip" data-days="' + d + '" aria-pressed="' + (d === days) + '">' + d + ' days</button>'; }).join('');
       $('fvia').innerHTML = VIAS.map(function (x) { return '<button class="chip" data-via="' + (x[0] || '') + '" aria-pressed="' + (x[0] === via) + '">' + x[1] + '</button>'; }).join('');
@@ -1199,6 +1200,15 @@
         }).join('') + '</table><p class="muted">Showing the latest ' + rows.length + '.</p>' : '<p class="muted">Everyone who signed in has finished.</p>';
       });
     }
+    function loadAndroid() {
+      return rpc('admin_android_testers').then(function (rows) {
+        $('fand').innerHTML = rows.length ? '<table><tr><th>Name</th><th>Email</th><th>First opened</th><th>Last seen</th><th>Got as far as</th><th>Phone</th></tr>' + rows.map(function (r) {
+          return '<tr><td dir="auto">' + esc(r.display_name || (r.username ? '@' + r.username : 'No name yet')) + '</td><td>' + esc(r.email || '') + '</td><td>' + esc(when(r.first_seen)) + '</td><td>' + esc(when(r.last_seen)) + '</td><td>' + esc(STAGES[r.stage] || '') + '</td><td>' + esc(r.os || '') + ' · v' + esc(r.app_version || '') + '</td></tr>';
+        }).join('') + '</table><p class="muted"><b>' + rows.length + '</b> people so far.</p>' : '<p class="muted">Nobody has signed in from the Android app yet.</p>';
+      }).catch(function (e) {
+        $('fand').innerHTML = '<p class="muted">' + esc(/admin_android_testers/.test(msg(e)) ? 'This list appears once the latest database update (0048) is run in Supabase.' : msg(e)) + '</p>';
+      });
+    }
     function loadAll() { chips(); return Promise.all([loadSteps(), loadDaily(), loadProblems(), loadSources()]).catch(fail); }
     v.onclick = function (e) {
       var d = e.target.closest('[data-days]'), x = e.target.closest('[data-via]');
@@ -1206,7 +1216,7 @@
       if (x) { via = x.getAttribute('data-via') || null; loadAll(); }
     };
     chips();
-    return Promise.all([loadSteps(), loadDaily(), loadProblems(), loadSources(), loadUnfinished()]);
+    return Promise.all([loadSteps(), loadDaily(), loadProblems(), loadSources(), loadUnfinished(), loadAndroid()]);
   }
 
   // Referrals: how members heard about us, by week and detail
