@@ -34,5 +34,12 @@ jobs:
           GROUP=$(jq -r '.currentPage[0].group // empty' latest.json)
           if [ -z "$GROUP" ]; then echo "No tested update found"; cat latest.json; exit 1; fi
           echo "group=$GROUP" >> "$GITHUB_OUTPUT"
+      # EAS allows one rollout at a time per branch. If an earlier run left one at a small share (the first run of a
+      # "small number first" pair), finish it at 100% so the next promotion can start (run #3 and #4 failed on this).
+      - name: Finish an earlier rollout, if one is still in progress
+        run: |
+          eas update:list --branch production --limit 1 --json --non-interactive > production.json || true
+          ACTIVE=$(jq -r '.currentPage[0].group // empty' production.json 2>/dev/null || true)
+          if [ -n "$ACTIVE" ]; then eas update:edit "$ACTIVE" --rollout-percentage 100 --non-interactive || true; fi
       - name: Send it to real users
         run: eas update:republish --group "${{ steps.latest.outputs.group }}" --destination-branch production --rollout-percentage "${{ inputs.percentage }}" --force-end-active-rollout --message "Promoted from test" --non-interactive
