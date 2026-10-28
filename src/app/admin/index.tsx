@@ -7,26 +7,25 @@ import { FlipIcon } from '@/components/flip-icon';
 import { AdminScreen, ErrorLine, useStaffRole } from '@/components/admin-ui';
 import { colors, fonts } from '@/constants/theme';
 import { fetchOverview, type MemberFilter, type Overview } from '@/lib/admin';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 const ROLE_LABEL = { owner: 'Owner', moderator: 'Moderator', support: 'Support' } as const;
 
 export default function AdminHome() {
   const role = useStaffRole();
   const [data, setData] = useState<Overview | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       setData(await fetchOverview());
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load');
     }
-    setLoading(false);
   }, []);
 
+  const pull = usePullRefresh(load);
   useFocusEffect(
     useCallback(() => {
       load();
@@ -45,7 +44,7 @@ export default function AdminHome() {
 
   return (
     <AdminScreen title="Admin">
-      <ScrollView contentContainerStyle={styles.body} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}>
+      <ScrollView contentContainerStyle={styles.body} refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}>
         <Text style={styles.role}>Signed in as {role ? ROLE_LABEL[role] : ''}</Text>
         <ErrorLine text={error} />
         {data ? (

@@ -11,6 +11,7 @@ import { useLive } from '@/lib/live';
 import { ACTIVE, fetchOrders, type Order, type OrderStatus } from '@/lib/orders';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Flow 16, screen s45: active and past orders. Cooks also see orders placed with them.
 type Tab = 'buyer' | 'cook';
@@ -36,7 +37,6 @@ export default function Orders() {
   const [tab, setTab] = useState<Tab>(params.tab === 'cook' ? 'cook' : 'buyer');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pulling, setPulling] = useState(false);
 
   const load = useCallback(async () => {
     if (!session) return;
@@ -49,6 +49,7 @@ export default function Orders() {
     setLoading(false);
   }, [session, tab]);
 
+  const pull = usePullRefresh(load);
   useLive(load);
 
   const active = orders.filter((o) => ACTIVE.includes(o.status));
@@ -74,7 +75,7 @@ export default function Orders() {
         sections={sections}
         keyExtractor={(o) => o.id}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
         renderSectionHeader={({ section }) => <Text style={styles.section}>{section.title}</Text>}
         renderItem={({ item }) => {
           const b = BADGE[item.status];

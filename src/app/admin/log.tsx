@@ -6,6 +6,7 @@ import { AdminScreen, adminStyles, Card, ErrorLine } from '@/components/admin-ui
 import { colors } from '@/constants/theme';
 import { ACTION_LABEL, type AdminAction, fetchRecentActions } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Every admin action, newest first: who did what, to what, and why.
 function what(a: AdminAction): string {
@@ -31,6 +32,7 @@ export default function ActionLog() {
     setLoading(false);
   }, []);
 
+  const pull = usePullRefresh(load);
   useFocusEffect(
     useCallback(() => {
       load();
@@ -43,7 +45,7 @@ export default function ActionLog() {
         data={items}
         keyExtractor={(a) => String(a.id)}
         contentContainerStyle={adminStyles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
         ListHeaderComponent={<ErrorLine text={error} />}
         ListEmptyComponent={loading ? null : <Text style={adminStyles.empty}>Nothing yet.</Text>}
         renderItem={({ item }) => (

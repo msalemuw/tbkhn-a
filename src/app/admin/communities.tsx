@@ -6,6 +6,7 @@ import { AdminScreen, adminStyles, Card, ErrorLine, ReasonModal, SmallButton, us
 import { colors } from '@/constants/theme';
 import { canAct, type CommunityRequest, fetchCommunityRequests, reviewCommunity } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Requests from "Request a new community" (flow 7). The app promises a review in 1 to 2 days.
 export default function CommunityRequests() {
@@ -26,6 +27,7 @@ export default function CommunityRequests() {
     setLoading(false);
   }, []);
 
+  const pull = usePullRefresh(load);
   useFocusEffect(
     useCallback(() => {
       load();
@@ -47,7 +49,7 @@ export default function CommunityRequests() {
         data={items}
         keyExtractor={(c) => c.id}
         contentContainerStyle={adminStyles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
         ListHeaderComponent={<ErrorLine text={error} />}
         ListEmptyComponent={loading ? null : <Text style={adminStyles.empty}>No requests waiting.</Text>}
         renderItem={({ item }) => (

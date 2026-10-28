@@ -8,6 +8,7 @@ import { Field, formStyles } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { type AdminOrder, fetchOrderTimeline, findOrders, ORDER_EVENT_LABEL, orderCode, type OrderEvent, type OrderState } from '@/lib/admin';
 import { fmtAgo, fmtClock } from '@/lib/format';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Read-only order viewer for support: find an order, then see each step with who did it and why.
 const STATES: { label: string; value: OrderState | null }[] = [
@@ -58,6 +59,7 @@ export default function Orders() {
     setLoading(false);
   }, []);
 
+  const pull = usePullRefresh(() => load(query, state));
   useFocusEffect(
     useCallback(() => {
       load(query, state);
@@ -108,7 +110,7 @@ export default function Orders() {
         keyExtractor={(o) => o.id}
         contentContainerStyle={adminStyles.list}
         keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => load(query, state)} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
         ListEmptyComponent={loading ? null : <Text style={adminStyles.empty}>No orders match.</Text>}
         renderItem={({ item }) => {
           const total = item.price_egp !== null ? ` · ${Number(item.price_egp) * item.plates} EGP` : '';

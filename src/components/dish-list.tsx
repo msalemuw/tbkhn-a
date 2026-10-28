@@ -12,6 +12,7 @@ import { useMyLocation } from '@/lib/location';
 import { CUISINES, type Dish, fetchMyCommunities, fetchTodaysDishes, type MyCommunity } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabaseConfigured } from '@/lib/supabase';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 /**
  * Today's menu (s53): every dish neighbors share on today's menu, narrowed by community, cuisine or search.
@@ -36,7 +37,6 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   // Only a pull-down shows the spinner. Showing it for the automatic loads pushes the whole list down and leaves a blank gap.
-  const [pulling, setPulling] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -55,6 +55,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
   }, [session]);
 
   // Reload when the tab comes back into view, e.g. after posting or ordering.
+  const pull = usePullRefresh(load);
   useFocusEffect(
     useCallback(() => {
       load();
@@ -132,7 +133,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
       renderItem={({ item }) => <DishCard dish={item} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
       style={{ backgroundColor: ui.page }}
       contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={ui.deepTeal} />}
+      refreshControl={<RefreshControl {...pull} tintColor={ui.deepTeal} />}
       ListHeaderComponent={
         <View style={{ gap: 14 }}>
           {header}

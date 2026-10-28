@@ -29,6 +29,7 @@ import { confirmBlock } from '@/lib/blocks';
 import { fetchStories, loadSeen, type StoryGroup } from '@/lib/stories';
 import { supabaseConfigured } from '@/lib/supabase';
 import { tr } from '@/lib/i18n';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Screen s6: Home is the social feed (design flow 15): signature dishes from the communities and cooks you watch.
 // Today’s menu and ordering live on the Menu tab.
@@ -53,7 +54,6 @@ export default function Home() {
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [loading, setLoading] = useState(true);
   // Only a pull-down shows the spinner. Showing it for the automatic loads pushes the whole list down and leaves a blank gap.
-  const [pulling, setPulling] = useState(false);
   const [failed, setFailed] = useState(false);
 
   const dataVersion = useDataVersion();
@@ -88,6 +88,7 @@ export default function Home() {
     setLoading(false);
   }, [me]);
 
+  const pull = usePullRefresh(load);
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('dark');
@@ -206,7 +207,7 @@ export default function Home() {
             onMore={() => onMore(item)}
           />
         )}
-        refreshControl={<RefreshControl refreshing={pulling} onRefresh={() => { setPulling(true); load().finally(() => setPulling(false)); }} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
         ListHeaderComponent={
           // White at the top (like the header) fading to the cream page by the time the first post starts.
           <View>
