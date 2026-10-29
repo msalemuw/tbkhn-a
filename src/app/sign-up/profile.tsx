@@ -14,7 +14,7 @@ import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
 import { HEARD, OTHER_DETAIL } from '@/lib/heard';
-import { cleanPhoneInput, formatPhone, isValidPhone, toE164 } from '@/lib/phone';
+import { cleanPhoneInput, DIALS, dialFor, formatPhone, isValidPhone, splitE164, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
 import { type Country, fetchCountries, fetchRegions, type Region } from '@/lib/regions';
 import { useSession } from '@/lib/session';
@@ -83,6 +83,8 @@ export default function ProfileStep() {
   const [username, setUsername] = useState(() => nameToUsername(name));
   // Google and Apple do not share a phone number, so it is asked here (digits after +20) and saved as it is typed.
   const [mobile, setMobile] = useState('');
+  // The country code of the number; Egypt to start with, any member can change it.
+  const [dialCc, setDialCc] = useState('EG');
   const [loves, setLoves] = useState<Loves | null>(null);
   const [taken, setTaken] = useState<boolean | null>(null);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -140,7 +142,11 @@ export default function ProfileStep() {
     if (!session?.user.id) return;
     supabase.rpc('my_profile').then(({ data }) => {
       const saved = (Array.isArray(data) ? data[0] : data)?.whatsapp as string | null | undefined;
-      if (saved?.startsWith('+20')) setMobile((cur) => cur || saved.slice(3));
+      const parts = saved ? splitE164(saved) : null;
+      if (parts) {
+        setMobile((cur) => cur || parts.digits);
+        setDialCc(parts.cc);
+      }
     }, () => {});
   }, [session?.user.id]);
 
@@ -149,7 +155,7 @@ export default function ProfileStep() {
   useEffect(() => {
     if (!session?.user.id || !needsMobile) return;
     const row: { whatsapp?: string; display_name?: string } = {};
-    if (isValidPhone(mobile)) row.whatsapp = toE164(mobile);
+    if (isValidPhone(mobile, dialCc)) row.whatsapp = toE164(mobile, dialCc);
     if (name.trim().length >= 2) row.display_name = name.trim();
     if (!row.whatsapp && !row.display_name) return;
     const id = setTimeout(() => {
@@ -157,7 +163,7 @@ export default function ProfileStep() {
       if (row.whatsapp) logFunnel('phone_entered', { valid: true, saved: 'autosave' }, { userRef: session.user.id });
     }, 600);
     return () => clearTimeout(id);
-  }, [mobile, name, needsMobile, session?.user.id]);
+  }, [mobile, dialCc, name, needsMobile, session?.user.id]);
 
   // Live, advisory username check; the unique index decides on save.
   useEffect(() => {
@@ -193,7 +199,7 @@ export default function ProfileStep() {
   const heardDetail = heardDef?.detail.kind === 'pick' ? (heardPick && heardPick !== OTHER_DETAIL ? heardPick : heardText.trim() || null) : heardDef?.detail.kind === 'text' ? heardText.trim() || null : null;
 
   // Not required, so nobody drops out here, and nothing on screen says it is optional; a half-typed number must be finished.
-  const mobileOk = !needsMobile || mobile === '' || isValidPhone(mobile);
+  const mobileOk = !needsMobile || mobile === '' || isValidPhone(mobile, dialCc);
   const canContinue = name.trim().length > 0 && un.ok && mobileOk;
   const canSubmit = loves !== null && Boolean(gov?.trim() && areaId);
 
@@ -259,7 +265,7 @@ export default function ProfileStep() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({ display_name: name.trim(), username, ...(needsMobile && isValidPhone(mobile) ? { whatsapp: toE164(mobile) } : {}), ...(avatarPath ? { avatar_path: avatarPath } : {}) })
+      .update({ display_name: name.trim(), username, ...(needsMobile && isValidPhone(mobile, dialCc) ? { whatsapp: toE164(mobile, dialCc) } : {}), ...(avatarPath ? { avatar_path: avatarPath } : {}) })
       .eq('id', session.user.id);
     if (saveError) {
       setBusy(false);
@@ -408,16 +414,35 @@ export default function ProfileStep() {
                 ) : null}
                 <Field label="MOBILE NUMBER" borderColor={mobile ? (mobileOk ? colors.teal : danger) : undefined}>
                   <View style={styles.row}>
-                    <Text style={[formStyles.input, { color: colors.muted }]}>+20</Text>
+                    <Pressable
+                      onPress={() =>
+                        openPicker(
+                          'Country code',
+                          DIALS.map((d) => ({ label: `${d.name} (+${d.dial})`, value: d.cc })),
+                          dialCc,
+                          (v) => {
+                            if (!v) return;
+                            setDialCc(v);
+                            setMobile((cur) => cleanPhoneInput(cur, v));
+                          },
+                          { searchable: true },
+                        )
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={`Country code +${dialFor(dialCc).dial}`}
+                      style={styles.dialPick}>
+                      <Text style={[formStyles.input, { color: colors.muted }]}>+{dialFor(dialCc).dial}</Text>
+                      <MaterialIcons name="expand-more" size={18} color={colors.muted} />
+                    </Pressable>
                     <TextInput
                       value={mobile}
-                      onChangeText={(v) => setMobile(cleanPhoneInput(v))}
-                      placeholder="example: 1234567890"
+                      onChangeText={(v) => setMobile(cleanPhoneInput(v, dialCc))}
+                      placeholder={`example: ${dialFor(dialCc).example}`}
                       placeholderTextColor={colors.faint}
                       keyboardType="number-pad"
                       textContentType="telephoneNumber"
                       autoComplete="tel"
-                      maxLength={13}
+                      maxLength={16}
                       style={[formStyles.input, { flex: 1 }]}
                       accessibilityLabel="Mobile number"
                     />
@@ -672,6 +697,7 @@ const styles = StyleSheet.create({
   photoText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, textDecorationLine: 'underline' },
   group: { gap: 12, marginTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  dialPick: { flexDirection: 'row', alignItems: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   chip: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, backgroundColor: colors.lightBlue, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, overflow: 'hidden' },
   section: { fontFamily: fonts.extraBold, fontSize: 12, letterSpacing: 0.6, color: colors.ink, marginTop: 28 },
