@@ -14,6 +14,7 @@ import { useLive } from '@/lib/live';
 import { describe, fetchNotifications, markNotificationsRead, type Notification } from '@/lib/notifications';
 import { type Person, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Screen s20: Inbox with Messages and Notifications.
 type Tab = 'messages' | 'notifications';
@@ -26,7 +27,6 @@ export default function Inbox() {
   const [notes, setNotes] = useState<Notification[] | null>(null);
   const [people, setPeople] = useState<Map<string, Person>>(new Map());
   const [q, setQ] = useState('');
-  const [pulling, setPulling] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const userId = session?.user.id;
 
@@ -46,11 +46,7 @@ export default function Inbox() {
 
   useLive(load);
 
-  // The spinner is only for a pull by the member: background reloads (coming back to the screen) must not start it.
-  function pull() {
-    setPulling(true);
-    load().finally(() => setPulling(false));
-  }
+  const pull = usePullRefresh(load);
 
   const unreadNotes = notes?.filter((n) => !n.read_at).length ?? 0;
   const unreadMsgs = convos?.reduce((s, c) => s + c.unread, 0) ?? 0;
@@ -93,7 +89,7 @@ export default function Inbox() {
           data={shownConvos}
           keyExtractor={(c) => c.partner.id}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={pulling} onRefresh={pull} tintColor={colors.teal} />}
+          refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
           ListHeaderComponent={
             <TextInput value={q} onChangeText={setQ} placeholder="Search messages" placeholderTextColor={colors.faint} style={styles.search} accessibilityLabel="Search messages" />
           }
@@ -122,7 +118,7 @@ export default function Inbox() {
           data={notes ?? []}
           keyExtractor={(n) => n.id}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={pulling} onRefresh={pull} tintColor={colors.teal} />}
+          refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
           renderItem={({ item }) => {
             const d = describe(item, personName(people.get(item.payload.from ?? '')));
             // A rejected request that duplicates an existing community opens that community.

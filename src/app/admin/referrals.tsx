@@ -8,6 +8,7 @@ import { colors, fonts } from '@/constants/theme';
 import { type AdminCommunity, fetchCommunities, fetchInviterNames, fetchReferralTally, type InviterRow, type ReferralRow } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
 import { HEARD_LABEL } from '@/lib/heard';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Referral tally: finished sign-ups by their "How did you hear about tabkheen A?" answer, in total and per week,
 // for everyone or one community, plus the names typed under "Who invited you?".
@@ -63,6 +64,7 @@ export default function Referrals() {
     setLoading(false);
   }, []);
 
+  const pull = usePullRefresh(() => load(community));
   useFocusEffect(
     useCallback(() => {
       load(community);
@@ -81,7 +83,7 @@ export default function Referrals() {
 
   return (
     <AdminScreen title="Referrals">
-      <ScrollView contentContainerStyle={adminStyles.list} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => load(community)} tintColor={colors.teal} />}>
+      <ScrollView contentContainerStyle={adminStyles.list} refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}>
         <View style={styles.chips}>
           <Chip label="Everyone" on={community === null} onPress={() => pick(null)} />
           {communities.map((c) => (

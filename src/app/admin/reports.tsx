@@ -6,6 +6,7 @@ import { AdminScreen, adminStyles, Card, ErrorLine, ReasonModal, SmallButton, us
 import { colors } from '@/constants/theme';
 import { canAct, dismissReports, fetchOpenReports, removePost, type ReportGroup, setSuspended } from '@/lib/admin';
 import { fmtAgo } from '@/lib/format';
+import { usePullRefresh } from '@/lib/pull-refresh';
 
 // Reports from "Report post" and a profile's "Report", grouped by post or member, most reported first.
 const KIND_LABEL: Record<string, string> = { cooking_today: 'Today’s menu', story: 'Story', signature: 'Signature dish' };
@@ -28,6 +29,7 @@ export default function Reports() {
     setLoading(false);
   }, []);
 
+  const pull = usePullRefresh(load);
   useFocusEffect(
     useCallback(() => {
       load();
@@ -45,7 +47,7 @@ export default function Reports() {
         data={items}
         keyExtractor={(g) => g.report_ids[0]}
         contentContainerStyle={adminStyles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
         ListHeaderComponent={<ErrorLine text={error} />}
         ListEmptyComponent={loading ? null : <Text style={adminStyles.empty}>No open reports.</Text>}
         renderItem={({ item }) => {
