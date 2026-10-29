@@ -943,6 +943,7 @@
       var pk = e.target.closest('[data-pick]');
       if (pk) { picked[list[pk.getAttribute('data-pick')].id] = pk.checked; draw(); }
     };
+    $('mres').onkeydown = function (e) { if (e.key === 'Escape' && pop) { pop = ''; draw(); } };
     $('mres').oninput = function (e) {
       if (e.target.id === 'mpq') { popQ = e.target.value; $('mplist').innerHTML = popListHtml(); }
     };
