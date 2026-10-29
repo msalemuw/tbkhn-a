@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       percentage:
-        description: Share of real users who get it now (1-100). Use a small number first, then run again with 100.
+        description: Share of real users who get it now (1-100). 100 sends it to everyone. Or use a small number first, then run again with 100.
         default: '10'
         required: true
 jobs:
@@ -41,5 +41,14 @@ jobs:
           eas update:list --branch production --limit 1 --json --non-interactive > production.json || true
           ACTIVE=$(jq -r '.currentPage[0].group // empty' production.json 2>/dev/null || true)
           if [ -n "$ACTIVE" ]; then eas update:edit "$ACTIVE" --rollout-percentage 100 --non-interactive || true; fi
+      # EAS refuses a rollout percentage of 100 (it accepts 0 to 99): "everyone" is a normal republish with no percentage.
       - name: Send it to real users
-        run: eas update:republish --group "${{ steps.latest.outputs.group }}" --destination-branch production --rollout-percentage "${{ inputs.percentage }}" --force-end-active-rollout --message "Promoted from test" --non-interactive
+        env:
+          PERCENT: ${{ inputs.percentage }}
+          GROUP: ${{ steps.latest.outputs.group }}
+        run: |
+          if [ "$PERCENT" -ge 100 ]; then
+            eas update:republish --group "$GROUP" --destination-branch production --force-end-active-rollout --message "Promoted from test" --non-interactive
+          else
+            eas update:republish --group "$GROUP" --destination-branch production --rollout-percentage "$PERCENT" --force-end-active-rollout --message "Promoted from test" --non-interactive
+          fi
