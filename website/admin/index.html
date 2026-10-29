@@ -40,7 +40,14 @@
   button.btn.danger { background:var(--yellow); border-color:var(--yellow); }
   button.btn:disabled { opacity:.45; cursor:default; }
   .chip { display:inline-block; border:1.5px solid var(--blue); background:var(--white); border-radius:999px; padding:4px 12px; margin:0 6px 6px 0; cursor:pointer; font:inherit; }
-  .fil { display:inline-flex; flex-direction:column; gap:2px; font-size:13px; }
+  .hbtn { font:inherit; font-size:12px; letter-spacing:.04em; text-transform:uppercase; font-weight:700; color:var(--muted); background:none; border:0; padding:2px 4px; border-radius:6px; cursor:pointer; white-space:nowrap; }
+  .hbtn:hover, .hbtn.on { background:var(--blue); color:var(--navy); }
+  .popback { position:fixed; inset:0; z-index:59; }
+  .pop { position:fixed; z-index:60; width:280px; max-height:72vh; overflow:hidden; display:flex; flex-direction:column; background:var(--white); border:1.5px solid var(--blue); border-radius:14px; padding:12px; box-shadow:0 10px 30px rgba(40,48,58,.25); }
+  table.mt td { white-space:nowrap; }
+  .poplist { overflow:auto; max-height:260px; margin-top:4px; }
+  .popitem { display:flex; gap:8px; align-items:center; padding:3px 2px; cursor:pointer; }
+  .popitem span:nth-child(2) { flex:1; word-break:break-all; }
   .chip[aria-pressed="true"] { background:var(--teal); border-color:var(--teal); font-weight:700; }
   table { width:100%; border-collapse:collapse; font-size:14px; }
   th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
@@ -768,91 +775,128 @@
     var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '', stages = null, testers = {}, picked = {}, fil = { who: 'all' };
     v.innerHTML = '<div class="row"><h2 class="grow">Members</h2>' + (role === 'owner' ? '<button class="btn" id="exportMembers">Download all members (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="mq" placeholder="Username, name, phone or email" autocomplete="off"><button class="btn strong" id="mgo">Search</button></div><div id="mres"></div></div>';
-    // Filters work on the full list (loaded in full the moment one is used); the tester choice also works on search results.
-    var FILTERS = ['step', 'name', 'user', 'phone', 'area', 'when', 'via', 'src', 'ver', 'status', 'act'];
-    function filtersOn() { return FILTERS.some(function (k) { return fil[k]; }); }
-    function matches(m) {
-      var phone = m.whatsapp || m.phone, st = m.stage !== undefined && m.stage !== null ? m.stage : (m.finished ? 2 : 0);
-      if (fil.step === 'done') { if (st < 2) return false; } else if (fil.step && st !== Number(fil.step)) return false;
-      if (fil.name && (fil.name === 'has') !== !!(m.display_name || '').trim()) return false;
-      if (fil.user && (fil.user === 'has') !== !!m.username) return false;
-      if (fil.phone && (fil.phone === 'has') !== !!phone) return false;
-      if (fil.area && (fil.area === 'has') !== !!m.area) return false;
-      if (fil.when && Date.now() - new Date(m.created_at).getTime() > Number(fil.when) * 864e5) return false;
-      if (fil.via && m.via !== fil.via) return false;
-      if (fil.src && m.source !== fil.src) return false;
-      if (fil.ver && (fil.ver === 'yes') !== !!m.verified_at) return false;
-      if (fil.status && (m.banned_at ? 'banned' : m.suspended_at ? 'suspended' : 'active') !== fil.status) return false;
-      if (fil.act === 'posts' && !m.posts) return false;
-      if (fil.act === 'orders' && !m.orders) return false;
-      if (fil.act === 'none' && (m.posts || m.orders)) return false;
+    // Excel-style filters: every column header opens a list of its values to tick, with sort. They work on the full list,
+    // which is loaded in full the first time one is used (the list normally loads 50 at a time).
+    var NUMS = ['posts', 'orders', 'reports'];
+    function stageOf(m) { return m.stage !== undefined && m.stage !== null ? m.stage : (m.finished ? 2 : 0); }
+    var COLS = [
+      ['name', 'Name', function (m) { return (m.display_name || '').trim(); }],
+      ['user', 'Username', function (m) { return m.username || ''; }],
+      ['step', 'Sign-up step', function (m) { return STAGES[stageOf(m)]; }],
+      ['email', 'Email', function (m) { return m.email || ''; }],
+      ['phone', 'Phone', function (m) { return m.whatsapp || m.phone || ''; }],
+      ['area', 'Area', function (m) { return m.area || ''; }],
+      ['gov', 'Governorate', function (m) { return m.governorate || ''; }],
+      ['joined', 'Joined', function (m) { return (m.created_at || '').slice(0, 10); }],
+      ['via', 'Signed up on', function (m) { return m.via === 'website' ? 'Website' : 'App'; }],
+      ['src', 'Source', function (m) { return m.source || ''; }],
+      ['ver', 'Verified', function (m) { return m.verified_at ? 'Yes' : 'No'; }],
+      ['acct', 'Account', function (m) { return m.banned_at ? 'Banned' : m.suspended_at ? 'Suspended' : 'Active'; }],
+      ['tester', 'Tester', function (m) { return testers[m.id] ? 'Tester' : 'Real'; }],
+      ['posts', 'Posts', function (m) { return String(m.posts || 0); }],
+      ['orders', 'Orders', function (m) { return String(m.orders || 0); }],
+      ['reports', 'Open reports', function (m) { return String(m.open_reports || 0); }]
+    ];
+    var colf = {}, sortKey = '', sortDir = 'asc', pop = '', popQ = '', popPos = null, popAll = [];
+    function col(k) { return COLS.filter(function (c) { return c[0] === k; })[0]; }
+    function filtersOn() { return Object.keys(colf).length > 0; }
+    function local() { return filtersOn() || !!sortKey; }
+    // A row passes when every column filter lets its value through (skip: leave one column out, to list that column's values).
+    function matches(m, skip) {
+      for (var k in colf) { if (k !== skip && !colf[k][col(k)[2](m)]) return false; }
       if (q && [m.display_name, m.username, m.email, m.phone, m.whatsapp].join(' ').toLowerCase().indexOf(q.toLowerCase()) < 0) return false;
       return true;
     }
     function rows() {
-      var base = filtersOn() ? all.filter(matches) : q ? items : all;
-      return fil.who === 'real' ? base.filter(function (m) { return !testers[m.id]; }) : fil.who === 'testers' ? base.filter(function (m) { return testers[m.id]; }) : base;
-    }
-    function sel(key, label, opts) {
-      return '<label class="fil"><span class="muted">' + label + '</span><select data-f="' + key + '">' + opts.map(function (o) {
-        return '<option value="' + esc(o[0]) + '"' + ((fil[key] || '') === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
-    }
-    function filterBar() {
-      var srcs = [];
-      all.forEach(function (m) { if (m.source && srcs.indexOf(m.source) < 0) srcs.push(m.source); });
-      var hasNo = function (a, b) { return [['', 'Any'], ['has', a], ['no', b]]; };
-      return '<div class="row" style="gap:10px;align-items:flex-end;margin:6px 0 10px">' +
-        sel('step', 'Sign-up step', [['', 'Any'], ['0', 'Signed in only'], ['1', 'Step 1 done'], ['2', 'Step 2 done'], ['3', 'All 3 steps'], ['done', 'Account complete (step 2 or 3)']]) +
-        sel('name', 'Name', hasNo('Has a name', 'No name yet')) +
-        sel('user', 'Username', hasNo('Has a username', 'No username yet')) +
-        sel('phone', 'Phone number', hasNo('Has a phone number', 'No phone number')) +
-        sel('area', 'Area', hasNo('Has an area', 'No area yet')) +
-        sel('when', 'Joined', [['', 'Any time'], ['1', 'Last 24 hours'], ['7', 'Last 7 days'], ['30', 'Last 30 days']]) +
-        sel('via', 'Signed up on', [['', 'Anywhere'], ['website', 'Website'], ['app', 'App']]) +
-        sel('src', 'Source', [['', 'Any']].concat(srcs.sort().map(function (x) { return [x, x]; }))) +
-        sel('ver', 'Verified tick', [['', 'Any'], ['yes', 'Verified'], ['no', 'Not verified']]) +
-        sel('status', 'Account', [['', 'Any'], ['active', 'Active'], ['suspended', 'Suspended'], ['banned', 'Banned']]) +
-        sel('act', 'Activity', [['', 'Any'], ['posts', 'Has posts'], ['orders', 'Has orders'], ['none', 'No posts or orders']]) +
-        sel('who', 'Testers', [['all', 'Show everyone'], ['real', 'Real members only'], ['testers', 'Testers only']]) +
-        (filtersOn() || fil.who !== 'all' ? '<button class="btn" id="mclear">Clear filters</button>' : '') + '</div>';
-    }
-    // Everyone, for the filters (the list normally loads 50 at a time).
-    function loadAll() {
-      if (all.length >= total) return Promise.resolve();
-      return rpc('admin_list_signups', { p_limit: 200, p_offset: all.length }).then(function (r) { if (!r.length) return; all = all.concat(r); return loadAll(); });
-    }
-    function applyFilters() {
-      if (filtersOn()) { $('mres').innerHTML = '<p class="muted">Loading everyone…</p>'; return loadAll().then(draw).catch(fail); }
-      if (q) return search();
-      draw();
+      if (!local()) return q ? items : all;
+      var list = all.filter(function (m) { return matches(m); });
+      if (!sortKey) return list;
+      var f = col(sortKey)[2], num = NUMS.indexOf(sortKey) >= 0, dir = sortDir === 'desc' ? -1 : 1;
+      return list.sort(function (a, b) {
+        var x = f(a), y = f(b);
+        if (x === '' || y === '') return x === y ? 0 : x === '' ? 1 : -1;
+        return dir * (num ? Number(x) - Number(y) : x.localeCompare(y, undefined, { numeric: true }));
+      });
     }
     function loadTesters() {
       // From 0050; without it the Members tab works as before, only without the tester mark.
       return rpc('admin_tester_ids').then(function (r) { testers = {}; r.forEach(function (x) { testers[x.id] = true; }); draw(); }).catch(function () {});
     }
     function pickedIds() { return Object.keys(picked).filter(function (k) { return picked[k]; }); }
+    // Everyone, for the filters.
+    function loadAll() {
+      if (all.length >= total) return Promise.resolve();
+      return rpc('admin_list_signups', { p_limit: 200, p_offset: all.length }).then(function (r) { if (!r.length) return; all = all.concat(r); return loadAll(); });
+    }
+    function applyFilters() {
+      if (local()) { $('mres').innerHTML = '<p class="muted">Loading everyone…</p>'; return loadAll().then(draw).catch(fail); }
+      if (q) return search();
+      draw();
+    }
+    // The values of one column (with how many people have each), for its filter list.
+    function popData(k) {
+      var f = col(k)[2], counts = {};
+      all.forEach(function (m) { if (matches(m, k)) { var v = f(m); counts[v] = (counts[v] || 0) + 1; } });
+      var num = NUMS.indexOf(k) >= 0;
+      popAll = Object.keys(counts).sort(function (a, b) {
+        if (a === '' || b === '') return a === b ? 0 : a === '' ? 1 : -1;
+        return num ? Number(a) - Number(b) : a.localeCompare(b, undefined, { numeric: true });
+      }).map(function (v) { return [v, counts[v]]; });
+    }
+    function popListHtml() {
+      var shown = popAll.map(function (x, i) { return [x, i]; }).filter(function (x) { return !popQ || (x[0][0] || '(blanks)').toLowerCase().indexOf(popQ.toLowerCase()) >= 0; });
+      return shown.slice(0, 200).map(function (x) {
+        return '<label class="popitem"><input type="checkbox" data-pv="' + x[1] + '"' + (!colf[pop] || colf[pop][x[0][0]] ? ' checked' : '') + '> <span dir="auto">' + (x[0][0] === '' ? '<i>(Blanks)</i>' : esc(x[0][0])) + '</span> <span class="muted">' + x[0][1] + '</span></label>';
+      }).join('') + (shown.length > 200 ? '<p class="muted">Type to narrow down (' + shown.length + ' values).</p>' : '') + (!shown.length ? '<p class="muted">No values.</p>' : '');
+    }
+    function popHtml() {
+      if (!pop || !popPos) return '';
+      popData(pop);
+      var name = col(pop)[1];
+      return '<div id="mpback" class="popback"></div><div class="pop" style="top:' + popPos.top + 'px;left:' + popPos.left + 'px" role="dialog" aria-label="Filter ' + esc(name) + '">' +
+        '<div class="row" style="gap:6px;margin-bottom:8px"><button class="btn" data-sort="asc">Sort A→Z</button><button class="btn" data-sort="desc">Sort Z→A</button></div>' +
+        '<input type="text" id="mpq" placeholder="Search ' + esc(name.toLowerCase()) + '" value="' + esc(popQ) + '" autocomplete="off" style="width:100%;box-sizing:border-box;margin-bottom:8px">' +
+        '<label class="popitem"><input type="checkbox" id="mpall"' + (colf[pop] ? '' : ' checked') + '> <b>(Select all)</b></label>' +
+        '<div class="poplist" id="mplist">' + popListHtml() + '</div>' +
+        '<div class="row" style="margin-top:8px;gap:6px"><button class="btn" id="mpclear"' + (colf[pop] ? '' : ' disabled') + '>Clear filter</button><span class="grow"></span><button class="btn strong" id="mpclose">Done</button></div></div>';
+    }
+    function cells(m, i, list) {
+      var phone = m.whatsapp || m.phone || '';
+      return '<td dir="auto"><b>' + esc((m.display_name || '').trim() || '') + (!(m.display_name || '').trim() ? '<span class="muted">No name yet</span>' : '') + '</b>' +
+          (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
+        '<td dir="auto">' + esc(m.username ? '@' + m.username : '') + '</td>' +
+        '<td><span class="tag" title="' + esc(STAGE_HELP[stageOf(m)] || '') + '">' + esc((STAGES[stageOf(m)] || '').toUpperCase()) + '</span></td>' +
+        '<td>' + esc(m.email || '') + '</td>' +
+        '<td>' + esc(phone) + (m.whatsapp && m.phone && m.phone !== m.whatsapp ? '<br><span class="muted">' + esc(m.phone) + '</span>' : '') + '</td>' +
+        '<td>' + esc(m.area || '') + '</td><td>' + esc(m.governorate || '') + '</td>' +
+        '<td>' + esc(when(m.created_at)) + '</td><td>' + (m.via === 'website' ? 'Website' : 'App') + '</td><td>' + esc(m.source || '') + '</td>' +
+        '<td>' + (m.verified_at ? '<span class="tag">VERIFIED</span>' : '') + '</td>' +
+        '<td>' + (m.banned_at ? '<span class="tag">BANNED</span>' : m.suspended_at ? '<span class="tag">SUSPENDED</span>' : 'Active') + '</td>' +
+        '<td>' + (testers[m.id] ? '<span class="tag" title="Left out of ad and sign-up reports">TESTER</span>' : '') + '</td>' +
+        '<td>' + (m.posts || 0) + '</td><td>' + (m.orders || 0) + '</td><td>' + (m.open_reports || 0) + '</td>' +
+        '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' +
+          (canAct() && !m.staff_role && !m.banned_at ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) +
+          ' <button class="btn" data-manage="' + i + '">Manage…' + (m.notes ? ' (' + m.notes + ' note' + (m.notes === 1 ? '' : 's') + ')' : '') + '</button></td>';
+    }
     function draw() {
       var list = rows(), head = '';
-      if (filtersOn()) head = '<p class="muted"><b>' + list.length + '</b> of ' + total + ' members match.</p>';
+      if (filtersOn() || sortKey) head = '<div class="row" style="margin:0 0 6px;gap:8px"><span class="muted grow"><b>' + list.length + '</b> of ' + total + ' members' + (filtersOn() ? ' match the filters' : '') + '. Click a column title to filter or sort it.</span>' +
+        '<button class="btn" id="mreal">Real members only</button><button class="btn" id="mclear">Clear all filters</button></div>';
       else if (!q) head = listErr ? '<p class="muted">' + esc(listErr) + '</p>' :
-        '<p class="muted">Everyone who signed up, newest first: ' + total + ' in all' + (all.length < total ? ', showing ' + all.length : '') + '. Search to find one person.</p>' +
+        '<p class="muted">Everyone who signed up, newest first: ' + total + ' in all' + (all.length < total ? ', showing ' + all.length : '') + '. Click a column title to filter or sort it, or search for one person.</p>' +
         (stages ? '<p class="muted" style="margin-top:-6px">' + STAGES.map(function (n, k) { return '<span title="' + esc(STAGE_HELP[k]) + '"><b>' + (stages[k] || 0) + '</b> ' + esc(n.toLowerCase()) + '</span>'; }).join(' · ') + '</p>' : '');
       var nPicked = pickedIds().length, nTesters = Object.keys(testers).length;
-      var tools = filterBar() + (canAct() ? '<div class="row" style="margin:6px 0 10px;gap:8px"><span class="muted grow"><b>' + nTesters + '</b> marked as testers (left out of ad and sign-up reports). Tick people in the table, then:</span>' +
-        '<button class="btn" id="mtest"' + (nPicked ? '' : ' disabled') + '>Mark ' + nPicked + ' as testers</button><button class="btn" id="muntest"' + (nPicked ? '' : ' disabled') + '>Remove tester mark</button></div>' : '');
-      $('mres').innerHTML = head + tools + (!list.length ? (q || filtersOn() || fil.who !== 'all' ? '<p class="muted">No members match.</p>' : '') :
-        '<div class="tablewrap"><table><tr>' + (canAct() ? '<th><input type="checkbox" id="mall" aria-label="Tick everyone shown"' + (list.length && list.every(function (m) { return picked[m.id]; }) ? ' checked' : '') + '></th>' : '') + '<th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + list.map(function (m, i) {
-          return '<tr>' + (canAct() ? '<td><input type="checkbox" data-pick="' + i + '" aria-label="Tick"' + (picked[m.id] ? ' checked' : '') + '></td>' : '') + '<td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
-            (m.stage !== undefined && m.stage !== null ? ' <span class="tag" title="' + esc(STAGE_HELP[m.stage] || '') + '">' + esc((STAGES[m.stage] || '').toUpperCase()) + '</span>' : m.finished === false ? ' <span class="tag">PROFILE NOT FINISHED</span>' : '') +
-            (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (testers[m.id] ? ' <span class="tag" title="Left out of ad and sign-up reports">TESTER</span>' : '') + (m.banned_at ? ' <span class="tag">BANNED</span>' : m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
-            '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + (m.whatsapp ? '<br><span class="muted">WhatsApp ' + esc(m.whatsapp) + '</span>' : '') + '</td>' +
-            '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + (m.via ? ' · ' + esc(m.via) : '') + (m.source ? ' · ' + esc(m.source) : '') + '</span></td>' +
-            '<td>' + m.posts + ' posts<br>' + m.orders + ' orders<br>' + m.open_reports + ' open reports</td>' +
-            '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' +
-              (canAct() && !m.staff_role && !m.banned_at ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) +
-              ' <button class="btn" data-manage="' + i + '">Manage…' + (m.notes ? ' (' + m.notes + ' note' + (m.notes === 1 ? '' : 's') + ')' : '') + '</button></td></tr>';
+      var tools = canAct() ? '<div class="row" style="margin:6px 0 10px;gap:8px"><span class="muted grow"><b>' + nTesters + '</b> marked as testers (left out of ad and sign-up reports). Tick people in the table, then:</span>' +
+        '<button class="btn" id="mtest"' + (nPicked ? '' : ' disabled') + '>Mark ' + nPicked + ' as testers</button><button class="btn" id="muntest"' + (nPicked ? '' : ' disabled') + '>Remove tester mark</button></div>' : '';
+      var th = COLS.map(function (c) {
+        var on = !!colf[c[0]], sorted = sortKey === c[0];
+        return '<th><button class="hbtn' + (on ? ' on' : '') + '" data-h="' + c[0] + '" title="Filter or sort ' + esc(c[1].toLowerCase()) + '">' + esc(c[1]) + (sorted ? (sortDir === 'desc' ? ' ▼' : ' ▲') : '') + ' <span aria-hidden="true">' + (on ? '⧩' : '▾') + '</span></button></th>';
+      }).join('');
+      $('mres').innerHTML = head + tools + (!list.length ? (q || local() ? '<p class="muted">No members match.</p>' : '') :
+        '<div class="tablewrap"><table class="mt"><tr>' + (canAct() ? '<th><input type="checkbox" id="mall" aria-label="Tick everyone shown"' + (list.length && list.every(function (m) { return picked[m.id]; }) ? ' checked' : '') + '></th>' : '') + th + '<th></th></tr>' + list.map(function (m, i) {
+          return '<tr>' + (canAct() ? '<td><input type="checkbox" data-pick="' + i + '" aria-label="Tick"' + (picked[m.id] ? ' checked' : '') + '></td>' : '') + cells(m, i, list) + '</tr>';
         }).join('') + '</table></div>') +
-        (!q && !filtersOn() && all.length < total ? '<div class="row" style="margin-top:10px"><button class="btn" id="mmore">Show more</button></div>' : '');
+        (!q && !local() && all.length < total ? '<div class="row" style="margin-top:10px"><button class="btn" id="mmore">Show more</button></div>' : '') + popHtml();
     }
     function loadList(from, upTo) {
       return rpc('admin_list_signups', { p_limit: upTo || PAGE, p_offset: from }).then(function (r) {
@@ -867,7 +911,7 @@
     }
     function search() {
       q = $('mq').value.trim();
-      if (filtersOn()) { all = []; return loadList(0, 200).then(loadAll).then(draw).catch(fail); }
+      if (local()) { all = []; return loadList(0, 200).then(loadAll).then(draw).catch(fail); }
       if (!q) return loadList(0, Math.min(Math.max(all.length, PAGE), 200));
       return rpc('admin_find_members', { p_query: q }).then(function (r) { items = r; draw(); }).catch(fail);
     }
@@ -886,15 +930,39 @@
     }
     $('mres').onchange = function (e) {
       var list = rows();
-      var fk = e.target.getAttribute('data-f');
-      if (fk) { fil[fk] = e.target.value; if (fk === 'who') draw(); else applyFilters(); return; }
+      if (e.target.id === 'mpall') { if (e.target.checked) delete colf[pop]; else colf[pop] = {}; applyFilters(); return; }
+      var pv = e.target.getAttribute('data-pv');
+      if (pv !== null) {
+        var set = colf[pop];
+        if (!set) { set = {}; popAll.forEach(function (x) { set[x[0]] = true; }); }
+        set[popAll[pv][0]] = e.target.checked;
+        if (popAll.every(function (x) { return set[x[0]]; })) delete colf[pop]; else colf[pop] = set;
+        applyFilters(); return;
+      }
       if (e.target.id === 'mall') { list.forEach(function (m) { picked[m.id] = e.target.checked; }); draw(); return; }
       var pk = e.target.closest('[data-pick]');
       if (pk) { picked[list[pk.getAttribute('data-pick')].id] = pk.checked; draw(); }
     };
+    $('mres').oninput = function (e) {
+      if (e.target.id === 'mpq') { popQ = e.target.value; $('mplist').innerHTML = popListHtml(); }
+    };
+    // A column list is open at a fixed spot under its title; scrolling the page closes it.
+    window.addEventListener('scroll', function (ev) { if (pop && $('mpback') && !(ev.target.closest && ev.target.closest('.pop'))) { pop = ''; draw(); } }, true);
     $('mres').onclick = function (e) {
       var list = rows();
-      if (e.target.closest('#mclear')) { fil = { who: 'all' }; applyFilters(); return; }
+      var hb = e.target.closest('[data-h]');
+      if (hb) {
+        var key = hb.getAttribute('data-h'), r = hb.getBoundingClientRect();
+        if (pop === key) { pop = ''; draw(); return; }
+        pop = key; popQ = ''; popPos = { top: Math.round(r.bottom + 4), left: Math.round(Math.max(8, Math.min(r.left, window.innerWidth - 290))) };
+        $('mres').innerHTML = '<p class="muted">Loading everyone…</p>'; loadAll().then(draw).catch(fail); return;
+      }
+      if (e.target.closest('#mpback') || e.target.closest('#mpclose')) { pop = ''; draw(); return; }
+      var sb = e.target.closest('[data-sort]');
+      if (sb) { sortKey = pop; sortDir = sb.getAttribute('data-sort'); pop = ''; applyFilters(); return; }
+      if (e.target.closest('#mpclear')) { delete colf[pop]; applyFilters(); return; }
+      if (e.target.closest('#mclear')) { colf = {}; sortKey = ''; pop = ''; applyFilters(); return; }
+      if (e.target.closest('#mreal')) { colf.tester = { Real: true }; applyFilters(); return; }
       if (e.target.closest('#mtest')) { setTesters(true); return; }
       if (e.target.closest('#muntest')) { setTesters(false); return; }
       if (e.target.closest('#mmore')) { loadList(all.length); return; }
