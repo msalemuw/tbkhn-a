@@ -117,6 +117,7 @@
   .ltr { display: flex; gap: 8px; direction: ltr; }
   .ltr .pre { flex: 0 0 auto; display: flex; align-items: center; padding: 0 14px; border: 1.5px solid var(--light-blue); border-radius: 14px; font-weight: 600; }
   .ltr input { direction: ltr; text-align: left; }
+  .ltr select.pre { width: auto; max-width: 150px; padding-right: 30px; text-align: left; background-color: #fff; }
   .hint { font-size: 13.5px; color: var(--muted); margin: 6px 2px 0; line-height: 1.45; }
   .hint.bad { color: var(--navy); font-weight: 600; }
   .photo { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 6px; cursor: pointer; }
@@ -205,7 +206,7 @@
         <input id="name" type="text" autocomplete="name" maxlength="60">
 
         <label class="f" for="whatsapp" data-t="fWhatsapp"></label>
-        <div class="ltr"><span class="pre">+20</span><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="14"></div>
+        <div class="ltr"><select id="dial" class="pre" aria-label="Country code"></select><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="18"></div>
         <p class="hint" data-t="whatsappHint"></p>
 
         <label class="f" for="username"><span data-t="fUsername"></span> <span class="req">*</span></label>
@@ -380,7 +381,7 @@
       submit: 'Create my account', sending: 'Saving…',
       notYou: 'Not you? Use another account',
       errName: 'Please write your name.', errUsername: 'Please choose an available username.',
-      errPhone: 'Please write a valid Egyptian mobile number, like 010 1234 5678.',
+      errPhone: 'Please write a valid mobile number for the country code you chose (Egypt example: 010 1234 5678).',
       errGov: 'Please choose your governorate.', errArea: 'Please choose or type your area.',
       errNet: 'We couldn’t save your account. Check your connection and try again.',
       errSignIn: 'We couldn’t sign you in. Please try again.',
@@ -447,7 +448,7 @@
       submit: 'اعمل حسابي', sending: 'جاري الحفظ…',
       notYou: 'مش إنت؟ ادخل بحساب تاني',
       errName: 'من فضلك اكتب اسمك.', errUsername: 'من فضلك اختار اسم مستخدم متاح.',
-      errPhone: 'من فضلك اكتب رقم موبايل مصري صحيح، زي 010 1234 5678.',
+      errPhone: 'من فضلك اكتب رقم موبايل صحيح لكود الدولة اللي اخترته (مثال مصر: 010 1234 5678).',
       errGov: 'من فضلك اختار محافظتك.', errArea: 'من فضلك اختار أو اكتب منطقتك.',
       errNet: 'مقدرناش نحفظ حسابك. اتأكد من الإنترنت وجرّب تاني.',
       errSignIn: 'مقدرناش ندخلك. جرّب تاني.',
@@ -977,15 +978,40 @@
     document.querySelectorAll('#loves button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
   });
 
-  // Egyptian mobile: 01x + 8 digits, written with or without the 0, +20 or 0020; Arabic digits allowed.
-  function normalizePhone(raw) {
+  // Mobile numbers by country code (the same list as the app's src/lib/phone.ts). Egypt is the default; each country has the shape of
+  // its mobile numbers, and the rest accept 6 to 12 digits. Written with or without the 0, the dial code or 00; Arabic digits allowed.
+  var G = /^\d{6,12}$/, NANP = /^[2-9]\d{9}$/;
+  var DIALS = [
+    ['EG', '20', 'Egypt', /^1[0125]\d{8}$/, '10 1234 5678'], ['AE', '971', 'United Arab Emirates', /^5\d{8}$/, '50 123 4567'],
+    ['SA', '966', 'Saudi Arabia', /^5\d{8}$/, '51 234 5678'], ['KW', '965', 'Kuwait', /^[569]\d{7}$/, '5123 4567'],
+    ['QA', '974', 'Qatar', /^[3567]\d{7}$/, '3312 3456'], ['BH', '973', 'Bahrain', /^[36]\d{7}$/, '3600 1234'],
+    ['OM', '968', 'Oman', /^[79]\d{7}$/, '9212 3456'], ['JO', '962', 'Jordan', /^7\d{8}$/, '79 012 3456'],
+    ['LB', '961', 'Lebanon', G, '71 123 456'], ['IQ', '964', 'Iraq', G, '791 234 5678'], ['SY', '963', 'Syria', G, '944 567 890'],
+    ['PS', '970', 'Palestine', G, '599 123 456'], ['YE', '967', 'Yemen', G, '712 345 678'], ['LY', '218', 'Libya', G, '91 234 5678'],
+    ['TN', '216', 'Tunisia', G, '20 123 456'], ['DZ', '213', 'Algeria', G, '551 23 45 67'], ['MA', '212', 'Morocco', G, '612 345 678'],
+    ['SD', '249', 'Sudan', G, '91 234 5678'], ['TR', '90', 'Turkey', G, '501 234 56 78'], ['GB', '44', 'United Kingdom', G, '7400 123456'],
+    ['US', '1', 'United States', NANP, '201 555 0123'], ['CA', '1', 'Canada', NANP, '506 234 5678'], ['DE', '49', 'Germany', G, '1512 3456789'],
+    ['FR', '33', 'France', G, '6 12 34 56 78'], ['IT', '39', 'Italy', G, '312 345 6789'], ['ES', '34', 'Spain', G, '612 34 56 78'],
+    ['NL', '31', 'Netherlands', G, '6 12345678'], ['SE', '46', 'Sweden', G, '70 123 45 67'], ['CH', '41', 'Switzerland', G, '78 123 45 67'],
+    ['AU', '61', 'Australia', G, '412 345 678'], ['IE', '353', 'Ireland', G, '85 012 3456'], ['CY', '357', 'Cyprus', G, '96 123456'],
+    ['GR', '30', 'Greece', G, '691 234 5678'], ['MY', '60', 'Malaysia', G, '12 345 6789']
+  ];
+  function dialOf(cc) { for (var i = 0; i < DIALS.length; i++) if (DIALS[i][0] === cc) return DIALS[i]; return DIALS[0]; }
+  function normalizePhone(raw, cc) {
+    var dl = dialOf(cc || 'EG');
     var d = raw.replace(/[٠-٩]/g, function (c) { return String(c.charCodeAt(0) - 0x0660); })
                .replace(/[۰-۹]/g, function (c) { return String(c.charCodeAt(0) - 0x06f0); })
                .replace(/\D/g, '');
-    if (d.indexOf('0020') === 0) d = d.slice(4); else if (d.indexOf('20') === 0 && d.length === 12) d = d.slice(2);
+    if (d.indexOf('00') === 0) d = d.slice(2);
+    if (d.indexOf(dl[1]) === 0 && dl[3].test(d.slice(dl[1].length))) d = d.slice(dl[1].length);
     if (d.charAt(0) === '0') d = d.slice(1);
-    return /^1[0125]\d{8}$/.test(d) ? '+20' + d : null;
+    return dl[3].test(d) ? '+' + dl[1] + d : null;
   }
+  (function fillDials() {
+    var sel = document.getElementById('dial');
+    DIALS.forEach(function (x) { sel.appendChild(option(x[0], x[2] + ' (+' + x[1] + ')', x[0] === 'EG')); });
+    sel.addEventListener('change', function () { document.getElementById('whatsapp').placeholder = dialOf(sel.value)[4]; autosaveBasics(); });
+  })();
 
   // The same key the database uses to refuse duplicate communities (communities.name_key, like the app's nameKey).
   function nameKey(n) {
@@ -1032,7 +1058,7 @@
     if (!state.user || state.part === 2 || state.part === 3) return;
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(function () {
-      var row = {}, nm = $('name').value.trim(), wa = $('whatsapp').value.trim(), num = wa ? normalizePhone(wa) : null;
+      var row = {}, nm = $('name').value.trim(), wa = $('whatsapp').value.trim(), num = wa ? normalizePhone(wa, $('dial').value) : null;
       if (nm.length >= 2) row.display_name = nm;
       if (num) row.whatsapp = num;
       if (!row.display_name && !row.whatsapp) return;
@@ -1052,7 +1078,7 @@
       if (!name) return fail('errName');
       if (username.length < 3 || state.taken !== false) return fail('errUsername');
       // Not required, so nobody drops out here, and nothing says it is optional; a half-typed number must be finished.
-      var wa1 = $('whatsapp').value.trim(), whatsapp1 = wa1 ? normalizePhone(wa1) : null;
+      var wa1 = $('whatsapp').value.trim(), whatsapp1 = wa1 ? normalizePhone(wa1, $('dial').value) : null;
       if (wa1 && !whatsapp1) return fail('errPhone');
       var b1 = $('submit'), uid1 = state.user.id;
       b1.disabled = true; b1.textContent = t('sending');
