@@ -764,20 +764,32 @@
   var STAGE_HELP = ['signed in with Google or Apple but did not save a username', 'photo, name and username saved, required details not yet', 'required details saved (the account is complete), optional extras not yet', 'optional extras saved or skipped'];
   // Members: everyone who signed up (newest first), search, verify, suspend, download
   function viewMembers(v) {
-    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '', stages = null;
+    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '', stages = null, testers = {}, picked = {}, only = 'all';
     v.innerHTML = '<div class="row"><h2 class="grow">Members</h2>' + (role === 'owner' ? '<button class="btn" id="exportMembers">Download all members (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="mq" placeholder="Username, name, phone or email" autocomplete="off"><button class="btn strong" id="mgo">Search</button></div><div id="mres"></div></div>';
-    function rows() { return q ? items : all; }
+    function rows() {
+      var base = q ? items : all;
+      return only === 'real' ? base.filter(function (m) { return !testers[m.id]; }) : only === 'testers' ? base.filter(function (m) { return testers[m.id]; }) : base;
+    }
+    function loadTesters() {
+      // From 0050; without it the Members tab works as before, only without the tester mark.
+      return rpc('admin_tester_ids').then(function (r) { testers = {}; r.forEach(function (x) { testers[x.id] = true; }); draw(); }).catch(function () {});
+    }
+    function pickedIds() { return Object.keys(picked).filter(function (k) { return picked[k]; }); }
     function draw() {
       var list = rows(), head = '';
       if (!q) head = listErr ? '<p class="muted">' + esc(listErr) + '</p>' :
         '<p class="muted">Everyone who signed up, newest first: ' + total + ' in all' + (all.length < total ? ', showing ' + all.length : '') + '. Search to find one person.</p>' +
         (stages ? '<p class="muted" style="margin-top:-6px">' + STAGES.map(function (n, k) { return '<span title="' + esc(STAGE_HELP[k]) + '"><b>' + (stages[k] || 0) + '</b> ' + esc(n.toLowerCase()) + '</span>'; }).join(' · ') + '</p>' : '');
-      $('mres').innerHTML = head + (!list.length ? (q ? '<p class="muted">No members match.</p>' : '') :
-        '<div class="tablewrap"><table><tr><th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + list.map(function (m, i) {
-          return '<tr><td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
+      var nPicked = pickedIds().length, nTesters = Object.keys(testers).length;
+      var tools = canAct() ? '<div class="row" style="margin:6px 0 10px;gap:8px"><span class="muted grow"><b>' + nTesters + '</b> marked as testers (left out of ad and sign-up reports). Tick people in the table, then:</span>' +
+        '<select id="mshow" aria-label="Show"><option value="all"' + (only === 'all' ? ' selected' : '') + '>Show everyone</option><option value="real"' + (only === 'real' ? ' selected' : '') + '>Real members only</option><option value="testers"' + (only === 'testers' ? ' selected' : '') + '>Testers only</option></select>' +
+        '<button class="btn" id="mtest"' + (nPicked ? '' : ' disabled') + '>Mark ' + nPicked + ' as testers</button><button class="btn" id="muntest"' + (nPicked ? '' : ' disabled') + '>Remove tester mark</button></div>' : '';
+      $('mres').innerHTML = head + tools + (!list.length ? (q ? '<p class="muted">No members match.</p>' : '') :
+        '<div class="tablewrap"><table><tr>' + (canAct() ? '<th><input type="checkbox" id="mall" aria-label="Tick everyone shown"' + (list.length && list.every(function (m) { return picked[m.id]; }) ? ' checked' : '') + '></th>' : '') + '<th>Member</th><th>Contact</th><th>Where</th><th>Activity</th><th></th></tr>' + list.map(function (m, i) {
+          return '<tr>' + (canAct() ? '<td><input type="checkbox" data-pick="' + i + '" aria-label="Tick"' + (picked[m.id] ? ' checked' : '') + '></td>' : '') + '<td dir="auto"><b>' + esc(m.display_name || who(m.username)) + '</b><br><span class="muted">' + esc(m.username ? '@' + m.username : '') + '</span>' +
             (m.stage !== undefined && m.stage !== null ? ' <span class="tag" title="' + esc(STAGE_HELP[m.stage] || '') + '">' + esc((STAGES[m.stage] || '').toUpperCase()) + '</span>' : m.finished === false ? ' <span class="tag">PROFILE NOT FINISHED</span>' : '') +
-            (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (m.banned_at ? ' <span class="tag">BANNED</span>' : m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
+            (m.verified_at ? ' <span class="tag">VERIFIED</span>' : '') + (testers[m.id] ? ' <span class="tag" title="Left out of ad and sign-up reports">TESTER</span>' : '') + (m.banned_at ? ' <span class="tag">BANNED</span>' : m.suspended_at ? ' <span class="tag">SUSPENDED</span>' : '') + (m.warnings ? ' <span class="tag">' + m.warnings + ' WARNING' + (m.warnings === 1 ? '' : 'S') + '</span>' : '') + (m.staff_role ? ' <span class="tag">' + esc(m.staff_role.toUpperCase()) + '</span>' : '') + '</td>' +
             '<td>' + esc(m.email || '') + '<br>' + esc(m.phone || '') + (m.whatsapp ? '<br><span class="muted">WhatsApp ' + esc(m.whatsapp) + '</span>' : '') + '</td>' +
             '<td>' + esc([m.area, m.governorate].filter(Boolean).join(', ')) + '<br><span class="muted">joined ' + esc(when(m.created_at)) + (m.via ? ' · ' + esc(m.via) : '') + (m.source ? ' · ' + esc(m.source) : '') + '</span></td>' +
             '<td>' + m.posts + ' posts<br>' + m.orders + ' orders<br>' + m.open_reports + ' open reports</td>' +
@@ -805,14 +817,28 @@
     }
     $('mgo').onclick = search;
     $('mq').onkeydown = function (e) { if (e.key === 'Enter') search(); };
-    draw(); loadList(0);
+    draw(); loadList(0).then(loadTesters);
     var ex = $('exportMembers');
     if (ex) ex.onclick = function () {
       ex.disabled = true;
       rpc('admin_export_members').then(function (rows) { downloadCsv('tabkheen-members', rows); }).catch(fail).then(function () { ex.disabled = false; });
     };
+    function setTesters(value) {
+      var ids = pickedIds();
+      if (!ids.length) return;
+      rpc('admin_set_testers', { p_ids: ids, p_value: value }).then(function () { picked = {}; return loadTesters(); }).catch(fail);
+    }
+    $('mres').onchange = function (e) {
+      var list = rows();
+      if (e.target.id === 'mshow') { only = e.target.value; draw(); return; }
+      if (e.target.id === 'mall') { list.forEach(function (m) { picked[m.id] = e.target.checked; }); draw(); return; }
+      var pk = e.target.closest('[data-pick]');
+      if (pk) { picked[list[pk.getAttribute('data-pick')].id] = pk.checked; draw(); }
+    };
     $('mres').onclick = function (e) {
       var list = rows();
+      if (e.target.closest('#mtest')) { setTesters(true); return; }
+      if (e.target.closest('#muntest')) { setTesters(false); return; }
       if (e.target.closest('#mmore')) { loadList(all.length); return; }
       var vf = e.target.closest('[data-verify]'), li = e.target.closest('[data-lift]'), su = e.target.closest('[data-susp]'), mg = e.target.closest('[data-manage]');
       if (mg) manageMember(list[mg.getAttribute('data-manage')], search);
