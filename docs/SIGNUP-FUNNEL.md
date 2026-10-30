@@ -43,3 +43,6 @@ Phone number, email and username must each be unique across all accounts, across
 
 ## Admin dashboard
 The **Sign-up funnel** tab of the web admin (`website/admin`, migration `0031_admin_signup_funnel.sql`) reads this table: visits per step, day by day, stuck points, per-ad results and unfinished sign-ups. Counts are of distinct `session_id`s; the website's Google/Apple redirect starts a new visit, so a step can read slightly above the one before it.
+
+## Printed handouts (2026-10-30)
+The New Giza flyer's QR code opens `tabkheen-a.com/ng`, which `website/_redirects` sends to the sign-up page with `utm_source=handout`, `utm_medium=print`, `utm_campaign=newgiza_handout`, `utm_term=New Giza`, `utm_content=flyer_v1`. Those tags ride on every web event and are saved in `profiles.signup_source`, so the admin shows these sign-ups as source "handout" and the funnel tab can split them by campaign. A new handout gets its own short link (for example `/ng2`) and its own `utm_content`.
