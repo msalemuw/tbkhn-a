@@ -14,7 +14,18 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
 <script src="config.js"></script>
-<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+  // Google draws its button in the language it is loaded with (hl), so load it in the page language.
+  var gsiLang = (function () {
+    var q = new URLSearchParams(location.search).get('lang'), saved = null;
+    try { saved = localStorage.getItem('tabkheen.lang'); } catch (e) {}
+    return q === 'en' || q === 'ar' ? q : (saved || (/^ar/i.test(navigator.language || '') ? 'ar' : 'en'));
+  })();
+  var gsiScript = document.createElement('script');
+  gsiScript.src = 'https://accounts.google.com/gsi/client?hl=' + gsiLang;
+  gsiScript.async = true;
+  document.head.appendChild(gsiScript);
+</script>
 <style>
   /* The tabkheen A palette (founder, 2026-10-04): only these five colors, plus see-through tints. */
   :root {
@@ -650,7 +661,12 @@
   }
 
   document.querySelectorAll('.lang button').forEach(function (b) {
-    b.addEventListener('click', function () { lang = b.dataset.lang; store('tabkheen.lang', lang); render(); });
+    b.addEventListener('click', function () {
+      lang = b.dataset.lang; store('tabkheen.lang', lang);
+      // The Google button only changes language when its script is loaded again.
+      if (lang !== gsiLang && state.step === 'start') { var u = new URL(location.href); u.searchParams.set('lang', lang); location.replace(u.toString()); return; }
+      render();
+    });
   });
 
   // ---------- step 1: leaving Instagram / Facebook ----------
