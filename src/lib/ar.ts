@@ -200,7 +200,13 @@ export const ar: Record<string, string> = {
 
   // Search tab
   'Area or neighborhood': 'منطقة أو حي',
-  'Can’t find your compound, club or school?': 'مش لاقي الكمبوند أو النادي أو المدرسة بتاعتك؟',
+  'Can’t find your community?': 'مش لاقي المجتمع بتاعك؟',
+  'Add your compound, club, school or work.': 'ضيف الكمبوند أو النادي أو المدرسة أو الشغل بتاعك.',
+  'Add a new community': 'ضيف مجتمع جديد',
+  'No community named “{n}” yet': 'مفيش مجتمع اسمه “{n}” لسه',
+  'Be the first. We will review it and tell you when it is open to join.': 'كن أول واحد. هنراجعه ونقولك أول ما يتفتح للانضمام.',
+  'Add “{n}”': 'ضيف “{n}”',
+  'No communities to show yet.': 'لسه مفيش مجتمعات نعرضها.',
   'Clear search': 'امسح البحث',
   Club: 'نادي',
   'Communities you can join': 'مجتمعات تقدر تنضم ليها',
