@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { colors, fonts } from '@/constants/theme';
+import { t } from '@/lib/i18n';
 
 // Errors: navy text on yellow, since the palette has no red.
 export const danger = colors.yellow;
@@ -130,7 +131,7 @@ export function PickerSheet({
   items: SheetItem[] | null;
   onClose: () => void;
   searchable?: boolean;
-  footer?: { label: string; onPress: () => void };
+  footer?: { label: string; onPress: (typed?: string) => void };
 }) {
   const [q, setQ] = useState('');
   const [expanded, setExpanded] = useState(false);
@@ -202,7 +203,19 @@ export function PickerSheet({
                 {it.selected ? <MaterialIcons name="check" size={20} color={colors.teal} /> : null}
               </Pressable>
             ))}
-            {!shown.length ? <Text style={styles.none}>No matches</Text> : null}
+            {!shown.length && footer && needle ? (
+              <View style={styles.noneBox}>
+                <Text style={styles.noneTitle}>{t('No match for “{n}” yet', { n: q.trim() })}</Text>
+                <Pressable
+                  style={styles.noneBtn}
+                  onPress={() => {
+                    footer.onPress(q.trim());
+                    close();
+                  }}>
+                  <Text style={styles.noneBtnText}>{t('Add “{n}”', { n: q.trim() })}</Text>
+                </Pressable>
+              </View>
+            ) : !shown.length ? <Text style={styles.none}>No matches</Text> : null}
           </ScrollView>
           {footer ? (
             <Pressable
@@ -249,6 +262,10 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, marginBottom: 4 },
   searchInput: { flex: 1, fontFamily: fonts.semiBold, fontSize: 16, color: colors.ink, paddingVertical: 10 },
   none: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, paddingVertical: 14 },
+  noneBox: { alignItems: 'center', paddingVertical: 14, paddingHorizontal: 6 },
+  noneTitle: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.ink, textAlign: 'center', marginBottom: 12 },
+  noneBtn: { alignSelf: 'stretch', backgroundColor: colors.yellow, borderRadius: 16, paddingVertical: 13, alignItems: 'center' },
+  noneBtnText: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.ink },
   grabArea: { paddingVertical: 14, alignItems: 'center' },
   grab: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line },
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginBottom: 6 },

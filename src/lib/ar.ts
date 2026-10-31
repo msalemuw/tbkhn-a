@@ -206,6 +206,7 @@ export const ar: Record<string, string> = {
   'No community named “{n}” yet': 'مفيش مجتمع اسمه “{n}” لسه',
   'Be the first. We will review it and tell you when it is open to join.': 'كن أول واحد. هنراجعه ونقولك أول ما يتفتح للانضمام.',
   'Add “{n}”': 'ضيف “{n}”',
+  'No match for “{n}” yet': 'مفيش نتيجة لـ “{n}” لسه',
   'No communities to show yet.': 'لسه مفيش مجتمعات نعرضها.',
   'Clear search': 'امسح البحث',
   Club: 'نادي',
