@@ -23,6 +23,7 @@ import { usePlace } from '@/lib/location';
 import { fetchCommunityLogos } from '@/lib/community';
 import { fetchMyCommunities, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
+import { t } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { VerifiedTick } from '@/lib/verified';
@@ -65,6 +66,7 @@ export default function Search() {
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requested, setRequested] = useState<string | null>(null);
+  const [prefill, setPrefill] = useState('');
 
   // Refetched whenever the tab is focused again, so a logo changed on the community page shows here.
   useFocusEffect(
@@ -160,8 +162,9 @@ export default function Search() {
     setRequest(null);
   }
 
-  function openRequest() {
+  function openRequest(name = '') {
     if (!me) return router.push('/sign-up');
+    setPrefill(name);
     setKindSheet(true);
   }
 
@@ -176,7 +179,7 @@ export default function Search() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.title}>Find cooks & communities</Text>
         <View style={styles.pad}>
           <View style={styles.search}>
@@ -224,7 +227,19 @@ export default function Search() {
 
         <Text style={[styles.head, styles.pad, { marginTop: 14 }]}>Communities you can join</Text>
         <View style={styles.pad}>
-          {found?.communities.length === 0 && !loading ? <Text style={styles.emptyLeft}>No community found. You can request it below.</Text> : null}
+          {found?.communities.length === 0 && !loading && !text ? <Text style={styles.emptyLeft}>No communities to show yet.</Text> : null}
+          {found?.communities.length === 0 && !loading && text ? (
+            <View style={styles.none}>
+              <View style={styles.noneIcon}>
+                <MaterialIcons name="help-outline" size={30} color={colors.ink} />
+              </View>
+              <Text style={styles.noneTitle}>{t('No community named “{n}” yet', { n: text.trim() })}</Text>
+              <Text style={styles.noneSub}>Be the first. We will review it and tell you when it is open to join.</Text>
+              <Pressable style={styles.noneBtn} onPress={() => openRequest(text.trim())} accessibilityRole="button">
+                <Text style={styles.noneBtnText}>{t('Add “{n}”', { n: text.trim() })}</Text>
+              </Pressable>
+            </View>
+          ) : null}
           {found?.communities.map((c) => (
             <Pressable key={c.id} style={styles.row} onPress={() => router.push({ pathname: '/community/[id]', params: { id: c.id } })} accessibilityRole="button">
               <View style={styles.commIcon}>
@@ -243,19 +258,28 @@ export default function Search() {
           ))}
         </View>
 
-        <View style={[styles.pad, { marginTop: 8 }]}>
-          <Pressable style={styles.request} onPress={openRequest} accessibilityRole="button">
-            <MaterialIcons name="add-circle" size={20} color={colors.ink} />
-            <Text style={styles.requestText}>Request a new community</Text>
-          </Pressable>
-          <Text style={styles.hint}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Can’t find your compound, club or school?'}</Text>
-        </View>
       </ScrollView>
+
+      <View style={styles.dock}>
+        <Pressable style={styles.request} onPress={() => openRequest()} accessibilityRole="button" accessibilityLabel="Add a new community">
+          <View style={styles.requestIcon}>
+            <MaterialIcons name="add" size={26} color={colors.ink} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.requestTitle}>Can’t find your community?</Text>
+            <Text style={styles.requestText}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Add your compound, club, school or work.'}</Text>
+          </View>
+          <View style={styles.requestAdd}>
+            <Text style={styles.requestAddText}>Add</Text>
+          </View>
+        </Pressable>
+      </View>
 
       <PickerSheet title="What kind of community?" items={kindSheet ? kindItems : null} onClose={() => setKindSheet(false)} />
       <RequestCommunitySheet
         key={request ? 'open' : 'closed'}
         visible={request !== null}
+        initialName={prefill}
         existing={request ? (found?.communities ?? []).filter((c) => c.kind === request.kind && c.governorate === profile?.governorate) : []}
         onUseExisting={(id) => {
           setRequest(null);
@@ -298,9 +322,19 @@ const styles = StyleSheet.create({
   commIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   pill: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 },
   pillText: { fontFamily: fonts.extraBold, fontSize: 12.5, color: colors.ink },
-  request: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.teal, borderRadius: 14, paddingVertical: 13, backgroundColor: colors.lightBlue },
-  requestText: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.ink },
-  hint: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.muted, textAlign: 'center', marginTop: 8 },
+  dock: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 12, backgroundColor: colors.paper },
+  request: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 14, backgroundColor: colors.navy },
+  requestIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.yellow, alignItems: 'center', justifyContent: 'center' },
+  requestTitle: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.white },
+  requestText: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.white, marginTop: 2 },
+  requestAdd: { backgroundColor: colors.yellow, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 8 },
+  requestAddText: { fontFamily: fonts.extraBold, fontSize: 13.5, color: colors.ink },
+  none: { alignItems: 'center', paddingVertical: 18 },
+  noneIcon: { width: 64, height: 64, borderRadius: 20, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
+  noneTitle: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink, textAlign: 'center', marginTop: 14 },
+  noneSub: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 6, marginBottom: 16, paddingHorizontal: 12 },
+  noneBtn: { alignSelf: 'stretch', backgroundColor: colors.yellow, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  noneBtnText: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.ink },
   empty: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center', padding: 22 },
   emptyLeft: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, paddingVertical: 8 },
 });

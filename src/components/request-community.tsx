@@ -13,6 +13,7 @@ export function RequestCommunitySheet({
   kindLabel,
   where,
   existing,
+  initialName = '',
   busy,
   error,
   onSubmit,
@@ -23,13 +24,14 @@ export function RequestCommunitySheet({
   kindLabel: string;
   where: string;
   existing: { id: string; name: string }[];
+  initialName?: string;
   busy: boolean;
   error: string | null;
   onSubmit: (name: string) => void;
   onUseExisting: (id: string) => void;
   onClose: () => void;
 }) {
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName);
   const keyboard = useKeyboardHeight();
   const { exact, close } = similarNames(name, existing);
   const ok = name.trim().length >= 2 && !exact;
