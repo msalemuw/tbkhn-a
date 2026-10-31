@@ -92,7 +92,7 @@ export default function ProfileStep() {
   const [country, setCountry] = useState('EG');
   const [regions, setRegions] = useState<Region[]>([]);
   const [requested, setRequested] = useState<Community[]>([]);
-  const [request, setRequest] = useState<{ kind: string; noun: string } | null>(null);
+  const [request, setRequest] = useState<{ kind: string; noun: string; name?: string } | null>(null);
   const [requestBusy, setRequestBusy] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [gov, setGov] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export default function ProfileStep() {
   const [heardPick, setHeardPick] = useState<string | null>(null);
   const [heardText, setHeardText] = useState('');
   const [inviter, setInviter] = useState('');
-  const [sheet, setSheet] = useState<{ title: string; items: SheetItem[]; searchable?: boolean; footer?: { label: string; onPress: () => void } } | null>(null);
+  const [sheet, setSheet] = useState<{ title: string; items: SheetItem[]; searchable?: boolean; footer?: { label: string; onPress: (typed?: string) => void } } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -208,16 +208,16 @@ export default function ProfileStep() {
     options: { label: string; value: string | null }[],
     current: string | null,
     set: (v: string | null) => void,
-    extra?: { searchable?: boolean; footer?: { label: string; onPress: () => void } },
+    extra?: { searchable?: boolean; footer?: { label: string; onPress: (typed?: string) => void } },
   ) {
     setSheet({ title, items: options.map((o) => ({ label: o.label, selected: o.value === current, onPress: () => set(o.value) })), ...extra });
   }
 
-  function openRequest(kind: string, noun: string) {
+  function openRequest(kind: string, noun: string, name?: string) {
     if (!gov?.trim()) return setError(`Choose your ${typedRegion ? 'region' : 'governorate'} first, then request your ${noun}.`);
     setError(null);
     setRequestError(null);
-    setRequest({ kind, noun });
+    setRequest({ kind, noun, name });
   }
 
   async function sendRequest(communityName: string) {
@@ -563,7 +563,7 @@ export default function ProfileStep() {
                 gov?.trim() &&
                 openPicker('Area', areas.map((a) => ({ label: label(a), value: a.id })), areaId, setAreaId, {
                   searchable: true,
-                  footer: { label: 'Can’t find your area? Request it', onPress: () => openRequest('area', 'area') },
+                  footer: { label: 'Can’t find your area? Request it', onPress: (n) => openRequest('area', 'area', n) },
                 })
               }
             />
@@ -584,7 +584,7 @@ export default function ProfileStep() {
                     [...all.filter((c) => c.kind === kind && inCountry(c)).map((c) => ({ label: label(c), value: c.id })), { label: 'None', value: null }],
                     optional[kind] ?? null,
                     (v) => setOptional((o) => ({ ...o, [kind]: v ?? undefined })),
-                    { searchable: true, footer: { label: `Can’t find your ${noun}? Request it`, onPress: () => openRequest(kind, noun) } },
+                    { searchable: true, footer: { label: `Can’t find your ${noun}? Request it`, onPress: (n) => openRequest(kind, noun, n) } },
                   )
                 }
               />
@@ -670,6 +670,7 @@ export default function ProfileStep() {
       <RequestCommunitySheet
         key={request ? 'open' : 'closed'}
         visible={request !== null}
+        initialName={request?.name}
         existing={request ? all.filter((c) => c.kind === request.kind && c.governorate.toLowerCase() === (gov ?? '').trim().toLowerCase() && inCountry(c)) : []}
         onUseExisting={(id) => {
           if (request?.kind === 'area') setAreaId(id);
