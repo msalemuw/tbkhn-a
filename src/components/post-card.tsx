@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   meta: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted },
   cooking: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3, alignSelf: 'flex-start' },
   cookingText: { fontFamily: fonts.extraBold, fontSize: 13, color: ui.deep },
-  photo: { width: '100%', height: 270, marginTop: 12, borderRadius: 16, backgroundColor: colors.cream },
+  photo: { width: '100%', aspectRatio: 1, marginTop: 12, borderRadius: 16, backgroundColor: colors.cream },
   caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },
   more: { fontFamily: fonts.bold, color: colors.muted },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingTop: 12 },
