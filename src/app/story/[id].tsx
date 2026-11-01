@@ -172,7 +172,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
 
   return (
     <View style={styles.screen}>
-      {photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="contain" /> : <View style={[StyleSheet.absoluteFill, styles.plain]} />}
+      {photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <View style={[StyleSheet.absoluteFill, styles.plain]} />}
       <View style={[StyleSheet.absoluteFill, styles.shade]} pointerEvents="none" />
       <View style={StyleSheet.absoluteFill}>
         <Pressable style={styles.tapPrev} onPress={onPrev} accessibilityLabel="Previous" />

@@ -30,7 +30,7 @@ export default function ComposeStory() {
   }, [uid]);
 
   async function pickPhoto(camera: boolean) {
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] };
+    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: false };
     if (camera) {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) return;
@@ -114,8 +114,8 @@ const styles = StyleSheet.create({
   closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
   // Stories are tall, like the full-screen viewer: a 9:16 crop, shown at 60% width so the form stays in reach.
-  photoWrap: { width: '80%', alignSelf: 'center' },
-  photo: { width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: colors.cream },
+  photoWrap: { width: '60%', alignSelf: 'center' },
+  photo: { width: '100%', aspectRatio: 9 / 16, borderRadius: 18, backgroundColor: colors.cream },
   photoEmpty: { flexDirection: 'row', gap: 12, aspectRatio: 2.2, borderRadius: 18, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center' },
   photoBtn: { alignItems: 'center', gap: 6, backgroundColor: colors.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
   photoBtnText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
