@@ -256,24 +256,25 @@ export default function Search() {
               <Pill label={joined.has(c.id) ? 'Joined' : 'Join'} on={!joined.has(c.id)} onPress={() => toggleJoin(c.id)} />
             </Pressable>
           ))}
+          {text.trim() && found?.communities.length ? (
+            <View style={styles.dock}>
+              <Pressable style={styles.request} onPress={() => openRequest()} accessibilityRole="button" accessibilityLabel="Add a new community">
+                <View style={styles.requestIcon}>
+                  <MaterialIcons name="add" size={26} color={colors.ink} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.requestTitle}>Can’t find your community?</Text>
+                  <Text style={styles.requestText}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Add your compound, club, school or work.'}</Text>
+                </View>
+                <View style={styles.requestAdd}>
+                  <Text style={styles.requestAddText}>Add</Text>
+                </View>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
       </ScrollView>
-
-      <View style={styles.dock}>
-        <Pressable style={styles.request} onPress={() => openRequest()} accessibilityRole="button" accessibilityLabel="Add a new community">
-          <View style={styles.requestIcon}>
-            <MaterialIcons name="add" size={26} color={colors.ink} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.requestTitle}>Can’t find your community?</Text>
-            <Text style={styles.requestText}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Add your compound, club, school or work.'}</Text>
-          </View>
-          <View style={styles.requestAdd}>
-            <Text style={styles.requestAddText}>Add</Text>
-          </View>
-        </Pressable>
-      </View>
 
       <PickerSheet title="What kind of community?" items={kindSheet ? kindItems : null} onClose={() => setKindSheet(false)} />
       <RequestCommunitySheet
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
   commIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   pill: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 7 },
   pillText: { fontFamily: fonts.extraBold, fontSize: 12.5, color: colors.ink },
-  dock: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 12, backgroundColor: colors.paper },
+  dock: { paddingTop: 10 },
   request: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 14, backgroundColor: colors.navy },
   requestIcon: { width: 46, height: 46, borderRadius: 14, backgroundColor: colors.yellow, alignItems: 'center', justifyContent: 'center' },
   requestTitle: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.white },
