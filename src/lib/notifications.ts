@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string; ticket_id?: string; subject?: string; preview?: string };
+  payload: { reservation_id?: string; post_id?: string; ref?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string; ticket_id?: string; subject?: string; preview?: string };
   created_at: string;
   read_at: string | null;
 };
@@ -88,6 +88,11 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
   }
 }
 
+/** A like or comment on a signature or ordinary post (not a menu dish): the post is in `ref` and its author is the profile. */
+export function isPostReaction(n: Notification): boolean {
+  return (n.kind === 'post_liked' || n.kind === 'post_commented') && !n.payload.post_id && !!n.payload.ref && !!n.payload.profile_id;
+}
+
 /** The Notifications tab of the inbox (the plain `/inbox` opens Messages). */
 export const NOTIFICATIONS_PATH = '/inbox?tab=notifications';
 
@@ -97,6 +102,7 @@ export function notificationPath(n: Notification): string {
   if (n.kind === 'post_removed' || n.kind.startsWith('community_')) return NOTIFICATIONS_PATH;
   if (n.payload.reservation_id) return `/order/${n.payload.reservation_id}`;
   if (n.payload.post_id) return `/dish/${n.payload.post_id}`;
+  if (isPostReaction(n)) return `/post/${n.payload.ref}?by=${n.payload.profile_id}`;
   if (n.payload.profile_id) return `/cook/${n.payload.profile_id}`;
   return NOTIFICATIONS_PATH;
 }
