@@ -11,7 +11,7 @@ import { Avatar } from '@/components/avatar';
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { normalizeSocial, SOCIALS } from '@/lib/social';
-import { topFirst } from '@/lib/regions';
+import { type Country, fetchCountries, fetchRegions, topFirst } from '@/lib/regions';
 import { uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -51,11 +51,24 @@ export default function EditProfile() {
       .order('name')
       .then(({ data }) => setAreas((data as AreaRow[] | null) ?? []));
   }, []);
-  const country = (profile as { country_code?: string | null } | null)?.country_code ?? 'EG';
+  const profileCountry = (profile as { country_code?: string | null } | null)?.country_code ?? 'EG';
+  const [country, setCountry] = useState(profileCountry);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [regionNames, setRegionNames] = useState<string[]>([]);
+  useEffect(() => {
+    fetchCountries().then(setCountries, () => null);
+  }, []);
+  useEffect(() => {
+    let live = true;
+    fetchRegions(country).then((r) => live && setRegionNames(r.map((x) => x.name)), () => live && setRegionNames([]));
+    return () => {
+      live = false;
+    };
+  }, [country]);
   const inCountry = areas.filter((a) => (a.country_code ?? 'EG') === country);
-  const governorates = topFirst([...new Set([...inCountry.map((a) => a.governorate), ...(profile?.governorate ? [profile.governorate] : [])])].sort());
+  const governorates = topFirst(regionNames.length ? regionNames : [...new Set([...inCountry.map((a) => a.governorate), ...(country === profileCountry && profile?.governorate ? [profile.governorate] : [])])].sort());
   const govAreas = inCountry.filter((a) => a.governorate === gov);
-  const placeChanged = gov !== (profile?.governorate ?? null) || areaName !== (profile?.area ?? null);
+  const placeChanged = country !== profileCountry || gov !== (profile?.governorate ?? null) || areaName !== (profile?.area ?? null);
 
   async function pickPhoto() {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] });
@@ -100,7 +113,7 @@ export default function EditProfile() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({ ...(userChanged ? { username } : {}), display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(avatarPath ? { avatar_path: avatarPath } : {}), ...(placeChanged ? { governorate: gov, area: areaName } : {}) })
+      .update({ ...(userChanged ? { username } : {}), display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(avatarPath ? { avatar_path: avatarPath } : {}), ...(placeChanged ? { country_code: country, governorate: gov, area: areaName } : {}) })
       .eq('id', session.user.id);
     setBusy(false);
     if (saveError) {
@@ -168,6 +181,28 @@ export default function EditProfile() {
             </Field>
           ))}
           <Text style={[formStyles.hint, { color: colors.muted }]}>Optional. Shown on your profile so neighbors can find you.</Text>
+          {countries.length > 0 ? (
+            <SelectField
+              label="COUNTRY"
+              required
+              value={countries.find((c) => c.code === country)?.name ?? 'Egypt'}
+              onPress={() =>
+                setSheet({
+                  title: 'Country',
+                  items: countries.map((c) => ({
+                    label: c.name,
+                    selected: c.code === country,
+                    onPress: () => {
+                      if (c.code === country) return;
+                      setCountry(c.code);
+                      setGov(null);
+                      setAreaName(null);
+                    },
+                  })),
+                })
+              }
+            />
+          ) : null}
           <SelectField
             label="GOVERNORATE"
             required
