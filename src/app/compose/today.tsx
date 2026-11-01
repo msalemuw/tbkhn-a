@@ -82,7 +82,7 @@ export default function ComposeToday() {
   }
 
   async function pickPhoto(camera: boolean) {
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] };
+    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: false };
     if (camera) {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) return;
@@ -150,7 +150,16 @@ export default function ComposeToday() {
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           {photo ? (
             <View>
-              <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" />
+              <View style={styles.previews}>
+                <View style={{ flex: 62 }}>
+                  <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" />
+                  <Text style={styles.previewLabel}>Your post (square)</Text>
+                </View>
+                <View style={{ flex: 34 }}>
+                  <Image source={{ uri: photo.uri }} style={styles.storyPhoto} contentFit="cover" />
+                  <Text style={styles.previewLabel}>Your story (full screen)</Text>
+                </View>
+              </View>
               <Pressable style={styles.retake} onPress={() => pickPhoto(false)}>
                 <MaterialIcons name="photo-camera" size={16} color={colors.white} />
                 <Text style={styles.retakeText}>Retake</Text>
@@ -273,10 +282,13 @@ const styles = StyleSheet.create({
   closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
   photo: { width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: colors.cream },
+  previews: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  storyPhoto: { width: '100%', aspectRatio: 9 / 16, borderRadius: 14, backgroundColor: colors.cream },
+  previewLabel: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted, marginTop: 6 },
   photoEmpty: { flexDirection: 'row', gap: 12, aspectRatio: 2.2, borderRadius: 18, backgroundColor: colors.cream, alignItems: 'center', justifyContent: 'center' },
   photoBtn: { alignItems: 'center', gap: 6, backgroundColor: colors.white, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
   photoBtnText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
-  retake: { position: 'absolute', right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(40,48,58,.6)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  retake: { position: 'absolute', left: 10, top: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(40,48,58,.6)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   retakeText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   group: { gap: 12, marginTop: 14 },
   row2: { flexDirection: 'row', gap: 12 },
