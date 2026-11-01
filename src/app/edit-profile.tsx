@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 import { BackHeader, danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { Avatar } from '@/components/avatar';
+import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { normalizeSocial, SOCIALS } from '@/lib/social';
 import { uploadPhoto } from '@/lib/posts';
@@ -32,7 +33,12 @@ export default function EditProfile() {
   const [areas, setAreas] = useState<AreaRow[]>([]);
   const [gov, setGov] = useState<string | null>(profile?.governorate ?? null);
   const [areaName, setAreaName] = useState<string | null>(profile?.area ?? null);
-  const [sheet, setSheet] = useState<{ title: string; items: SheetItem[] } | null>(null);
+  const [sheet, setSheet] = useState<{ title: string; items: SheetItem[]; footer?: { label: string; onPress: (typed?: string) => void } } | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [prefill, setPrefill] = useState('');
+  const [requestBusy, setRequestBusy] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requested, setRequested] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -183,9 +189,16 @@ export default function EditProfile() {
             label="AREA"
             required
             value={areaName ?? (gov ? 'Choose' : 'Choose a governorate first')}
-            onPress={() => gov && setSheet({ title: 'Area', items: govAreas.map((a) => ({ label: a.name, selected: a.name === areaName, onPress: () => setAreaName(a.name) })) })}
+            onPress={() =>
+              gov &&
+              setSheet({
+                title: 'Area',
+                items: govAreas.map((a) => ({ label: a.name, selected: a.name === areaName, onPress: () => setAreaName(a.name) })),
+                footer: { label: 'Can’t find your area? Request it', onPress: (n) => { setPrefill(n ?? ''); setRequestError(null); setRequestOpen(true); } },
+              })
+            }
           />
-          <Text style={[formStyles.hint, { color: colors.muted }]}>Where you live. Can’t find your area? Request it from the Search tab.</Text>
+          <Text style={[formStyles.hint, { color: colors.muted }]}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Where you live. Can’t find your area? Tap Area, then Request it.'}</Text>
           <Field label="INSTAPAY HANDLE">
             <TextInput value={instapay} onChangeText={setInstapay} placeholder="example: nour@instapay" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={60} style={formStyles.input} accessibilityLabel="InstaPay handle" />
           </Field>
@@ -194,7 +207,36 @@ export default function EditProfile() {
           <PrimaryButton label="Save" onPress={save} busy={busy} disabled={!ok} style={{ marginTop: 8 }} />
         </ScrollView>
       </KeyboardAvoidingView>
-      <PickerSheet title={sheet?.title ?? ''} items={sheet?.items ?? null} onClose={() => setSheet(null)} searchable />
+      <PickerSheet title={sheet?.title ?? ''} items={sheet?.items ?? null} onClose={() => setSheet(null)} searchable footer={sheet?.footer} />
+      <RequestCommunitySheet
+        key={requestOpen ? 'open' : 'closed'}
+        visible={requestOpen}
+        initialName={prefill}
+        existing={govAreas}
+        onUseExisting={(id) => {
+          setRequestOpen(false);
+          const a = govAreas.find((x) => x.id === id);
+          if (a) setAreaName(a.name);
+        }}
+        kindLabel="area"
+        where={gov ?? ''}
+        busy={requestBusy}
+        error={requestError}
+        onSubmit={async (n) => {
+          if (!session || !gov) return;
+          setRequestBusy(true);
+          setRequestError(null);
+          const { error: reqError } = await supabase
+            .from('communities')
+            .insert({ name: n, kind: 'area', governorate: gov, area: n, requested_by: session.user.id, status: 'pending', country_code: country });
+          setRequestBusy(false);
+          if (reqError?.code === '23505') return setRequestError('That community already exists or is waiting for approval. Search for it above.');
+          if (reqError) return setRequestError('We couldn’t send your request. Check your connection and try again.');
+          setRequested(n);
+          setRequestOpen(false);
+        }}
+        onClose={() => setRequestOpen(false)}
+      />
     </SafeAreaView>
   );
 }
