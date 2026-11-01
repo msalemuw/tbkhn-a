@@ -16,3 +16,11 @@ export async function fetchRegions(countryCode: string): Promise<Region[]> {
   if (error) throw error;
   return data ?? [];
 }
+
+const TOP = ['Cairo', 'Giza', 'Alexandria'];
+
+/** Governorates with Cairo, Giza and Alexandria first, the rest in their given order. */
+export function topFirst<T extends string>(names: T[]): T[] {
+  const top = TOP.filter((n) => names.includes(n as T)) as T[];
+  return [...top, ...names.filter((n) => !TOP.includes(n))];
+}

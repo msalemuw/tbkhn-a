@@ -11,6 +11,7 @@ import { Avatar } from '@/components/avatar';
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { normalizeSocial, SOCIALS } from '@/lib/social';
+import { topFirst } from '@/lib/regions';
 import { uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -52,7 +53,7 @@ export default function EditProfile() {
   }, []);
   const country = (profile as { country_code?: string | null } | null)?.country_code ?? 'EG';
   const inCountry = areas.filter((a) => (a.country_code ?? 'EG') === country);
-  const governorates = [...new Set([...inCountry.map((a) => a.governorate), ...(profile?.governorate ? [profile.governorate] : [])])].sort();
+  const governorates = topFirst([...new Set([...inCountry.map((a) => a.governorate), ...(profile?.governorate ? [profile.governorate] : [])])].sort());
   const govAreas = inCountry.filter((a) => a.governorate === gov);
   const placeChanged = gov !== (profile?.governorate ?? null) || areaName !== (profile?.area ?? null);
 
