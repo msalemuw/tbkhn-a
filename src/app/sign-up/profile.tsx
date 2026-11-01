@@ -16,7 +16,7 @@ import { logFunnel } from '@/lib/funnel';
 import { HEARD, OTHER_DETAIL } from '@/lib/heard';
 import { cleanPhoneInput, DIALS, dialFor, formatPhone, isValidPhone, splitE164, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
-import { type Country, fetchCountries, fetchRegions, type Region } from '@/lib/regions';
+import { type Country, fetchCountries, fetchRegions, type Region, topFirst } from '@/lib/regions';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
@@ -186,7 +186,7 @@ export default function ProfileStep() {
   const all = useMemo(() => [...communities, ...requested], [communities, requested]);
   // Regions come from the database; with none listed (or no countries table yet) fall back to what the areas say.
   const governorates = useMemo(
-    () => (regions.length ? regions.map((r) => r.name) : [...new Set(communities.filter((c) => c.kind === 'area' && inCountry(c)).map((c) => c.governorate))].sort()),
+    () => topFirst(regions.length ? regions.map((r) => r.name) : [...new Set(communities.filter((c) => c.kind === 'area' && inCountry(c)).map((c) => c.governorate))].sort()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [regions, communities, country],
   );
