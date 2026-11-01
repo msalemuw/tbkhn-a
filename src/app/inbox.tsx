@@ -11,7 +11,7 @@ import { colors, fonts } from '@/constants/theme';
 import { type Conversation, fetchConversations, fetchPeople } from '@/lib/chat';
 import { fmtAgo } from '@/lib/format';
 import { useLive } from '@/lib/live';
-import { describe, fetchNotifications, markNotificationsRead, type Notification } from '@/lib/notifications';
+import { describe, fetchNotifications, isPostReaction, markNotificationsRead, type Notification } from '@/lib/notifications';
 import { type Person, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { usePullRefresh } from '@/lib/pull-refresh';
@@ -132,7 +132,9 @@ export default function Inbox() {
               ? { pathname: '/order/[id]' as const, params: { id: item.payload.reservation_id } }
               : item.payload.post_id
                 ? { pathname: '/dish/[id]' as const, params: { id: item.payload.post_id } }
-                : item.payload.profile_id
+                : isPostReaction(item)
+                  ? { pathname: '/post/[id]' as const, params: { id: item.payload.ref!, by: item.payload.profile_id! } }
+                  : item.payload.profile_id
                   ? { pathname: '/cook/[id]' as const, params: { id: item.payload.profile_id } }
                   : null;
             return (
