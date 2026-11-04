@@ -68,7 +68,7 @@ export function StoriesRow({
 const styles = StyleSheet.create({
   // flexGrow 0: a horizontal ScrollView otherwise stretches taller than its content and leaves a gap below the stories.
   scroll: { flexGrow: 0 },
-  row: { paddingHorizontal: 18, gap: 14, paddingBottom: 4 },
+  row: { paddingHorizontal: 18, gap: 14, paddingBottom: 8 },
   item: { width: 72, alignItems: 'center', gap: 6 },
   ring: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5 },
   addRing: { borderColor: colors.teal },

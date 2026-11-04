@@ -6,9 +6,9 @@ import { Text } from '@/components/text';
 import { fonts, ui } from '@/constants/theme';
 import type { Badge } from '@/lib/rankings';
 
-/** Rank pill from the design: "#1 in Mohandeseen" (rating x orders) or "#1 in Mohandeseen · Likes". Tap opens the community. */
+/** Rank pill from the design: "#1 in Mohandeseen" (rating x orders) or "#1 Likes · Mohandeseen". Tap opens the community. */
 export function RankBadge({ badge }: { badge: Badge }) {
-  const label = `#${badge.rank} in ${badge.community}${badge.kind === 'likes' ? ' · Likes' : ''}`;
+  const label = badge.kind === 'likes' ? `#${badge.rank} Likes · ${badge.community}` : `#${badge.rank} in ${badge.community}`;
   return (
     <Pressable
       style={styles.pill}

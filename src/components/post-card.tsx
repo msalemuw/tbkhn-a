@@ -106,7 +106,7 @@ export function PostCard({
 
 const styles = StyleSheet.create({
   // A white rounded card on the warm page, with the photo inside it (design s6).
-  post: { backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border, marginHorizontal: 14, marginTop: 12, padding: 14 },
+  post: { backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border, marginHorizontal: 14, marginTop: 14, padding: 14 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 11 },
   nameCol: { flex: 1, minWidth: 0, gap: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
