@@ -38,7 +38,7 @@ export function StoriesRow({
           <Pressable style={styles.plus} onPress={onAdd} hitSlop={6} accessibilityRole="button" accessibilityLabel="Add a story">
             <MaterialIcons name="add" size={14} color={colors.navy} />
           </Pressable>
-          <Text style={styles.name} numberOfLines={1}>Your story</Text>
+          <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.15}>Your story</Text>
         </View>
       ) : (
         <Pressable style={styles.item} onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add a story">
@@ -57,7 +57,7 @@ export function StoriesRow({
                 <Avatar person={g.author} size={52} />
               </View>
             </View>
-            <Text style={styles.name} numberOfLines={1}>{personName(g.author).split(' ')[0]}</Text>
+            <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={1.15}>{personName(g.author).split(' ')[0]}</Text>
           </Pressable>
         );
       })}
@@ -69,12 +69,12 @@ const styles = StyleSheet.create({
   // flexGrow 0: a horizontal ScrollView otherwise stretches taller than its content and leaves a gap below the stories.
   scroll: { flexGrow: 0 },
   row: { paddingHorizontal: 18, gap: 14, paddingBottom: 12 },
-  item: { width: 66, alignItems: 'center', gap: 6 },
+  item: { width: 72, alignItems: 'center', gap: 6 },
   ring: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5 },
   addRing: { borderColor: colors.teal },
   unseen: { borderColor: colors.yellow },
   seen: { borderColor: 'rgba(1,49,62,.2)' },
   inner: { borderRadius: 27, overflow: 'hidden' },
   plus: { position: 'absolute', top: 42, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: ui.page },
-  name: { fontFamily: fonts.bold, fontSize: 11, color: ui.deep, maxWidth: 66, textAlign: 'center' },
+  name: { fontFamily: fonts.bold, fontSize: 11, color: ui.deep, maxWidth: 72, textAlign: 'center' },
 });
