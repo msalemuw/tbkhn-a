@@ -216,12 +216,12 @@ export default function Home() {
             <View style={styles.bar}>
               <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityLabel="Choose your location">
                 <MaterialIcons name="location-on" size={18} color={colors.teal} />
-                <Text style={styles.locText} numberOfLines={1}>{place?.label || 'Location'}</Text>
+                <Text style={styles.locText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{place?.label || 'Location'}</Text>
                 <MaterialIcons name="expand-more" size={20} color={colors.muted} />
               </Pressable>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
-                <Text style={styles.watchText}>Feed filter: {all ? 'Everyone' : 'Custom'}</Text>
+                <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : 'Custom'}</Text>
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
             </View>
@@ -246,10 +246,10 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // Location and Feed filter share one soft white card above the posts, as in the design.
-  bar: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12, gap: 12, alignItems: 'flex-start' },
-  loc: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '100%' },
-  locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 17, color: ui.deep },
-  watch: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 },
+  bar: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 14, gap: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  loc: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
+  locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 18, color: ui.deep },
+  watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 14, height: 40, flexShrink: 0 },
   watchText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
 });
