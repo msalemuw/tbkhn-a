@@ -138,17 +138,17 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
         <View style={{ gap: 14 }}>
           {header}
           {filters ? (
-            <>
+            <View style={styles.bar}>
               <View style={styles.searchBox}>
-                <MaterialIcons name="search" size={24} color={SLATE} />
+                <MaterialIcons name="search" size={22} color={SLATE} />
                 <TextInput value={q} onChangeText={setQ} placeholder="Search dishes" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes" />
               </View>
               <Pressable style={styles.filter} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
-                <Text style={styles.filterText}>Menu filter: {allShown ? 'Everyone' : 'Custom'}</Text>
+                <Text style={styles.filterText} maxFontSizeMultiplier={1.15}>{allShown ? 'Everyone' : 'Custom'}</Text>
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
-            </>
+            </View>
           ) : null}
         </View>
       }
@@ -161,9 +161,10 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
 
 const styles = StyleSheet.create({
   list: { padding: 14, gap: 14 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: colors.lightBlue, borderRadius: 18, paddingHorizontal: 14 },
-  search: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: ui.deep, paddingVertical: 13 },
-  filter: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 },
-  filterText: { fontFamily: fonts.bold, fontSize: 14, color: colors.white },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  searchBox: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: colors.lightBlue, borderRadius: 18, paddingHorizontal: 14 },
+  search: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: ui.deep, paddingVertical: 10 },
+  filter: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
+  filterText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 20, lineHeight: 20 },
 });
