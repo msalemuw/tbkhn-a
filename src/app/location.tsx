@@ -40,7 +40,7 @@ export default function LocationPicker() {
   const [sheetH, setSheetH] = useState(190);
   const [text, setText] = useState('');
   // Pickup mode: the cook names the spot buyers will see. Re-picking a saved spot starts from its current name.
-  const [spotName, setSpotName] = useState('');
+  const [spotName, setSpotName] = useState(pickup && !at ? (place?.label ?? '') : '');
   const [found, setFound] = useState<{ q: string; list: PlaceHit[] } | null>(null);
   const startRef = useRef(start);
   // Where the phone was when the member last tapped "use my current location".
