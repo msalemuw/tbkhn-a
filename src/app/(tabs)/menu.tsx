@@ -39,7 +39,7 @@ export default function Menu() {
           header={
             <View style={styles.header}>
               {/* The founder's artwork (sparkle strokes and the teal blob over light blue), placed like the design: about 83% of the screen width, flush with the top-right. */}
-              <Image source={ART} style={[styles.art, { top: 28 - (insets.top + 14), left: width * 0.23 - 14, width: width * 0.83 }]} contentFit="contain" pointerEvents="none" accessible={false} />
+              <Image source={ART} style={[styles.art, { top: -12 - (insets.top + 14), left: width * 0.23 - 14, width: width * 0.83 }]} contentFit="contain" pointerEvents="none" accessible={false} />
               <Logo on="light" height={28} />
               <View style={styles.titleRow}>
                 <Text style={styles.title}>Today’s menu</Text>
