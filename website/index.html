@@ -690,7 +690,7 @@
     setTimeout(function () {
       if (document.visibilityState === 'visible') {
         state.iabNudge = true; render();
-        logFunnel('inapp_open_failed', { app: inApp });
+        logFunnel('inapp_still_showing', { app: inApp }); // not a failure: Instagram keeps its own page visible even when the jump worked
         $('iabSteps').scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }, 1500);
