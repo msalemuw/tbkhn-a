@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // Location and Feed filter share one soft white card above the posts, as in the design.
-  bar: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 8, gap: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, gap: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   loc: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
   locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
