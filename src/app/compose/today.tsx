@@ -32,7 +32,6 @@ export default function ComposeToday() {
   const { session } = useSession();
   const uid = session?.user.id;
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [caption, setCaption] = useState('');
   const [dish, setDish] = useState('');
   const [price, setPrice] = useState('');
   const [portions, setPortions] = useState('');
@@ -111,7 +110,7 @@ export default function ComposeToday() {
     try {
       const mediaPath = photo ? await uploadPhoto(uid!, photo.uri, photo.mimeType ?? 'image/jpeg') : null;
       const id = await postCookingToday(uid!, {
-        caption,
+        caption: dish.trim(),
         mediaPath,
         dishName: dish,
         priceEgp: priceNum,
@@ -179,9 +178,6 @@ export default function ComposeToday() {
           )}
 
           <View style={styles.group}>
-            <Field label="CAPTION">
-              <TextInput value={caption} onChangeText={setCaption} multiline maxLength={500} placeholder="example: Molokhia and rice today, enough for 6 plates." placeholderTextColor={colors.faint} style={[formStyles.input, { minHeight: 44 }]} />
-            </Field>
             <Field label="DISH NAME" required>
               <TextInput value={dish} onChangeText={setDish} maxLength={80} placeholder="example: Molokhia & Rice" placeholderTextColor={colors.faint} style={formStyles.input} />
             </Field>
