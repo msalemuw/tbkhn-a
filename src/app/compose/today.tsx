@@ -57,14 +57,14 @@ export default function ComposeToday() {
     });
   }, [uid]);
 
-  // Saved pickup points, by name. Coming back from the map picker selects the spot just saved.
+  // Saved pickup points, by name. Nothing is preselected: the map opens at the member's Home location, and coming back selects the spot just saved.
   useFocusEffect(
     useCallback(() => {
       if (!uid) return;
       fetchMyPickupPoints(uid).then((p) => {
         setPoints(p);
         const fresh = takeNewPickupPoint();
-        setPointId((cur) => fresh ?? (cur && p.some((x) => x.id === cur) ? cur : (p[p.length - 1]?.id ?? null)));
+        setPointId((cur) => fresh ?? (cur && p.some((x) => x.id === cur) ? cur : null));
       });
     }, [uid]),
   );
