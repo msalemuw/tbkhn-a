@@ -16,9 +16,9 @@ export function halfHourSlots(from: number, until: number = endOfToday(from)): n
   return out;
 }
 
-/** Ready-by choices for a cook posting now: at least 30 minutes away. */
+/** Ready-by choices for a cook posting now: every half hour from the next one (no minimum lead time, founder 2026-11-04). */
 export function readySlots(now: number = Date.now()): number[] {
-  return halfHourSlots(now + STEP - 1);
+  return halfHourSlots(now);
 }
 
 /** Pickup choices for a buyer: the ready time (or now, if it already passed), then every half hour. */
