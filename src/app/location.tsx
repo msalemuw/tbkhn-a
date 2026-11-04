@@ -190,7 +190,11 @@ export default function LocationPicker() {
         ref={map}
         style={StyleSheet.absoluteFill}
         initialRegion={{ ...start, latitudeDelta: DELTA, longitudeDelta: DELTA }}
-        onPanDrag={() => setLifted(true)}
+        onPanDrag={() => {
+          Keyboard.dismiss();
+          setLifted(true);
+        }}
+        onPress={() => Keyboard.dismiss()}
         onRegionChangeComplete={onRegion}
         showsUserLocation
         showsMyLocationButton={false}
@@ -277,6 +281,7 @@ export default function LocationPicker() {
             value={spotName}
             onChangeText={setSpotName}
             maxLength={80}
+            returnKeyType="done"
             placeholder="Name the spot, e.g. Building 5, front gate"
             placeholderTextColor={colors.faint}
             accessibilityLabel="Pickup spot name"
