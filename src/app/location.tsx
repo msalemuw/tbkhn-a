@@ -273,8 +273,8 @@ export default function LocationPicker() {
       {pickup && hits ? (
         <View style={[styles.hits, styles.hitsAbove]}>
           {hits.length ? (
-            hits.slice(0, 5).map((h, i) => (
-              <Pressable key={`${h.id ?? `${h.lat},${h.lng}`},${i}`} style={styles.hit} onPress={() => pick(h)} accessibilityRole="button">
+            hits.slice(0, 3).map((h, i) => (
+              <Pressable key={`${h.id ?? `${h.lat},${h.lng}`},${i}`} style={[styles.hit, styles.hitTight]} onPress={() => pick(h)} accessibilityRole="button">
                 <MaterialIcons name="place" size={20} color={colors.ink} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.hitName} numberOfLines={1}>{h.name}</Text>
@@ -333,7 +333,8 @@ const styles = StyleSheet.create({
   hit: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11 },
   hitName: { fontFamily: fonts.bold, fontSize: 14.5, color: colors.ink },
   hitSub: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted, marginTop: 1 },
-  hitsAbove: { marginHorizontal: 16, marginTop: 0, marginBottom: 8 },
+  hitsAbove: { marginHorizontal: 16, marginTop: 0, marginBottom: 8, paddingVertical: 2 },
+  hitTight: { paddingVertical: 7 },
   noHit: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, padding: 14 },
   locate: { position: 'absolute', right: 16, width: 46, height: 46, borderRadius: 23, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 },
