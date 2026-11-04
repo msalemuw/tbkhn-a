@@ -19,7 +19,7 @@ import { useSession } from '@/lib/session';
 // The default is central Cairo until a position is known.
 // With ?for=pickup it picks a cook's pickup point instead: it starts at the spot already picked (?at=lat,lng) or the
 // current location (set on Home), and Confirm saves it under the name the cook typed (reusing a saved spot within 25 m); home stays as it is.
-// In pickup mode the name box is also the search: typing "Dandy Mall" lists places, and picking one moves the pin there.
+// Pickup mode has the same search icon, search box, locate-me button and map as the home location; the name box below only names the spot.
 const CAIRO = { latitude: 30.0444, longitude: 31.2357 };
 const DELTA = 0.01;
 
@@ -42,8 +42,6 @@ export default function LocationPicker() {
   // Pickup mode: the cook names the spot buyers will see. Re-picking a saved spot starts from its current name.
   const [spotName, setSpotName] = useState('');
   const [found, setFound] = useState<{ q: string; list: PlaceHit[] } | null>(null);
-  // Pickup mode: the suggestion the cook picked, so its name in the box doesn't search again.
-  const [picked, setPicked] = useState('');
   const startRef = useRef(start);
   // Where the phone was when the member last tapped "use my current location".
   const gpsRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -90,9 +88,9 @@ export default function LocationPicker() {
   }, [pickup, session?.user.id, at]);
 
   // Search suggestions as the member types.
-  const q = (pickup ? spotName : text).trim();
+  const q = text.trim();
   useEffect(() => {
-    if (q.length < 3 || q === picked) return;
+    if (q.length < 3) return;
     let live = true;
     const t = setTimeout(() => {
       const c = centerRef.current;
@@ -102,9 +100,9 @@ export default function LocationPicker() {
       live = false;
       clearTimeout(t);
     };
-  }, [q, picked]);
-  const searching = q.length >= 3 && q !== picked && found?.q !== q;
-  const hits = q.length >= 3 && q !== picked && found?.q === q ? found.list : null;
+  }, [q]);
+  const searching = q.length >= 3 && found?.q !== q;
+  const hits = q.length >= 3 && found?.q === q ? found.list : null;
 
   const setLifted = (up: boolean) => Animated.timing(lift, { toValue: up ? -14 : 0, duration: 140, useNativeDriver: true }).start();
 
@@ -128,10 +126,9 @@ export default function LocationPicker() {
       Alert.alert('Couldn’t open that place', 'Try another suggestion, or move the map to the spot.');
       return;
     }
-    if (pickup) {
-      setPicked(h.name);
-      setSpotName(h.name.slice(0, 80));
-    } else setText('');
+    // Pickup: the place's name is offered as the spot name (the cook can still change it).
+    if (pickup && !spotName.trim()) setSpotName(h.name.slice(0, 80));
+    setText('');
     map.current?.animateToRegion({ latitude: at.lat, longitude: at.lng, latitudeDelta: DELTA, longitudeDelta: DELTA }, 400);
     setSearchOpen(false);
   }
@@ -217,15 +214,11 @@ export default function LocationPicker() {
           <View style={styles.titleWrap}>
             <Text style={styles.title} numberOfLines={1}>{pickup ? 'Pickup point' : 'Your location'}</Text>
           </View>
-          {pickup ? (
-            <View style={styles.round} />
-          ) : (
-            <Pressable onPress={() => setSearchOpen((o) => !o)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Search for a place" style={styles.round}>
-              <MaterialIcons name={searchOpen ? 'expand-less' : 'search'} size={22} color={colors.ink} />
-            </Pressable>
-          )}
+          <Pressable onPress={() => setSearchOpen((o) => !o)} hitSlop={12} accessibilityRole="button" accessibilityLabel="Search for a place" style={styles.round}>
+            <MaterialIcons name={searchOpen ? 'expand-less' : 'search'} size={22} color={colors.ink} />
+          </Pressable>
         </View>
-        {searchOpen && !pickup ? (
+        {searchOpen ? (
           <View style={[styles.search, { marginTop: 8, flex: 0 }]}>
             <MaterialIcons name="search" size={20} color={colors.muted} />
             <TextInput
@@ -246,7 +239,7 @@ export default function LocationPicker() {
             ) : null}
           </View>
         ) : null}
-        {searchOpen && !pickup && hits ? (
+        {searchOpen && hits ? (
           <View style={styles.hits}>
             {hits.length ? (
               hits.map((h, i) => (
@@ -270,23 +263,6 @@ export default function LocationPicker() {
       </Pressable>
 
       <KeyboardAvoidingView behavior="padding" style={styles.sheetWrap} pointerEvents="box-none">
-      {pickup && hits ? (
-        <View style={[styles.hits, styles.hitsAbove]}>
-          {hits.length ? (
-            hits.slice(0, 5).map((h, i) => (
-              <Pressable key={`${h.id ?? `${h.lat},${h.lng}`},${i}`} style={styles.hit} onPress={() => pick(h)} accessibilityRole="button">
-                <MaterialIcons name="place" size={20} color={colors.ink} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.hitName} numberOfLines={1}>{h.name}</Text>
-                  {h.line2 ? <Text style={styles.hitSub} numberOfLines={1}>{h.line2}</Text> : null}
-                </View>
-              </Pressable>
-            ))
-          ) : (
-            <Text style={styles.noHit}>No place found. Move the map to the spot instead.</Text>
-          )}
-        </View>
-      ) : null}
       <SafeAreaView edges={['bottom']} style={styles.sheet} onLayout={(e) => setSheetH(e.nativeEvent.layout.height)}>
         <View style={styles.where}>
           <MaterialIcons name="location-on" size={26} color={colors.teal} />
@@ -301,7 +277,7 @@ export default function LocationPicker() {
             value={spotName}
             onChangeText={setSpotName}
             maxLength={80}
-            placeholder="Search a place or name the spot, e.g. Dandy Mall"
+            placeholder="Name the spot, e.g. Building 5, front gate"
             placeholderTextColor={colors.faint}
             accessibilityLabel="Pickup spot name"
           />
@@ -333,7 +309,6 @@ const styles = StyleSheet.create({
   hit: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11 },
   hitName: { fontFamily: fonts.bold, fontSize: 14.5, color: colors.ink },
   hitSub: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted, marginTop: 1 },
-  hitsAbove: { marginHorizontal: 16, marginTop: 0, marginBottom: 8 },
   noHit: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, padding: 14 },
   locate: { position: 'absolute', right: 16, width: 46, height: 46, borderRadius: 23, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
   sheetWrap: { position: 'absolute', left: 0, right: 0, bottom: 0 },

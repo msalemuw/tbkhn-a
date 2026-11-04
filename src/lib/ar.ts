@@ -376,7 +376,7 @@ export const ar: Record<string, string> = {
   'Pickup point': 'مكان الاستلام',
   'Pickup point here': 'مكان الاستلام هنا',
   'Pickup spot name': 'اسم مكان الاستلام',
-  'Search a place or name the spot, e.g. Dandy Mall': 'ابحث عن مكان أو سمّي المكان، مثلًا: داندي مول',
+  'Name the spot, e.g. Building 5, front gate': 'سمّي المكان، مثلًا: مبنى 5، البوابة الأمامية',
   'Search for a place': 'ابحث عن مكان',
   'Search for area or street name': 'ابحث عن منطقة أو اسم شارع',
   'Search for area, street name…': 'ابحث عن منطقة أو اسم شارع…',
