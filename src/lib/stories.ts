@@ -18,7 +18,7 @@ export type StoryItem = {
   price_egp: number | null;
   portions_left: number | null;
   ready_at: string | null;
-  community: { name: string } | null;
+  pickup_point: { lat: number; lng: number } | null;
   likes: number;
   liked: boolean;
 };
@@ -27,7 +27,7 @@ export type StoryGroup = { author: Person; items: StoryItem[] };
 
 const SELECT =
   'id, author_id, kind, caption, media_path, created_at, dish_name, price_egp, portions_left, ready_at,' +
-  ' author:profiles!author_id(id, username, display_name, avatar_path), community:communities(name), likes(count)';
+  ' author:profiles!author_id(id, username, display_name, avatar_path), pickup_point:pickup_points(lat, lng), likes(count)';
 
 type Row = Omit<StoryItem, 'likes' | 'liked'> & { author_id: string; author: Person; likes: { count: number }[] };
 
