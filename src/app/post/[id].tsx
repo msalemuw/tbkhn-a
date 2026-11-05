@@ -131,7 +131,7 @@ export default function PostScreen() {
       )}
       <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
-      <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(pid) => patch(pid, (x) => ({ ...x, comments: x.comments + 1 }))} />
+      <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(pid) => patch(pid, (x) => ({ ...x, comments: x.comments + 1 }))} onRemoved={(pid) => patch(pid, (x) => ({ ...x, comments: Math.max(0, x.comments - 1) }))} />
       <EditCaption
         post={editing}
         onClose={() => setEditing(null)}

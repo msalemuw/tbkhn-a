@@ -18,6 +18,7 @@ export type Message = {
   body: string;
   created_at: string;
   read_at: string | null;
+  deleted_at: string | null;
 };
 
 export type Conversation = {
@@ -82,6 +83,13 @@ export async function sendMessage(me: string, partner: string, body: string, res
   if (error) throw new Error(error.code === '42501' ? 'You can’t message this member.' : 'Your message didn’t send. Try again.');
   dataChanged();
   return data as Message;
+}
+
+/** Unsend one of my own messages. Others see "Message deleted"; staff keep the original (see delete_my_message). */
+export async function deleteMessage(id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_my_message', { p_id: id });
+  if (error) throw error;
+  dataChanged();
 }
 
 export async function markRead(me: string, partner: string) {

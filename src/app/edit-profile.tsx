@@ -140,6 +140,15 @@ export default function EditProfile() {
     router.back();
   };
 
+  async function removePhoto() {
+    if (!session) return;
+    setPhoto(null);
+    if (!profile?.avatar_path) return;
+    const { error: e } = await supabase.from('profiles').update({ avatar_path: null }).eq('id', session.user.id);
+    if (e) return setError('We couldn’t remove your photo. Please try again.');
+    await refreshProfile();
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.paper }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
@@ -149,6 +158,11 @@ export default function EditProfile() {
             {photo ? <Image source={{ uri: photo.uri }} style={styles.preview} contentFit="cover" /> : <Avatar person={profile ? { id: profile.id, username: profile.username, display_name: profile.display_name, avatar_path: profile.avatar_path ?? null } : null} size={96} />}
             <Text style={styles.photoText}>Change photo</Text>
           </Pressable>
+          {profile?.avatar_path || photo ? (
+            <Pressable style={styles.removePhoto} onPress={removePhoto} accessibilityRole="button" accessibilityLabel="Remove photo">
+              <Text style={styles.removePhotoText}>Remove photo</Text>
+            </Pressable>
+          ) : null}
           <Field label="USERNAME">
             <TextInput
               value={username}
@@ -281,5 +295,7 @@ const styles = StyleSheet.create({
   body: { padding: 22, gap: 14 },
   photo: { alignItems: 'center', gap: 8 },
   preview: { width: 96, height: 96, borderRadius: 48 },
+  removePhoto: { alignSelf: 'center', paddingVertical: 6, marginBottom: 6 },
+  removePhotoText: { fontFamily: fonts.bold, fontSize: 14, color: colors.navy },
   photoText: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
 });

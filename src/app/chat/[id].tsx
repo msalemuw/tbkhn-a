@@ -9,7 +9,8 @@ import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
-import { fetchMessages, fetchOrderWith, fetchPerson, markRead, type Message, onMessageToMe, sendMessage } from '@/lib/chat';
+import { Alert } from '@/lib/alert';
+import { deleteMessage, fetchMessages, fetchOrderWith, fetchPerson, markRead, type Message, onMessageToMe, sendMessage } from '@/lib/chat';
 import { fmtAgo, fmtClock } from '@/lib/format';
 import { type Order, setPayment } from '@/lib/orders';
 import { type Person, personName } from '@/lib/posts';
@@ -108,6 +109,21 @@ export default function ChatScreen() {
     setPaying(false);
   }
 
+  function confirmDelete(m: Message) {
+    Alert.alert('Delete this message?', 'It will show as “Message deleted” for both of you.', [
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          deleteMessage(m.id).then(
+            () => setMessages((l) => (l ?? []).map((x) => (x.id === m.id ? { ...x, body: 'Message deleted', deleted_at: new Date().toISOString() } : x))),
+            () => Alert.alert('We couldn’t delete it', 'Check your connection and try again.'),
+          ),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
   const shown = [...(messages ?? [])].reverse(); // inverted list: newest at the bottom
 
   return (
@@ -132,7 +148,7 @@ export default function ChatScreen() {
             inverted
             keyExtractor={(m) => m.id}
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => <Bubble m={item} mine={item.sender_id === me} now={now} />}
+            renderItem={({ item }) => <Bubble m={item} mine={item.sender_id === me} now={now} onDelete={() => confirmDelete(item)} />}
             ListEmptyComponent={
               <Text style={[styles.empty, { transform: [{ scaleY: -1 }] }]}>
                 Say hello to {name}. Ask about the dish or agree on pickup here.
@@ -166,7 +182,7 @@ export default function ChatScreen() {
   );
 }
 
-function Bubble({ m, mine, now }: { m: Message; mine: boolean; now: number }) {
+function Bubble({ m, mine, now, onDelete }: { m: Message; mine: boolean; now: number; onDelete: () => void }) {
   const at = Date.parse(m.created_at);
   const when = now - at < 24 * 3_600_000 ? fmtClock(at) : `${fmtAgo(at, now)} · ${fmtClock(at)}`;
   if (m.kind !== 'text') {
@@ -181,11 +197,15 @@ function Bubble({ m, mine, now }: { m: Message; mine: boolean; now: number }) {
       </View>
     );
   }
+  const gone = m.deleted_at != null;
   return (
     <View style={[styles.bubbleRow, mine && { alignItems: 'flex-end' }]}>
-      <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-        <Text verbatim style={styles.body}>{m.body}</Text>
-      </View>
+      <Pressable
+        style={[styles.bubble, mine ? styles.mine : styles.theirs]}
+        onLongPress={mine && !gone ? onDelete : undefined}
+        accessibilityHint={mine && !gone ? 'Long press to delete this message' : undefined}>
+        {gone ? <Text style={[styles.body, { fontStyle: 'italic', opacity: 0.6 }]}>Message deleted</Text> : <Text verbatim style={styles.body}>{m.body}</Text>}
+      </Pressable>
       <Text style={styles.time}>{when}</Text>
     </View>
   );
