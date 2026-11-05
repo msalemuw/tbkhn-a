@@ -16,6 +16,8 @@ import { type Dish, fetchDish, mediaUrl, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { pickupSlots } from '@/lib/slots';
 import { VerifiedTick } from '@/lib/verified';
+import { RankBadge } from '@/components/rank-badge';
+import { fetchBadges, type Badge } from '@/lib/rankings';
 
 // Flows 3 and 4, screen s57: Your order. Pick plates and pickup time, then send it to the cook.
 // Payment is InstaPay, person to person, after the cook accepts (section 13); no delivery.
@@ -24,6 +26,7 @@ export default function DishScreen() {
   const { session } = useSession();
   const here = useMyLocation();
   const [dish, setDish] = useState<Dish | null | undefined>(undefined);
+  const [badges, setBadges] = useState<Badge[]>([]);
   const [plates, setPlates] = useState(1);
   const [pickupAt, setPickupAt] = useState<number | null>(null);
   const [note, setNote] = useState('');
@@ -33,7 +36,10 @@ export default function DishScreen() {
   const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(() => {
-    fetchDish(id).then(setDish, () => setDish(null));
+    fetchDish(id).then((d) => {
+      setDish(d);
+      if (d) fetchBadges([d.author_id]).then((m) => setBadges(m.get(d.author_id) ?? []), () => {});
+    }, () => setDish(null));
   }, [id]);
   useLive(load);
 
@@ -90,7 +96,7 @@ export default function DishScreen() {
     <SafeAreaView style={styles.screen}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
-          <BackHeader title={mine ? 'Your dish' : 'Your order'} />
+          <BackHeader title={mine ? 'Your dish' : 'Order details'} />
           <View style={styles.cookRow}>
             <Pressable onPress={() => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } })} accessibilityRole="link" accessibilityLabel={`${cook}'s profile`}>
               <Text style={styles.cook}>{cook}</Text>
@@ -107,7 +113,8 @@ export default function DishScreen() {
               </Pressable>
             ) : null}
           </View>
-          <Text style={styles.sub}>Today’s menu{dish.community ? ` · ${dish.community.name}` : ''}</Text>
+          {badges.map((b) => <View key={b.kind} style={{ marginTop: 6 }}><RankBadge badge={b} /></View>)}
+          <Text style={styles.sub}>Today’s menu</Text>
 
           {posted ? (
             <View style={styles.note}>
