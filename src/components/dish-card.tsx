@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   photo: { width: 128, height: 118, borderRadius: 16, backgroundColor: colors.cream },
   noPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: ui.mint },
   info: { flex: 1, gap: 5 },
-  dish: { fontFamily: fonts.extraBold, fontSize: 21, lineHeight: 26, color: ui.deep },
+  dish: { fontFamily: fonts.extraBold, fontSize: 19, lineHeight: 24, color: ui.deep },
   price: { fontFamily: fonts.extraBold, fontSize: 18, color: ui.bubble },
   muted: { fontFamily: fonts.medium, fontSize: 14, color: SLATE },
   where: { flexDirection: 'row', alignItems: 'center', gap: 4 },

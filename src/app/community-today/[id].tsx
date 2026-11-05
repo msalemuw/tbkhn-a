@@ -11,6 +11,7 @@ import { fetchCommunityOverview } from '@/lib/community';
 import { useMyLocation } from '@/lib/location';
 import { useLive } from '@/lib/live';
 import type { Dish } from '@/lib/posts';
+import { useBadges } from '@/lib/use-badges';
 
 // Today’s menu in one community (opened from the "Today’s menu" count), with the same dish cards as the Menu.
 export default function CommunityToday() {
@@ -19,6 +20,7 @@ export default function CommunityToday() {
   const [name, setName] = useState('');
   const [dishes, setDishes] = useState<Dish[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const badges = useBadges((dishes ?? []).map((d) => d.author_id));
 
   const load = useCallback(() => {
     fetchCommunityOverview(id).then(
@@ -52,7 +54,7 @@ export default function CommunityToday() {
           keyExtractor={(d) => d.id}
           contentContainerStyle={{ paddingHorizontal: 22, paddingBottom: 30, paddingTop: 12, gap: 12 }}
           ListEmptyComponent={<Text style={styles.empty}>Nothing on today’s menu in {name || 'this community'} yet.</Text>}
-          renderItem={({ item }) => <DishCard dish={item} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
+          renderItem={({ item }) => <DishCard dish={item} here={here} badges={badges.get(item.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
         />
       )}
     </SafeAreaView>
