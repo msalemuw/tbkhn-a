@@ -432,7 +432,8 @@
     legal: { label: 'Legal pages', render: viewLegal },
     staff: { label: 'Staff', render: viewStaff, only: 'owner' },
     data: { label: 'Data', render: viewData, only: 'owner' },
-    log: { label: 'Action log', render: viewLog }
+    log: { label: 'Action log', render: viewLog },
+    history: { label: 'History', render: viewHistory }
   };
   var current = 'overview', counts = {};
 
@@ -1435,6 +1436,64 @@
         return '<tr><td>' + esc(when(a.created_at)) + '</td><td>' + esc(a.actor_username ? '@' + a.actor_username : 'Staff') + '</td><td dir="auto">' + esc((ACTION_LABEL[a.action] || a.action) + (n ? ': ' + n : '')) + '</td><td dir="auto">' + esc(a.reason || '') + '</td></tr>';
       }).join('') + '</table></div></div>';
     });
+  }
+
+  // History: every change members made, with the value before and after, oldest-to-newest per record (from 0052).
+  // Nothing a member deletes disappears from here: deleted messages keep their original text.
+  function viewHistory(v) {
+    var TABLES = [['', 'Everything'], ['messages', 'Messages'], ['deleted_messages', 'Deleted messages'], ['posts', 'Dishes and posts'], ['comments', 'Comments'], ['profiles', 'Profiles'], ['pickup_points', 'Pickup spots'], ['reservations', 'Orders'], ['reviews', 'Reviews'], ['likes', 'Likes'], ['follows', 'Follows'], ['blocks', 'Blocks'], ['community_members', 'Community members'], ['communities', 'Communities'], ['reports', 'Reports']];
+    var table = '', rowId = '', actor = '', items = [];
+    var HIDE = { updated_at: 1, last_lat: 1, last_lng: 1 };
+    function fields(o) { return Object.keys(o || {}).filter(function (k) { return !HIDE[k]; }); }
+    function val(x) { return x === null || x === undefined ? '—' : (typeof x === 'object' ? JSON.stringify(x) : String(x)); }
+    function short(x) { var t = val(x); return t.length > 120 ? t.slice(0, 120) + '…' : t; }
+    function changed(a) {
+      var o = a.old_data || {}, n = a.new_data || {};
+      return fields(Object.assign({}, o, n)).filter(function (k) { return JSON.stringify(o[k]) !== JSON.stringify(n[k]); });
+    }
+    function summary(a) {
+      if (a.table_name === 'deleted_messages' && a.new_data) return 'Original text kept: “' + short(a.new_data.original_body) + '”';
+      if (a.action === 'UPDATE') { var c = changed(a); return c.length ? 'Changed ' + c.join(', ') : 'No visible change'; }
+      var d = a.new_data || a.old_data || {};
+      var pick = d.body || d.caption || d.title || d.name || d.dish_name || d.username || d.status || '';
+      return pick ? short(pick) : '';
+    }
+    function detail(a) {
+      if (a.action === 'UPDATE') {
+        var c = changed(a);
+        return '<table><tr><th>Field</th><th>Before</th><th>After</th></tr>' + c.map(function (k) {
+          return '<tr><td>' + esc(k) + '</td><td dir="auto">' + esc(val((a.old_data || {})[k])) + '</td><td dir="auto">' + esc(val((a.new_data || {})[k])) + '</td></tr>';
+        }).join('') + '</table>';
+      }
+      var d = a.new_data || a.old_data || {};
+      return '<table><tr><th>Field</th><th>' + (a.action === 'INSERT' ? 'Value' : 'Value when removed') + '</th></tr>' + fields(d).map(function (k) {
+        return '<tr><td>' + esc(k) + '</td><td dir="auto">' + esc(val(d[k])) + '</td></tr>';
+      }).join('') + '</table>';
+    }
+    function draw() {
+      $('hlist').innerHTML = items.length ? '<div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>Record</th><th>What</th><th>Detail</th></tr>' + items.map(function (a, i) {
+        var rid = a.row_id ? '<button class="btn" data-follow="' + i + '" title="Show every change to this record">' + esc(a.table_name) + ' · ' + esc(String(a.row_id).slice(0, 8)) + '</button>' : esc(a.table_name);
+        return '<tr><td>' + esc(when(a.at)) + '</td><td>' + esc(a.actor_username ? '@' + a.actor_username : (a.actor_id ? 'Member' : 'System')) + '</td><td>' + rid + '</td><td dir="auto"><span class="tag">' + esc(a.action) + '</span> ' + esc(summary(a)) + '</td><td><details><summary>Before / after</summary>' + detail(a) + '</details></td></tr>';
+      }).join('') + '</table></div>' : '<p class="muted">Nothing recorded yet for this filter. The history started on 5 Nov 2026 and only records changes from then on.</p>';
+    }
+    function load() {
+      $('hlist').innerHTML = '<p class="muted">Loading…</p>';
+      return rpc('admin_audit_trail', { p_table: table || null, p_row: rowId || null, p_actor: actor || null, p_limit: 200 }).then(function (r) {
+        items = rowId ? r.slice().reverse() : r; draw();
+      }).catch(function (e) { $('hlist').innerHTML = ''; showErr($('globalErr'), msg(e)); });
+    }
+    v.innerHTML = '<h2>History</h2><div class="card"><p class="muted" style="margin:0 0 8px">Every change members make is kept here with who, when, and the value before and after. Deleting something in the app only hides it from members; the original stays here. Click a record to see every change to it in order, oldest first.</p>' +
+      '<div class="row"><select id="htable">' + TABLES.map(function (t) { return '<option value="' + t[0] + '">' + esc(t[1]) + '</option>'; }).join('') + '</select>' +
+      '<input type="text" id="hrow" placeholder="Record id (optional)" autocomplete="off" style="flex:1 1 260px"><button class="btn strong" id="hgo">Show</button></div></div><div class="card" id="hlist"></div>';
+    $('htable').onchange = function () { table = this.value; load(); };
+    $('hgo').onclick = function () { rowId = $('hrow').value.trim(); load(); };
+    $('hrow').onkeydown = function (e) { if (e.key === 'Enter') $('hgo').click(); };
+    $('hlist').onclick = function (e) {
+      var f = e.target.closest('[data-follow]'); if (!f) return;
+      var a = items[f.getAttribute('data-follow')]; table = a.table_name; rowId = String(a.row_id);
+      $('htable').value = table; $('hrow').value = rowId; load();
+    };
+    return load();
   }
 
   // ---------- sign-in ----------
