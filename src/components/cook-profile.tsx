@@ -238,7 +238,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
             {dishes === null ? (
               <ActivityIndicator color={colors.teal} />
             ) : dishes.length ? (
-              dishes.map((d) => <DishCard key={d.id} dish={d} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
+              dishes.map((d) => <DishCard key={d.id} dish={d} here={here} badges={badges} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
             ) : (
               <Text style={styles.empty}>Nothing on today’s menu.</Text>
             )}
