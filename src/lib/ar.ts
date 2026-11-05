@@ -280,6 +280,7 @@ export const ar: Record<string, string> = {
   'Your dish': 'أكلتك',
   'Your dish is live in Today’s menu, with a story until midnight. Orders show under Orders for you.': 'أكلتك ظهرت في قائمة النهاردة، مع ستوري لحد 12 بالليل. الطلبات بتظهر في «طلبات ليك».',
   'Your order': 'طلبك',
+  'Order details': 'تفاصيل الطلب',
   'Accepted · cooking': 'اتقبل · بيتطبخ',
   'Pay by InstaPay once the order is accepted': 'ادفع بإنستاباي لما الطلب يتقبل',
   'Payment received': 'الدفع وصل',

@@ -10,6 +10,7 @@ import { colors, fonts, ui } from '@/constants/theme';
 import { distanceMeters } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
 import { CUISINES, type Dish, fetchMyCommunities, fetchTodaysDishes, type MyCommunity } from '@/lib/posts';
+import { fetchBadges, type Badge } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { supabaseConfigured } from '@/lib/supabase';
 import { usePullRefresh } from '@/lib/pull-refresh';
@@ -28,6 +29,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
   const { session } = useSession();
   const here = useMyLocation();
   const [dishes, setDishes] = useState<Dish[]>([]);
+  const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [mine, setMine] = useState<MyCommunity[]>([]);
   // What the member ticked. Nothing ticked in a section means no limit for that section, so one tick is enough.
   // Places: 'nearby' or a community id (a dish shows if it matches any ticked place). Cuisines: any ticked cuisine.
@@ -45,7 +47,10 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
     try {
       // Your own dishes live on your profile ("Today's menu" tab); this list is what other members offer.
       const me = session?.user.id;
-      setDishes((await fetchTodaysDishes()).filter((d) => d.author_id !== me));
+      const list = (await fetchTodaysDishes()).filter((d) => d.author_id !== me);
+      setDishes(list);
+      // Rank badges are a nicety: if they fail to load the cards still show.
+      fetchBadges(list.map((d) => d.author_id)).then(setBadges, () => {});
       if (session) setMine(await fetchMyCommunities(session.user.id));
       setFailed(false);
     } catch {
@@ -130,7 +135,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
     <FlatList
       data={shown}
       keyExtractor={(d) => d.id}
-      renderItem={({ item }) => <DishCard dish={item} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
+      renderItem={({ item }) => <DishCard dish={item} here={here} badges={badges.get(item.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
       style={{ backgroundColor: ui.page }}
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl {...pull} tintColor={ui.deepTeal} />}
