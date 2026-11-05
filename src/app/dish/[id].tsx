@@ -11,6 +11,8 @@ import { colors, fonts } from '@/constants/theme';
 import { distanceMeters, fmtClock, fmtDist, fmtReady } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
 import { useLive } from '@/lib/live';
+import { Alert } from '@/lib/alert';
+import { removeDish } from '@/lib/feed';
 import { placeOrder } from '@/lib/orders';
 import { type Dish, fetchDish, mediaUrl, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -90,6 +92,21 @@ export default function DishScreen() {
       setError((e as Error).message);
       setBusy(false);
     }
+  }
+
+  function confirmRemove() {
+    Alert.alert('Remove this from Today’s menu?', 'It will leave the menu and its story. Orders already sent stay.', [
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () =>
+          removeDish(dish!.id).then(
+            () => (router.canGoBack() ? router.back() : router.replace('/menu')),
+            () => Alert.alert('We couldn’t remove it', 'Check your connection and try again.'),
+          ),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   }
 
   return (
@@ -201,7 +218,13 @@ export default function DishScreen() {
           {error ? <Text style={formStyles.error}>{error}</Text> : null}
 
           {mine ? (
-            <PrimaryButton label="See orders for you" onPress={() => router.push({ pathname: '/orders', params: { tab: 'cook' } })} style={{ marginTop: 20 }} />
+            <>
+              <PrimaryButton label="See orders for you" onPress={() => router.push({ pathname: '/orders', params: { tab: 'cook' } })} style={{ marginTop: 20 }} />
+              <Pressable style={styles.remove} onPress={confirmRemove} accessibilityRole="button" accessibilityLabel="Remove from Today’s menu">
+                <MaterialIcons name="delete-outline" size={19} color={colors.navy} />
+                <Text style={styles.removeText}>Remove from Today’s menu</Text>
+              </Pressable>
+            </>
           ) : (
             <>
               <View style={styles.totalRow}>
@@ -245,6 +268,8 @@ const styles = StyleSheet.create({
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
   mapLink: { fontFamily: fonts.extraBold, fontSize: 13, color: colors.teal },
   lineText: { flex: 1, fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.ink, lineHeight: 19 },
+  remove: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14, paddingVertical: 12 },
+  removeText: { fontFamily: fonts.bold, fontSize: 14, color: colors.navy },
   noteInput: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 10 },
   total: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
