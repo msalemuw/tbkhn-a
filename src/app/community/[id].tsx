@@ -16,6 +16,7 @@ import { useMyLocation } from '@/lib/location';
 import { useLive } from '@/lib/live';
 import { fetchMyCommunities, mediaUrl, type Person, personName, uploadPhoto } from '@/lib/posts';
 import { fetchTop, type TopCook } from '@/lib/rankings';
+import { useBadges } from '@/lib/use-badges';
 import { useSession } from '@/lib/session';
 import { VerifiedTick } from '@/lib/verified';
 import { tr } from '@/lib/i18n';
@@ -45,6 +46,7 @@ export default function CommunityScreen() {
   const [members, setMembers] = useState(0);
   const [cover, setCover] = useState<{ path: string | null; logo: string | null; canEdit: boolean }>({ path: null, logo: null, canEdit: false });
   const [savingCover, setSavingCover] = useState(false);
+  const badges = useBadges((data?.today ?? []).map((d) => d.author_id));
 
   const load = useCallback(() => {
     fetchCommunityOverview(id).then(
@@ -201,7 +203,7 @@ export default function CommunityScreen() {
         </View>
         <View style={[styles.pad, { gap: 12, marginTop: 9 }]}>
           {data.today.length ? (
-            data.today.map((d) => <DishCard key={d.id} dish={d} here={here} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
+            data.today.map((d) => <DishCard key={d.id} dish={d} here={here} badges={badges.get(d.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: d.id } })} />)
           ) : (
             <Text style={styles.empty}>Nothing on today’s menu in {info.name} yet.</Text>
           )}
