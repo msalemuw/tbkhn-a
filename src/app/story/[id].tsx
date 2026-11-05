@@ -12,7 +12,7 @@ import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { useMenuOff } from '@/lib/app-status';
 import { sendMessage } from '@/lib/chat';
-import { deletePost, setLiked } from '@/lib/feed';
+import { deletePost, removeDish, setLiked } from '@/lib/feed';
 import { distanceMeters, fmtAgo, fmtDist, fmtReady } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
 import { useOverlayInsets } from '@/lib/insets';
@@ -141,15 +141,15 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
     }
   }, [liked, me, item.id]);
 
-  // Your own photo stories can be deleted; "Today's menu" stories follow the dish and end at midnight.
+  // Your own stories can be deleted. For a "Today's menu" story that takes the dish off the menu too (it would end at midnight anyway).
   function confirmDelete() {
     setPaused(true);
-    Alert.alert('Delete this story?', 'It will disappear for everyone.', [
+    Alert.alert(order ? 'Remove this from Today’s menu?' : 'Delete this story?', order ? 'It will leave the menu and this story. Orders already sent stay.' : 'It will disappear for everyone.', [
       {
         text: 'Delete',
         style: 'destructive',
         onPress: () =>
-          deletePost(item.id).then(
+          (order ? removeDish(item.id) : deletePost(item.id)).then(
             () => onDeleted(item.id),
             () => {
               setPaused(false);
@@ -199,8 +199,8 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
             </View>
           </Pressable>
           <View style={styles.headActions}>
-            {mine && !order ? (
-              <Pressable onPress={confirmDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel="Delete story" style={styles.closeHit}>
+            {mine ? (
+              <Pressable onPress={confirmDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel={order ? 'Remove from Today’s menu' : 'Delete story'} style={styles.closeHit}>
                 <MaterialIcons name="delete-outline" size={26} color={colors.white} />
               </Pressable>
             ) : null}

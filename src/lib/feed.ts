@@ -174,6 +174,20 @@ export async function updateCaption(postId: string, caption: string): Promise<vo
   dataChanged();
 }
 
+/**
+ * Take a "Today's menu" dish off the menu and end its story. A dish nobody ordered is deleted outright; one with orders can't be
+ * deleted (the orders still point at it), so it is ended now instead: it leaves the menu and stories, the orders stay.
+ */
+export async function removeDish(postId: string): Promise<void> {
+  const { error } = await supabase.from('posts').delete().eq('id', postId);
+  if (error) {
+    if (error.code !== '23503') throw error;
+    const { error: e2 } = await supabase.from('posts').update({ expires_at: new Date().toISOString() }).eq('id', postId);
+    if (e2) throw e2;
+  }
+  dataChanged();
+}
+
 export async function deletePost(postId: string): Promise<void> {
   const { error } = await supabase.from('posts').delete().eq('id', postId);
   if (error) throw error;
