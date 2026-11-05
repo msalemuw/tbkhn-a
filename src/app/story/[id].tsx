@@ -13,7 +13,8 @@ import { colors, fonts } from '@/constants/theme';
 import { useMenuOff } from '@/lib/app-status';
 import { sendMessage } from '@/lib/chat';
 import { deletePost, setLiked } from '@/lib/feed';
-import { fmtAgo, fmtReady } from '@/lib/format';
+import { distanceMeters, fmtAgo, fmtDist, fmtReady } from '@/lib/format';
+import { useMyLocation } from '@/lib/location';
 import { useOverlayInsets } from '@/lib/insets';
 import { mediaUrl, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -105,6 +106,7 @@ export default function StoryViewer() {
 function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryGroup; index: number; me: string | null; onNext: () => void; onPrev: () => void; onDeleted: (id: string) => void }) {
   const item = group.items[index];
   const mine = group.author.id === me;
+  const here = useMyLocation();
   const keyboard = useKeyboardHeight();
   const insets = useOverlayInsets();
   const [progress] = useState(() => new Animated.Value(0));
@@ -219,7 +221,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
             <Text style={styles.caption}>{item.dish_name}</Text>
             <Text style={styles.sub}>
               EGP {Number(item.price_egp)} · {item.ready_at ? fmtReady(Date.parse(item.ready_at)) : ''} · {item.portions_left ?? 0} left
-              {item.community ? ` · ${item.community.name}` : ''}
+              {here && item.pickup_point ? ` · ${fmtDist(distanceMeters(here, item.pickup_point))} away` : ''}
             </Text>
           </>
         ) : null}
