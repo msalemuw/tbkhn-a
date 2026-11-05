@@ -233,7 +233,7 @@ export default function Home() {
       {watching ? <WatchingSheet visible={watchOpen} mine={mine} value={watching} onChange={setWatching} onClose={() => setWatchOpen(false)} /> : null}
       <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
-      <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(id) => patch(id, (x) => ({ ...x, comments: x.comments + 1 }))} />
+      <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(id) => patch(id, (x) => ({ ...x, comments: x.comments + 1 }))} onRemoved={(id) => patch(id, (x) => ({ ...x, comments: Math.max(0, x.comments - 1) }))} />
     </View>
   );
 }

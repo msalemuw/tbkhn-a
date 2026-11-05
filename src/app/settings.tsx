@@ -55,6 +55,7 @@ export default function Settings() {
         <Row icon="receipt-long" label={t('My orders')} onPress={() => router.push('/orders')} />
         <Row icon="edit" label={t('Edit profile')} onPress={() => router.push('/edit-profile')} />
         <Row icon="translate" label={lang === 'ar' ? 'English' : 'العربية'} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />
+        <Row icon="place" label={t('My pickup spots')} onPress={() => router.push('/pickup-spots')} />
         <Row icon="block" label={t('Blocked accounts')} onPress={() => router.push('/blocked')} />
         <Row icon="help-outline" label={t('Help & support')} onPress={() => router.push('/support')} />
         <Row icon="privacy-tip" label={t('Privacy policy')} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'privacy' } })} />

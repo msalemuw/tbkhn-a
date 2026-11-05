@@ -122,7 +122,7 @@ export async function fetchMyCommunities(userId: string): Promise<MyCommunity[]>
 }
 
 export async function fetchMyPickupPoints(userId: string): Promise<PickupPoint[]> {
-  const { data, error } = await supabase.from('pickup_points').select('id, label, lat, lng').eq('owner_id', userId).order('created_at');
+  const { data, error } = await supabase.from('pickup_points').select('id, label, lat, lng').eq('owner_id', userId).is('archived_at', null).order('created_at');
   if (error) throw error;
   return data ?? [];
 }
@@ -141,6 +141,12 @@ export async function addPickupPoint(userId: string, label: string, lat: number,
 /** The cook gives the pickup spot a name buyers understand ("Building 5, front gate"). Live dishes at that spot show it too. */
 export async function renamePickupPoint(id: string, label: string): Promise<void> {
   const { error } = await supabase.from('pickup_points').update({ label }).eq('id', id);
+  if (error) throw error;
+}
+
+/** "Delete" a saved pickup spot: it leaves the member's list. Dishes that already used it keep their pickup point. */
+export async function removePickupPoint(id: string): Promise<void> {
+  const { error } = await supabase.from('pickup_points').update({ archived_at: new Date().toISOString() }).eq('id', id);
   if (error) throw error;
 }
 

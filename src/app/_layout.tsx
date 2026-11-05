@@ -90,6 +90,7 @@ export default function RootLayout() {
         <Stack.Screen name="order/[id]" />
         <Stack.Screen name="orders" />
         <Stack.Screen name="blocked" />
+        <Stack.Screen name="pickup-spots" />
         <Stack.Screen name="location" options={{ presentation: 'modal' }} />
         <Stack.Screen name="pickup-map" options={{ presentation: 'modal' }} />
         <Stack.Screen name="cook/[id]" />

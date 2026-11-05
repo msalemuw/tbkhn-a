@@ -145,6 +145,12 @@ export async function addComment(me: string, postId: string, body: string): Prom
   dataChanged();
 }
 
+export async function deleteComment(id: string): Promise<void> {
+  const { error } = await supabase.from('comments').delete().eq('id', id);
+  if (error) throw error;
+  dataChanged();
+}
+
 /** A signature dish: a photo and caption that stay on the cook's profile. */
 export async function postSignature(me: string, caption: string, mediaPath: string, communityId: string | null): Promise<string> {
   const { data, error } = await supabase

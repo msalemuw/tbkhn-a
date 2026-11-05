@@ -3,12 +3,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 import { Text, TextInput } from '@/components/text';
+import { Alert } from '@/lib/alert';
 import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
-import { addComment, type Comment, fetchComments } from '@/lib/feed';
+import { addComment, type Comment, deleteComment, fetchComments } from '@/lib/feed';
 import { fmtAgo } from '@/lib/format';
 import { personName } from '@/lib/posts';
 
@@ -18,20 +21,22 @@ export function CommentsSheet({
   me,
   onClose,
   onAdded,
+  onRemoved,
 }: {
   postId: string | null;
   me: string | null;
   onClose: () => void;
   onAdded: (postId: string) => void;
+  onRemoved?: (postId: string) => void;
 }) {
   return (
     <Modal visible={postId !== null} transparent animationType="slide" onRequestClose={onClose}>
-      {postId ? <Thread key={postId} postId={postId} me={me} onClose={onClose} onAdded={onAdded} /> : null}
+      {postId ? <Thread key={postId} postId={postId} me={me} onClose={onClose} onAdded={onAdded} onRemoved={onRemoved} /> : null}
     </Modal>
   );
 }
 
-function Thread({ postId, me, onClose, onAdded }: { postId: string; me: string | null; onClose: () => void; onAdded: (postId: string) => void }) {
+function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; me: string | null; onClose: () => void; onAdded: (postId: string) => void; onRemoved?: (postId: string) => void }) {
   const [items, setItems] = useState<Comment[] | null>(null);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -44,6 +49,24 @@ function Thread({ postId, me, onClose, onAdded }: { postId: string; me: string |
   }, [postId]);
 
   useEffect(load, [load]);
+
+  function remove(c: Comment) {
+    Alert.alert('Delete your comment?', 'It will disappear for everyone.', [
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          deleteComment(c.id).then(
+            () => {
+              setItems((l) => (l ?? []).filter((x) => x.id !== c.id));
+              onRemoved?.(postId);
+            },
+            () => Alert.alert('We couldn’t delete your comment', 'Check your connection and try again.'),
+          ),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
 
   async function send() {
     if (!me) {
@@ -90,6 +113,11 @@ function Thread({ postId, me, onClose, onAdded }: { postId: string; me: string |
                       </Text>
                       <Text verbatim style={styles.body}>{item.body}</Text>
                     </View>
+                    {me && item.author?.id === me ? (
+                      <Pressable onPress={() => remove(item)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Delete your comment">
+                        <MaterialIcons name="delete-outline" size={20} color={colors.muted} />
+                      </Pressable>
+                    ) : null}
                   </View>
                 )}
               />
