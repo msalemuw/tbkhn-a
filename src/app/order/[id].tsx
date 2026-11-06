@@ -147,10 +147,10 @@ export default function OrderScreen() {
           </View>
         ) : null}
 
-        {!isCook && (o.status === 'accepted' || o.status === 'ready') ? (
+        {!isCook && o.status === 'ready' ? (
           <View style={styles.lock}>
             <MaterialIcons name="lock" size={16} color={colors.muted} />
-            <Text style={styles.muted}>Cancellation is closed once the cook confirms. If something changed, contact {cookFirst}.</Text>
+            <Text style={styles.muted}>Cancellation is closed once the order is ready. If something changed, contact {cookFirst}.</Text>
           </View>
         ) : null}
 

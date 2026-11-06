@@ -52,7 +52,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Tell us what happened and we will answer here\.$/, 'قولنا حصل إيه وهنرد عليك هنا.'],
   [/^Tell us what happened and we will answer here, on the email or phone you leave\.$/, 'قولنا حصل إيه وهنرد عليك على الإيميل أو الموبايل اللي هتسيبه.'],
   [/^NOTE FROM (.+)$/, (_, n) => (n === 'YOU' ? 'ملاحظة منك' : `ملاحظة من ${n}`)],
-  [/^Cancellation is closed once the cook confirms\. If something changed, contact (.+)\.$/, 'الإلغاء بيتقفل لما الطباخ يأكد. لو حاجة اتغيّرت، كلّم $1.'],
+  [/^Cancellation is closed once the order is ready\. If something changed, contact (.+)\.$/, 'الإلغاء بيتقفل لما الطلب يبقى جاهز. لو حاجة اتغيّرت، كلّم $1.'],
   [/^How was (.+)’s meal\?$/, 'أكل $1 كان عامل إزاي؟'],
   [/^Resend code in (\d+:\d\d)$/, 'ابعت الكود تاني بعد $1'],
   [/^Pay (.+) by InstaPay after (.+) accepts\. Nothing is charged in the app\.$/, 'ادفع لـ $1 بإنستاباي بعد ما $2 يقبل. مفيش أي مبلغ بيتخصم من التطبيق.'],
