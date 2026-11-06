@@ -39,6 +39,7 @@ const STAFF_STATUS: Record<string, string> = {
   picked_up: 'Picked up',
   declined: 'Declined',
   cancelled: 'Cancelled',
+  not_picked_up: 'Not picked up',
 };
 
 export function describe(n: Notification, who: string): { title: string; sub?: string; icon: IconName } {
@@ -54,6 +55,12 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: `Your order from ${who} is ready`, sub: `${dish} · ready for pickup`, icon: 'restaurant' };
     case 'order_cancelled':
       return { title: `${who} cancelled their order`, sub: dish, icon: 'cancel' };
+    case 'order_expired':
+      return { title: 'An order timed out', sub: `${dish} · no answer in 24 hours, the plates went back`, icon: 'cancel' };
+    case 'order_not_picked_up':
+      return { title: 'An order was closed', sub: `${dish} · not picked up`, icon: 'cancel' };
+    case 'order_reminder':
+      return { title: `${who} is still waiting`, sub: `${dish} · answer or update the order`, icon: 'schedule' };
     case 'review_request':
       return { title: `How was your order from ${who}?`, sub: 'Tap to leave a review', icon: 'star' };
     case 'payment_sent':

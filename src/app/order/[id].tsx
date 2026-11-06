@@ -91,13 +91,13 @@ export default function OrderScreen() {
   const move = (s: OrderStatus) => run(s, () => setOrderStatus(o.id, s));
 
   function confirmCancel() {
-    Alert.alert('Cancel this order?', `${cookFirst} hasn’t confirmed, so nothing is owed.`, [
+    Alert.alert('Cancel this order?', o.status === 'accepted' ? `${cookFirst} may already be cooking. Cancel only if you can’t collect it.` : `${cookFirst} hasn’t confirmed, so nothing is owed.`, [
       { text: 'Keep order', style: 'cancel' },
       { text: 'Cancel order', style: 'destructive', onPress: () => move('cancelled') },
     ]);
   }
 
-  const head = headline(o.status, isCook, { cook: cookFirst, buyer });
+  const head = headline(o.status, isCook, { cook: cookFirst, buyer }, o.cancel_reason);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -165,8 +165,8 @@ export default function OrderScreen() {
           ) : null}
           {isCook && o.status === 'accepted' ? <PrimaryButton label="Mark as ready" busy={busy === 'ready'} onPress={() => move('ready')} /> : null}
           {isCook && o.status === 'ready' ? <PrimaryButton label="Picked up" busy={busy === 'picked_up'} onPress={() => move('picked_up')} /> : null}
-          {!isCook && o.status === 'pending' ? <SecondaryButton label="Cancel order" busy={busy === 'cancelled'} onPress={confirmCancel} /> : null}
-          {!isCook && (o.status === 'declined' || o.status === 'cancelled') ? <PrimaryButton label="See today’s menu" onPress={() => router.replace('/menu')} /> : null}
+          {!isCook && (o.status === 'pending' || o.status === 'accepted') ? <SecondaryButton label="Cancel order" busy={busy === 'cancelled'} onPress={confirmCancel} /> : null}
+          {!isCook && (o.status === 'declined' || o.status === 'cancelled' || o.status === 'not_picked_up') ? <PrimaryButton label="See today’s menu" onPress={() => router.replace('/menu')} /> : null}
           <SecondaryButton
             label={`Message ${isCook ? buyer : cookFirst}`}
             onPress={() => router.push({ pathname: '/chat/[id]', params: { id: isCook ? o.buyer_id : o.cook_id } })}
@@ -179,28 +179,32 @@ export default function OrderScreen() {
   );
 }
 
-function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string }): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
+function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string }, reason: string | null = null): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
   const wait = { icon: 'hourglass-top' as IconName, bg: colors.yellow, fg: colors.navy };
   const good = { icon: 'check' as IconName, bg: colors.teal, fg: colors.navy };
   const ready = { icon: 'restaurant' as IconName, bg: colors.teal, fg: colors.navy };
   const off = { icon: 'close' as IconName, bg: colors.navy, fg: colors.white };
   if (isCook) {
     switch (status) {
-      case 'pending': return { ...wait, title: `New order from ${n.buyer}`, sub: 'Accept it if you can cook it in time. They can cancel for free until you do.' };
+      case 'pending': return { ...wait, title: `New order from ${n.buyer}`, sub: 'Accept it if you can cook it in time. They can still cancel until you mark it ready. With no answer in 24 hours it cancels itself.' };
       case 'accepted': return { ...good, title: 'You accepted this order', sub: `Tap Mark as ready when it’s done, and ${n.buyer} is told right away.` };
       case 'ready': return { ...ready, title: 'Ready for pickup', sub: `Tap Picked up when ${n.buyer} collects it.` };
       case 'picked_up': return { ...good, title: 'Picked up', sub: 'Order complete.' };
       case 'declined': return { ...off, title: 'You declined this order', sub: 'The plates went back on your menu.' };
-      case 'cancelled': return { ...off, title: `${n.buyer} cancelled`, sub: 'The plates went back on your menu.' };
+      case 'not_picked_up': return { ...off, title: 'Not picked up', sub: `${n.buyer} didn’t collect it within 24 hours, so the order was closed.` };
+      case 'cancelled': if (reason?.startsWith('No answer')) return { ...off, title: 'This order timed out', sub: 'You didn’t answer within 24 hours. The plates went back on your menu.' };
+        return { ...off, title: `${n.buyer} cancelled`, sub: 'The plates went back on your menu.' };
     }
   }
   switch (status) {
-    case 'pending': return { ...wait, title: `Waiting for ${n.cook} to confirm`, sub: `You can cancel for free until ${n.cook} confirms.` };
+    case 'pending': return { ...wait, title: `Waiting for ${n.cook} to confirm`, sub: `You can cancel for free until ${n.cook} confirms. If there’s no answer in 24 hours it cancels itself.` };
     case 'accepted': return { ...good, title: `Order confirmed by ${n.cook}`, sub: 'Preparing. You’ll be told when it’s ready.' };
     case 'ready': return { ...ready, title: 'Your order is ready', sub: `${n.cook} just finished cooking. Hot and ready for your family’s table.` };
     case 'picked_up': return { ...good, title: 'Enjoy your meal' };
     case 'declined': return { ...off, title: `${n.cook} couldn’t take this order`, sub: 'Nothing is owed. Try another dish from today’s menu.' };
-    case 'cancelled': return { ...off, title: 'You cancelled this order', sub: 'Nothing is owed.' };
+    case 'not_picked_up': return { ...off, title: 'Order closed', sub: 'It wasn’t picked up within 24 hours of the pickup time.' };
+    case 'cancelled': if (reason?.startsWith('No answer')) return { ...off, title: `${n.cook} didn’t answer in time`, sub: 'The order was cancelled and nothing is owed. Try another dish.' };
+      return { ...off, title: 'You cancelled this order', sub: 'Nothing is owed.' };
   }
 }
 

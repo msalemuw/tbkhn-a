@@ -23,6 +23,7 @@ const BADGE: Record<OrderStatus, { label: string; bg: string; fg: string }> = {
   picked_up: { label: 'PICKED UP', bg: colors.lightBlue, fg: colors.muted },
   declined: { label: 'DECLINED', bg: colors.navy, fg: colors.white },
   cancelled: { label: 'CANCELLED', bg: colors.navy, fg: colors.white },
+  not_picked_up: { label: 'NOT PICKED UP', bg: colors.lightBlue, fg: colors.muted },
 };
 
 function line(o: Order, tab: Tab): string {
