@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Text, TextInput } from '@/components/text';
@@ -14,6 +14,7 @@ import { fetchBadges, type Badge } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { supabaseConfigured } from '@/lib/supabase';
 import { usePullRefresh } from '@/lib/pull-refresh';
+import { useRetap } from '@/lib/tab-retap';
 
 /**
  * Today's menu (s53): every dish neighbors share on today's menu, narrowed by community, cuisine or search.
@@ -25,7 +26,7 @@ const SLATE = 'rgba(1,49,62,.5)';
 /** How close a pickup point must be to the eater to count as "Nearby". */
 const NEARBY_METERS = 10_000;
 
-export function DishList({ header, filters = true }: { header?: React.ReactElement; filters?: boolean }) {
+export function DishList({ header, filters = true, retapTab }: { header?: React.ReactElement; filters?: boolean; retapTab?: string }) {
   const { session } = useSession();
   const here = useMyLocation();
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -61,6 +62,13 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
 
   // Reload when the tab comes back into view, e.g. after posting or ordering.
   const pull = usePullRefresh(load);
+  const listRef = useRef<FlatList<Dish>>(null);
+  // Tapping the tab you are on (Menu): back to the top and refresh, filters untouched.
+  useRetap(retapTab ?? '', () => {
+    if (!retapTab) return;
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    pull.onRefresh();
+  });
   useFocusEffect(
     useCallback(() => {
       load();
@@ -133,6 +141,7 @@ export function DishList({ header, filters = true }: { header?: React.ReactEleme
   return (
     <>
     <FlatList
+      ref={listRef}
       data={shown}
       keyExtractor={(d) => d.id}
       renderItem={({ item }) => <DishCard dish={item} here={here} badges={badges.get(item.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}

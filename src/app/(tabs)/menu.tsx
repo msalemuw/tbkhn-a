@@ -36,6 +36,7 @@ export default function Menu() {
         </View>
       ) : (
         <DishList
+          retapTab="menu"
           header={
             <View style={styles.header}>
               {/* The founder's artwork (sparkle strokes and the teal blob over light blue), placed like the design: about 83% of the screen width, flush with the top-right. */}

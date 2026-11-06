@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { t as tr } from '@/lib/i18n';
 import { colors, fonts, ui } from '@/constants/theme';
 import { useSession } from '@/lib/session';
+import { emitRetap } from '@/lib/tab-retap';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
@@ -35,6 +36,8 @@ export default function TabLayout() {
         <Tabs.Screen
           key={t.name}
           name={t.name}
+          // Tapping the tab you are already on scrolls it to the top and reloads it (the open tab is still focused when the tap arrives).
+          listeners={({ navigation, route }) => ({ tabPress: () => { if (navigation.isFocused()) emitRetap(route.name); } })}
           options={{
             title: tr(t.title),
             tabBarIcon: ({ color, size, focused }) =>
