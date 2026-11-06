@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 // Reservations: pickup only, paid peer to peer by InstaPay (section 13). Every change goes through
 // the database functions, which enforce who may do what and when.
 
-export type OrderStatus = 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled';
+export type OrderStatus = 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled' | 'not_picked_up';
 export type PaymentStatus = 'none' | 'sent' | 'received';
 
 export type Order = {

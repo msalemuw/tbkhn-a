@@ -68,7 +68,7 @@ export type AdminOrder = {
   id: string;
   created_at: string;
   updated_at: string;
-  status: 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled';
+  status: 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled' | 'not_picked_up';
   payment_status: 'none' | 'sent' | 'received';
   plates: number;
   price_egp: number | null;
@@ -148,6 +148,9 @@ export const ORDER_EVENT_LABEL: Record<string, string> = {
   ready: 'Ready for pickup',
   picked_up: 'Picked up',
   cancelled: 'Cancelled by buyer',
+  expired: 'Cancelled: cook did not answer in 24 hours',
+  not_picked_up: 'Closed: not picked up',
+  reminded: 'Reminder sent to the cook',
   payment_sent: 'Buyer marked InstaPay sent',
   payment_received: 'Cook marked InstaPay received',
 };

@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<AdminOrder['status'], string> = {
   picked_up: 'PICKED UP',
   declined: 'DECLINED',
   cancelled: 'CANCELLED',
+  not_picked_up: 'NOT PICKED UP',
 };
 
 const PAYMENT_LABEL: Record<AdminOrder['payment_status'], string> = {

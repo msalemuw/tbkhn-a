@@ -1143,8 +1143,8 @@
   }
 
   // Orders: find, open the timeline, download
-  var ORDER_STATUS = { pending: 'WAITING FOR COOK', accepted: 'ACCEPTED', ready: 'READY', picked_up: 'PICKED UP', declined: 'DECLINED', cancelled: 'CANCELLED' };
-  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received', staff_note: 'Staff note' };
+  var ORDER_STATUS = { pending: 'WAITING FOR COOK', accepted: 'ACCEPTED', ready: 'READY', picked_up: 'PICKED UP', declined: 'DECLINED', cancelled: 'CANCELLED', not_picked_up: 'NOT PICKED UP' };
+  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received', staff_note: 'Staff note', expired: 'Cancelled: cook did not answer in 24 hours', not_picked_up: 'Closed: not picked up', reminded: 'Reminder sent to the cook' };
   function viewOrders(v) {
     var state = null, items = [];
     v.innerHTML = '<div class="row"><h2 class="grow">Orders</h2>' + (role === 'owner' ? '<button class="btn" id="exportOrders">Download all orders (CSV)</button>' : '') + '</div>' +
