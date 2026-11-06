@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { GrabHandle } from '@/components/grab-handle';
 import { colors, fonts, ui } from '@/constants/theme';
 
 export type SheetAction = { label: string; destructive?: boolean; onPress: () => void };
@@ -13,7 +14,7 @@ export function ActionSheet({ title, actions, onClose }: { title: string | null;
       <View style={styles.root}>
         <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} accessibilityLabel="Close" />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
-          <View style={styles.grab} />
+          <GrabHandle onClose={onClose} color={ui.border} />
           {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : null}
           {actions.map((a) => (
             <Pressable
@@ -40,7 +41,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(1,49,62,.5)' },
   sheet: { backgroundColor: ui.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingBottom: 8 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: ui.border, marginVertical: 12 },
   title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 6 },
   row: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: ui.border },
   rowText: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep },

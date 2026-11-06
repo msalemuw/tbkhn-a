@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
+import { GrabHandle } from '@/components/grab-handle';
 import { danger, Field, formStyles, PrimaryButton, useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { similarNames } from '@/lib/community-names';
@@ -41,7 +42,7 @@ export function RequestCommunitySheet({
       <Pressable style={[StyleSheet.absoluteFill, styles.scrimFill]} onPress={onClose} />
       <View style={{ paddingBottom: keyboard }}>
         <SafeAreaView edges={keyboard ? [] : ['bottom']} style={styles.sheet}>
-          <View style={styles.grab} />
+          <GrabHandle onClose={onClose} />
           <Text style={styles.title}>Request a new {kindLabel}</Text>
           <Text style={styles.sub}>
             {where ? `In ${where}. ` : ''}Our team reviews every request. You can keep going now, and you join as soon as it is approved.
@@ -73,7 +74,6 @@ const styles = StyleSheet.create({
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   scrimFill: { backgroundColor: 'rgba(40,48,58,.35)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 20 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 10 },
   title: { fontFamily: fonts.extraBold, fontSize: 18, color: colors.ink },
   similar: { backgroundColor: colors.tealSoft, borderRadius: 14, padding: 12, marginTop: 12, gap: 6 },
   similarTitle: { fontFamily: fonts.extraBold, fontSize: 12.5, color: colors.ink },

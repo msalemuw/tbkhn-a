@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { GrabHandle } from '@/components/grab-handle';
 import { PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 
@@ -29,7 +30,7 @@ export function FilterSheet({
       <View style={styles.root}>
         <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
-          <View style={styles.grab} />
+          <GrabHandle onClose={onClose} />
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.sub}>{sub}</Text>
           <ScrollView style={{ maxHeight: Math.round(height * 0.6) }} showsVerticalScrollIndicator>
@@ -63,7 +64,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(40,48,58,.5)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 12 },
   title: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
   sub: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginBottom: 6 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginTop: 14 },

@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, Share, StyleSheet, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
+import { GrabHandle } from '@/components/grab-handle';
 import { Alert } from '@/lib/alert';
 import { FlipIcon } from '@/components/flip-icon';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
@@ -176,7 +177,7 @@ function EditBox({ post, onClose, onSaved }: { post: FeedPost; onClose: () => vo
       <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} />
       <View style={{ paddingBottom: keyboard }}>
         <SafeAreaView edges={keyboard ? [] : ['bottom']} style={styles.sheet}>
-          <View style={styles.grab} />
+          <GrabHandle onClose={onClose} />
           <Text style={styles.sheetTitle}>Edit caption</Text>
           <TextInput
             value={text}
@@ -212,7 +213,6 @@ const styles = StyleSheet.create({
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(40,48,58,.5)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingBottom: 12 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 12 },
   sheetTitle: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink, marginBottom: 10 },
   editInput: { minHeight: 90, maxHeight: 200, fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.ink, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, textAlignVertical: 'top', backgroundColor: colors.white },
   error: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.navy, backgroundColor: colors.yellow, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, overflow: 'hidden', marginTop: 8 },

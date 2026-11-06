@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, useWindowDim
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { GrabHandle } from '@/components/grab-handle';
 import { Avatar } from '@/components/avatar';
 import { fonts, ui } from '@/constants/theme';
 import { fetchLikers } from '@/lib/feed';
@@ -35,7 +36,7 @@ function Likers({ postId, onClose }: { postId: string; onClose: () => void }) {
     <View style={styles.root}>
       <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} accessibilityLabel="Close" />
       <SafeAreaView edges={['bottom']} style={[styles.sheet, { height: Math.round(screenH * 0.6) }]}>
-        <View style={styles.grab} />
+        <GrabHandle onClose={onClose} color={ui.border} />
         <Text style={styles.title}>Likes{people && !failed ? ` · ${people.length}` : ''}</Text>
         {people === null ? (
           <ActivityIndicator color={ui.deepTeal} style={{ marginTop: 30 }} />
@@ -69,7 +70,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(1,49,62,.5)' },
   sheet: { backgroundColor: ui.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: ui.border, marginVertical: 12 },
   title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 8 },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: ui.deep, opacity: 0.6, textAlign: 'center', marginTop: 30 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },

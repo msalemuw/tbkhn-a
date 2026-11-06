@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { Text, TextInput } from '@/components/text';
+import { GrabHandle } from '@/components/grab-handle';
 import { Alert } from '@/lib/alert';
 import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
@@ -93,7 +94,7 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
         <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} />
         <View style={{ paddingBottom: keyboard }}>
           <SafeAreaView edges={keyboard ? [] : ['bottom']} style={[styles.sheet, { height: Math.min(Math.round(screenH * 0.7), screenH - keyboard - 60) }]}>
-            <View style={styles.grab} />
+            <GrabHandle onClose={onClose} />
             <Text style={styles.title}>Comments{items ? ` · ${items.length}` : ''}</Text>
             {items === null ? (
               <ActivityIndicator color={colors.teal} style={{ marginTop: 30 }} />
@@ -148,7 +149,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(40,48,58,.5)' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22 },
-  grab: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginVertical: 12 },
   title: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink, marginBottom: 8 },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 30 },
   row: { flexDirection: 'row', gap: 10, paddingVertical: 9 },
