@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,6 +27,7 @@ import { t } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import { VerifiedTick } from '@/lib/verified';
+import { useRetap } from '@/lib/tab-retap';
 
 type Found = { q: string; people: FoundCook[]; communities: FoundCommunity[] };
 
@@ -67,6 +68,13 @@ export default function Search() {
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requested, setRequested] = useState<string | null>(null);
   const [prefill, setPrefill] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+  // Bumped when the Search tab is tapped while open: runs the search again with the same text and place.
+  const [refreshKey, setRefreshKey] = useState(0);
+  useRetap('search', () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    setRefreshKey((k) => k + 1);
+  });
 
   // Refetched whenever the tab is focused again, so a logo changed on the community page shows here.
   useFocusEffect(
@@ -105,7 +113,7 @@ export default function Search() {
       live = false;
       clearTimeout(t);
     };
-  }, [text, me, place, profile?.governorate]);
+  }, [text, me, place, profile?.governorate, refreshKey]);
 
   const loading = !failed && found?.q !== text;
 
@@ -179,7 +187,7 @@ export default function Search() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.title}>Find cooks & communities</Text>
         <View style={styles.pad}>
           <View style={styles.search}>

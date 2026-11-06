@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect } from 'expo-router';
 import { setStatusBarStyle } from 'expo-status-bar';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,6 +30,7 @@ import { fetchStories, loadSeen, type StoryGroup } from '@/lib/stories';
 import { supabaseConfigured } from '@/lib/supabase';
 import { tr } from '@/lib/i18n';
 import { usePullRefresh } from '@/lib/pull-refresh';
+import { useRetap } from '@/lib/tab-retap';
 
 // Screen s6: Home is the social feed (design flow 15): signature dishes from the communities and cooks you watch.
 // Today’s menu and ordering live on the Menu tab.
@@ -89,6 +90,12 @@ export default function Home() {
   }, [me]);
 
   const pull = usePullRefresh(load);
+  const listRef = useRef<FlatList<FeedPost>>(null);
+  // Tapping Home while on Home: back to the top and refresh. The filter and everything else stay as they are.
+  useRetap('home', () => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    pull.onRefresh();
+  });
   useFocusEffect(
     useCallback(() => {
       setStatusBarStyle('dark');
@@ -193,6 +200,7 @@ export default function Home() {
         </View>
       </SafeAreaView>
       <FlatList
+        ref={listRef}
         data={shown}
         keyExtractor={(p) => p.id}
         renderItem={({ item }) => (
