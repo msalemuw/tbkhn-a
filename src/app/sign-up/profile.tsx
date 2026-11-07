@@ -16,6 +16,7 @@ import { logFunnel } from '@/lib/funnel';
 import { HEARD, OTHER_DETAIL } from '@/lib/heard';
 import { cleanPhoneInput, DIALS, dialFor, formatPhone, isValidPhone, splitE164, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
+import { nameToUsername } from '@/lib/username';
 import { type Country, fetchCountries, fetchRegions, type Region, topFirst } from '@/lib/regions';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -40,21 +41,6 @@ const OPTIONAL: { kind: Optional; label: string; noun: string }[] = [
   { kind: 'work', label: 'WORK', noun: 'workplace' },
 ];
 
-
-// first.last from the name, never from the email (which would show part of it on the public profile). Names that are
-// not in Latin letters give nothing and the member types one. The website does the same.
-function nameToUsername(full: string): string {
-  const words = full
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .split(/\s+/)
-    .map((w) => w.replace(/[^a-z0-9]/g, ''))
-    .filter(Boolean);
-  if (!words.length) return '';
-  const u = (words.length > 1 ? `${words[0]}.${words[words.length - 1]}` : words[0]).slice(0, 20);
-  return u.length >= 3 ? u : '';
-}
 
 type UsernameState = { msg: string; color: string; icon?: 'error' | 'check-circle'; ok: boolean; suggestions: string[] };
 
@@ -87,6 +73,9 @@ export default function ProfileStep() {
   const [dialCc, setDialCc] = useState('EG');
   const [loves, setLoves] = useState<Loves | null>(null);
   const [taken, setTaken] = useState<boolean | null>(null);
+  // The username follows the name until the member types their own; the button explains what is missing once tapped.
+  const [usernameEdited, setUsernameEdited] = useState(false);
+  const [tried, setTried] = useState(false);
   const [communities, setCommunities] = useState<Community[]>([]);
   const [countries, setCountries] = useState<Country[]>([]);
   const [country, setCountry] = useState('EG');
@@ -201,7 +190,34 @@ export default function ProfileStep() {
   // Not required, so nobody drops out here, and nothing on screen says it is optional; a half-typed number must be finished.
   const mobileOk = !needsMobile || mobile === '' || isValidPhone(mobile, dialCc);
   const canContinue = name.trim().length > 0 && un.ok && mobileOk;
-  const canSubmit = loves !== null && Boolean(gov?.trim() && areaId);
+  // "I love…" is optional (founder, 2026-11-07); the website matches.
+  const canSubmit = Boolean(gov?.trim() && areaId);
+
+  // The first thing standing in the way, in words (the button is never greyed out without saying why).
+  function problem(): { field: string; msg: string } | null {
+    if (part === 1) {
+      if (!name.trim()) return { field: 'name', msg: 'Please write your name.' };
+      if (username.length < 3) return { field: 'username', msg: 'Please choose a username of at least 3 letters or numbers.' };
+      if (taken === true) return { field: 'username_taken', msg: 'That username is taken. Tap one of the suggestions or type another.' };
+      if (taken === null) return { field: 'username_checking', msg: 'One moment, we are checking that the username is free. Tap Continue again.' };
+      if (!mobileOk) return { field: 'phone', msg: `Please finish your mobile number (example: ${dialFor(dialCc).example}) or clear it.` };
+    } else if (part === 2) {
+      if (!gov?.trim()) return { field: 'governorate', msg: `Please choose your ${typedRegion ? 'region' : 'governorate'}.` };
+      if (!areaId) return { field: 'area', msg: 'Please choose your area. Can’t find it? Tap Request it at the bottom of the list.' };
+    }
+    return null;
+  }
+  function onNext() {
+    const p = problem();
+    if (p) {
+      setTried(true);
+      setError(p.msg);
+      logFunnel('profile_field_error', { field: `missing_${p.field}` }, { userRef: session?.user.id });
+      return;
+    }
+    setError(null);
+    return part === 1 ? onContinue() : part === 2 ? onDetails() : onExtras();
+  }
 
   function openPicker(
     title: string,
@@ -395,8 +411,21 @@ export default function ProfileStep() {
           </Pressable>
 
           <View style={styles.group}>
-            <Field label="FULL NAME" required>
-              <TextInput value={name} onChangeText={setName} placeholder="example: Nour Sami" placeholderTextColor={colors.faint} maxLength={60} autoComplete="name" textContentType="name" style={formStyles.input} />
+            <Field label="FULL NAME" required borderColor={tried && !name.trim() ? danger : undefined}>
+              <TextInput
+                value={name}
+                onChangeText={(v) => {
+                  setName(v);
+                  if (!usernameEdited) {
+                    setUsername(nameToUsername(v));
+                    setTaken(null);
+                  }
+                }}
+                placeholder="example: Nour Sami" placeholderTextColor={colors.faint} maxLength={60}
+                autoComplete="name"
+                textContentType="name"
+                style={formStyles.input}
+              />
             </Field>
             {phoneDigits ? (
               <Field label="MOBILE NUMBER" required>
@@ -458,6 +487,7 @@ export default function ProfileStep() {
                     value={username}
                     onChangeText={(v) => {
                       setUsername(v.toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20));
+                      setUsernameEdited(true);
                       setTaken(null);
                     }}
                     placeholder="example: nour.s"
@@ -474,7 +504,7 @@ export default function ProfileStep() {
               {un.suggestions.length ? (
                 <View style={styles.chips}>
                   {un.suggestions.map((s) => (
-                    <Text key={s} style={styles.chip} onPress={() => { setUsername(s); setTaken(null); }}>
+                    <Text key={s} style={styles.chip} onPress={() => { setUsername(s); setUsernameEdited(true); setTaken(null); }}>
                       @{s}
                     </Text>
                   ))}
@@ -487,18 +517,18 @@ export default function ProfileStep() {
           ) : part === 2 ? (
             <>
           <Text style={styles.section}>
-            ABOUT YOU <Text style={{ color: colors.muted }}>*</Text>
+            ABOUT YOU (OPTIONAL)
           </Text>
           <View style={styles.chips}>
             {LOVES.map((l) => (
-              <Chip key={l.value} label={l.label} on={loves === l.value} onPress={() => setLoves(l.value)} />
+              <Chip key={l.value} label={l.label} on={loves === l.value} onPress={() => setLoves(loves === l.value ? null : l.value)} />
             ))}
           </View>
 
           <Text style={styles.section}>
-            YOUR COMMUNITIES <Text style={{ color: colors.muted }}>*</Text>
+            WHERE DO YOU LIVE? <Text style={{ color: colors.muted }}>*</Text>
           </Text>
-          <Text style={styles.sectionSub}>Tell us where you belong: this decides who sees your posts and whose posts you see.</Text>
+          <Text style={styles.sectionSub}>Your area is your first community, a group of neighbors. You’ll see its cooks and posts, and they’ll see yours.</Text>
           <View style={styles.group}>
             {countries.length > 0 ? (
               <SelectField
@@ -540,6 +570,7 @@ export default function ProfileStep() {
               <SelectField
                 label="GOVERNORATE"
                 required
+                borderColor={tried && !gov?.trim() ? danger : undefined}
                 value={gov ?? 'Choose'}
                 onPress={() =>
                   openPicker(
@@ -558,6 +589,7 @@ export default function ProfileStep() {
             <SelectField
               label="AREA"
               required
+              borderColor={tried && !areaId ? danger : undefined}
               value={byId(areaId) ? label(byId(areaId)!) : gov?.trim() ? 'Choose' : `Choose a ${typedRegion ? 'region' : 'governorate'} first`}
               onPress={() =>
                 gov?.trim() &&
@@ -568,10 +600,12 @@ export default function ProfileStep() {
               }
             />
           </View>
+          <Text style={[formStyles.hint, { color: colors.muted }]}>Can’t find your area? Open the list and tap “Request it” at the bottom.</Text>
             </>
           ) : (
             <>
-          <Text style={styles.section}>YOUR OTHER COMMUNITIES</Text>
+          <Text style={styles.section}>JOIN MORE COMMUNITIES</Text>
+          <Text style={styles.sectionSub}>A community is a group of neighbors: your club, Sahel compound, school or workplace. Join any that fit to see their cooks and posts.</Text>
           <View style={styles.group}>
             {OPTIONAL.map(({ kind, label: heading, noun }) => (
               <SelectField
@@ -653,9 +687,8 @@ export default function ProfileStep() {
           {error ? <Text style={formStyles.error}>{error}</Text> : null}
           <PrimaryButton
             label={part === 1 ? 'Continue' : part === 2 ? 'Create my account' : 'Save and finish'}
-            onPress={part === 1 ? onContinue : part === 2 ? onDetails : onExtras}
+            onPress={onNext}
             busy={busy}
-            disabled={part === 1 ? !canContinue : part === 2 ? !canSubmit : false}
             style={{ marginTop: 22 }}
           />
           {part === 3 ? (
