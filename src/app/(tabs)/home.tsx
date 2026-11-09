@@ -94,7 +94,7 @@ export default function Home() {
   // Tapping Home while on Home: back to the top and refresh. The filter and everything else stay as they are.
   useRetap('home', () => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    pull.onRefresh();
+    pull.reload();
   });
   useFocusEffect(
     useCallback(() => {
@@ -215,7 +215,7 @@ export default function Home() {
             onMore={() => onMore(item)}
           />
         )}
-        refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.teal} />}
         ListHeaderComponent={
           // White at the top (like the header) fading to the cream page by the time the first post starts.
           <View>
