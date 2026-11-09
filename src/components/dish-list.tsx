@@ -67,7 +67,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
   useRetap(retapTab ?? '', () => {
     if (!retapTab) return;
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    pull.onRefresh();
+    pull.reload();
   });
   useFocusEffect(
     useCallback(() => {
@@ -147,7 +147,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       renderItem={({ item }) => <DishCard dish={item} here={here} badges={badges.get(item.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
       style={{ backgroundColor: ui.page }}
       contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl {...pull} tintColor={ui.deepTeal} />}
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={ui.deepTeal} />}
       ListHeaderComponent={
         <View style={{ gap: 14 }}>
           {header}

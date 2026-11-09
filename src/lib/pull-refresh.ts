@@ -17,5 +17,10 @@ export function usePullRefresh(load: () => Promise<unknown> | void) {
         setRefreshing(false);
       });
   }, [load]);
-  return { refreshing, onRefresh };
+  // Reload with no spinner: for reloads the member did not start by pulling down (tapping the open tab). Turning `refreshing` on
+  // by code while the list is scrolling to the top is what leaves iOS with a blank gap above the list.
+  const reload = useCallback(() => {
+    Promise.resolve(load()).catch(() => {});
+  }, [load]);
+  return { refreshing, onRefresh, reload };
 }
