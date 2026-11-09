@@ -12,6 +12,9 @@ import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
+import { confirmBlock } from '@/lib/blocks';
 import { addComment, type Comment, deleteComment, fetchComments } from '@/lib/feed';
 import { fmtAgo } from '@/lib/format';
 import { personName } from '@/lib/posts';
@@ -42,6 +45,8 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [report, setReport] = useState<ReportTarget | null>(null);
   const keyboard = useKeyboardHeight();
   const { height: screenH } = useWindowDimensions();
 
@@ -67,6 +72,20 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  }
+
+  // Meta-style "…" on someone else's comment: Report (pick a reason) or Block.
+  function more(c: Comment) {
+    if (!me || !c.author) return;
+    const who = c.author;
+    const name = personName(who);
+    setMenu({
+      title: name,
+      actions: [
+        { label: 'Report comment', destructive: true, onPress: () => setTimeout(() => setReport({ me, name, profileId: who.id, quote: c.body }), 350) },
+        { label: `Block ${name}`, destructive: true, onPress: () => confirmBlock(name, who.id, () => setItems((l) => (l ?? []).filter((x) => x.author?.id !== who.id))) },
+      ],
+    });
   }
 
   async function send() {
@@ -118,6 +137,10 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
                       <Pressable onPress={() => remove(item)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Delete your comment">
                         <MaterialIcons name="delete-outline" size={20} color={colors.muted} />
                       </Pressable>
+                    ) : me && item.author ? (
+                      <Pressable onPress={() => more(item)} hitSlop={10} accessibilityRole="button" accessibilityLabel="More">
+                        <MaterialIcons name="more-horiz" size={22} color={colors.muted} />
+                      </Pressable>
                     ) : null}
                   </View>
                 )}
@@ -141,6 +164,8 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
           </SafeAreaView>
         </View>
       </View>
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
+      <ReportSheet target={report} onClose={() => setReport(null)} />
     </>
   );
 }

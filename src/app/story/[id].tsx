@@ -7,6 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
 import { Alert } from '@/lib/alert';
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
+import { confirmBlock } from '@/lib/blocks';
 import { Avatar } from '@/components/avatar';
 import { useKeyboardHeight } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
@@ -111,6 +114,8 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
   const insets = useOverlayInsets();
   const [progress] = useState(() => new Animated.Value(0));
   const [paused, setPaused] = useState(false);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [report, setReport] = useState<ReportTarget | null>(null);
   const [draft, setDraft] = useState('');
   const [liked, setLikedState] = useState(item.liked);
   const [sent, setSent] = useState(false);
@@ -161,6 +166,20 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
     ]);
   }
 
+  // Meta-style "…" on someone else's story: the story pauses while the sheet is open.
+  function openMore() {
+    if (!me) return router.push('/sign-up');
+    const name = personName(group.author);
+    setPaused(true);
+    setMenu({
+      title: name,
+      actions: [
+        { label: 'Report story', destructive: true, onPress: () => setTimeout(() => setReport({ me, name, profileId: group.author.id, postId: item.id }), 350) },
+        { label: `Block ${name}`, destructive: true, onPress: () => confirmBlock(name, group.author.id, closeStory) },
+      ],
+    });
+  }
+
   async function reply() {
     if (!me) return router.push('/sign-up');
     if (!draft.trim()) return;
@@ -203,7 +222,11 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
               <Pressable onPress={confirmDelete} hitSlop={8} accessibilityRole="button" accessibilityLabel={order ? 'Remove from Today’s menu' : 'Delete story'} style={styles.closeHit}>
                 <MaterialIcons name="delete-outline" size={26} color={colors.white} />
               </Pressable>
-            ) : null}
+            ) : (
+              <Pressable onPress={openMore} hitSlop={8} accessibilityRole="button" accessibilityLabel="More" style={styles.closeHit}>
+                <MaterialIcons name="more-horiz" size={28} color={colors.white} />
+              </Pressable>
+            )}
             <Pressable onPress={closeStory} hitSlop={8} accessibilityRole="button" accessibilityLabel="Close" style={styles.closeHit}>
               <MaterialIcons name="close" size={28} color={colors.white} />
             </Pressable>
@@ -258,6 +281,8 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
           </View>
         )}
       </View>
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => { setMenu(null); setPaused(false); }} />
+      <ReportSheet target={report} onClose={() => setReport(null)} />
     </View>
   );
 }

@@ -10,6 +10,9 @@ import { Avatar } from '@/components/avatar';
 import { formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 import { Alert } from '@/lib/alert';
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
+import { confirmBlock } from '@/lib/blocks';
 import { deleteMessage, fetchMessages, fetchOrderWith, fetchPerson, markRead, type Message, onMessageToMe, sendMessage } from '@/lib/chat';
 import { fmtAgo, fmtClock } from '@/lib/format';
 import { type Order, setPayment } from '@/lib/orders';
@@ -40,6 +43,8 @@ export default function ChatScreen() {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const list = useRef<FlatList<Message>>(null);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [report, setReport] = useState<ReportTarget | null>(null);
 
   const load = useCallback(async () => {
     if (!me) return;
@@ -124,6 +129,15 @@ export default function ChatScreen() {
     ]);
   }
 
+  const leave = () => (router.canGoBack() ? router.back() : router.replace('/inbox'));
+  function openMore() {
+    const actions: SheetAction[] = [
+      { label: `Report ${name}`, destructive: true, onPress: () => setTimeout(() => setReport({ me, name, profileId: partnerId }), 350) },
+      { label: `Block ${name}`, destructive: true, onPress: () => confirmBlock(name, partnerId, leave) },
+    ];
+    setMenu({ title: name, actions });
+  }
+
   const shown = [...(messages ?? [])].reverse(); // inverted list: newest at the bottom
 
   return (
@@ -134,7 +148,12 @@ export default function ChatScreen() {
         </Pressable>
         <Avatar person={partner} size={36} />
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        <Pressable hitSlop={12} onPress={openMore} accessibilityRole="button" accessibilityLabel="More">
+          <MaterialIcons name="more-horiz" size={28} color={colors.ink} />
+        </Pressable>
       </View>
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
+      <ReportSheet target={report} onClose={() => setReport(null)} onBlocked={leave} />
 
       {order ? <OrderCard order={order} me={me} name={name} paying={paying} onPay={pay} /> : null}
 

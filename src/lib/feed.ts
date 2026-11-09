@@ -169,8 +169,8 @@ export async function fetchFollowing(me: string): Promise<string[]> {
   return (data ?? []).map((f) => f.followee_id);
 }
 
-export async function reportPost(me: string, postId: string): Promise<void> {
-  const { error } = await supabase.from('reports').insert({ reporter_id: me, post_id: postId });
+export async function reportPost(me: string, postId: string, reason?: string): Promise<void> {
+  const { error } = await supabase.from('reports').insert({ reporter_id: me, post_id: postId, reason: reason ? reason.slice(0, 500) : null });
   if (error) throw error;
 }
 
