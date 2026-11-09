@@ -95,16 +95,18 @@ export function SelectField({
   label,
   value,
   required,
+  borderColor,
   onPress,
 }: {
   label: string;
   value: string;
   required?: boolean;
+  borderColor?: string;
   onPress: () => void;
 }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}: ${value}`}>
-      <Field label={label} required={required}>
+      <Field label={label} required={required} borderColor={borderColor}>
         <View style={styles.selectRow}>
           <Text style={[styles.value, value === 'None' && { color: colors.muted }]}>{value}</Text>
           <MaterialIcons name="expand-more" size={22} color={colors.muted} />
