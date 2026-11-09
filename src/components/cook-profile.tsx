@@ -28,7 +28,8 @@ import {
   setFollowing,
   type Signature,
 } from '@/lib/cooks';
-import { confirmBlock, isBlocked, reportMember, unblockMember } from '@/lib/blocks';
+import { confirmBlock, isBlocked, unblockMember } from '@/lib/blocks';
+import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { useMyLocation } from '@/lib/location';
 import { type Dish, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
@@ -65,6 +66,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [report, setReport] = useState<ReportTarget | null>(null);
 
   const me = session?.user.id ?? null;
   const mine = me === id;
@@ -134,7 +136,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
         {
           label: 'Report this member',
           destructive: true,
-          onPress: () => (me ? reportMember(me, id).then(() => Alert.alert('Thanks', 'Our team will take a look.'), () => Alert.alert('We couldn’t send your report', 'Check your connection and try again.')) : undefined),
+          onPress: () => (me ? setTimeout(() => setReport({ me, name, profileId: id }), 350) : undefined),
         },
       ],
     });
@@ -272,6 +274,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
         {footer}
       </ScrollView>
       <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
+      <ReportSheet target={report} onClose={() => setReport(null)} onBlocked={() => setBlocked(true)} />
     </SafeAreaView>
   );
 }

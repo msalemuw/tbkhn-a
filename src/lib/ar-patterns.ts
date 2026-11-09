@@ -74,6 +74,7 @@ export const arPatterns: [RegExp, To][] = [
   // People and blocking
   [/^Block (.+)\?$/, 'تحظر $1؟'],
   [/^Block (.+)$/, 'حظر $1'],
+  [/^Report (.+)$/, 'الإبلاغ عن $1'],
   [/^Unblock (.+)$/, 'إلغاء حظر $1'],
   [/^Message (.+)…$/, 'ابعت لـ $1…'],
   [/^Message (.+)$/, 'ابعت لـ $1'],

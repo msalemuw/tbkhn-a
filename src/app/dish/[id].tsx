@@ -12,6 +12,9 @@ import { distanceMeters, fmtClock, fmtDist, fmtReady } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
 import { useLive } from '@/lib/live';
 import { Alert } from '@/lib/alert';
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
+import { confirmBlock } from '@/lib/blocks';
 import { removeDish } from '@/lib/feed';
 import { placeOrder } from '@/lib/orders';
 import { type Dish, fetchDish, mediaUrl, personName } from '@/lib/posts';
@@ -33,6 +36,8 @@ export default function DishScreen() {
   const [pickupAt, setPickupAt] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [sheet, setSheet] = useState<SheetItem[] | null>(null);
+  const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [report, setReport] = useState<ReportTarget | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -127,6 +132,24 @@ export default function DishScreen() {
                 accessibilityLabel={`Message ${cook}`}>
                 <MaterialIcons name="chat-bubble-outline" size={16} color={colors.navy} />
                 <Text style={styles.msgText}>Message</Text>
+              </Pressable>
+            ) : null}
+            {session && !mine ? (
+              <Pressable
+                hitSlop={10}
+                onPress={() => {
+                  const me = session.user.id;
+                  setMenu({
+                    title: cook,
+                    actions: [
+                      { label: 'Report dish', destructive: true, onPress: () => setTimeout(() => setReport({ me, name: cook, profileId: dish.author_id, postId: id }), 350) },
+                      { label: `Block ${cook}`, destructive: true, onPress: () => confirmBlock(cook, dish.author_id, () => (router.canGoBack() ? router.back() : router.replace('/menu'))) },
+                    ],
+                  });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="More">
+                <MaterialIcons name="more-horiz" size={26} color={colors.ink} />
               </Pressable>
             ) : null}
           </View>
@@ -242,6 +265,8 @@ export default function DishScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
       <PickerSheet title="Pickup time" items={sheet} onClose={() => setSheet(null)} />
+      <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
+      <ReportSheet target={report} onClose={() => setReport(null)} />
     </SafeAreaView>
   );
 }

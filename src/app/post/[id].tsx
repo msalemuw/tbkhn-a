@@ -13,7 +13,8 @@ import { LikesSheet } from '@/components/likes-sheet';
 import { useKeyboardHeight } from '@/components/form';
 import { PostCard } from '@/components/post-card';
 import { colors, fonts, ui } from '@/constants/theme';
-import { deletePost, type FeedPost, fetchPostsBy, reportPost, setLiked, updateCaption } from '@/lib/feed';
+import { deletePost, type FeedPost, fetchPostsBy, setLiked, updateCaption } from '@/lib/feed';
+import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -29,6 +30,7 @@ export default function PostScreen() {
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [likesFor, setLikesFor] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
+  const [report, setReport] = useState<ReportTarget | null>(null);
   const [editing, setEditing] = useState<FeedPost | null>(null);
   const list = useRef<FlatList<FeedPost>>(null);
   const scrolled = useRef(false);
@@ -97,7 +99,7 @@ export default function PostScreen() {
             {
               label: 'Report post',
               destructive: true,
-              onPress: () => (me ? reportPost(me, p.id).then(() => Alert.alert('Thanks', 'Our team will take a look.'), () => null) : router.push('/sign-up')),
+              onPress: () => (me ? setTimeout(() => setReport({ me, name, profileId: p.author_id, postId: p.id }), 350) : router.push('/sign-up')),
             },
             { label: `Block ${name}`, destructive: true, onPress: () => (me ? confirmBlock(name, p.author_id, back) : router.push('/sign-up')) },
           ];
@@ -131,6 +133,7 @@ export default function PostScreen() {
         />
       )}
       <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
+      <ReportSheet target={report} onClose={() => setReport(null)} onBlocked={back} />
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
       <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(pid) => patch(pid, (x) => ({ ...x, comments: x.comments + 1 }))} onRemoved={(pid) => patch(pid, (x) => ({ ...x, comments: Math.max(0, x.comments - 1) }))} />
       <EditCaption

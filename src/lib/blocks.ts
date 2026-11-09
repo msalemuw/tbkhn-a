@@ -87,7 +87,7 @@ export function confirmBlock(name: string, id: string, done?: () => void) {
   ]);
 }
 
-export async function reportMember(me: string, profileId: string): Promise<void> {
-  const { error } = await supabase.from('reports').insert({ reporter_id: me, profile_id: profileId });
+export async function reportMember(me: string, profileId: string, reason?: string): Promise<void> {
+  const { error } = await supabase.from('reports').insert({ reporter_id: me, profile_id: profileId, reason: reason ? reason.slice(0, 500) : null });
   if (error) throw error;
 }
