@@ -76,6 +76,7 @@ export const ar: Record<string, string> = {
   Comments: 'التعليقات',
   Share: 'مشاركة',
   more: 'المزيد',
+  less: 'أقل',
   More: 'المزيد',
   'Feed filter': 'فلتر الصفحة',
   'Choose whose posts show on your Home feed.': 'اختار بوستات مين تظهر في صفحتك الرئيسية.',

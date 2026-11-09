@@ -40,6 +40,7 @@ export function PostCard({
   onMore: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [cut, setCut] = useState(false);
   const menuOff = useMenuOff();
   const photo = mediaUrl(post.media_path);
   const meta = ['Signature dish', meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at))].join(' · ');
@@ -78,10 +79,16 @@ export function PostCard({
       </View>
       {photo ? <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" /> : null}
       {post.caption ? (
-        <Text verbatim style={styles.caption} numberOfLines={open ? undefined : 2}>
-          {post.caption}
-          {long && !open ? <Text style={styles.more} onPress={() => setOpen(true)}>  more</Text> : null}
-        </Text>
+        <Pressable onPress={() => (long || cut) && setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? 'Show less' : 'Show the full description'}>
+          <Text
+            verbatim
+            style={styles.caption}
+            numberOfLines={open ? undefined : 2}
+            onTextLayout={(e) => !open && setCut(e.nativeEvent.lines.length > 2)}>
+            {post.caption}
+          </Text>
+          {long || cut ? <Text style={styles.more}>{open ? 'less' : 'more'}</Text> : null}
+        </Pressable>
       ) : null}
       <View style={styles.actions}>
         <View style={styles.act}>
@@ -116,7 +123,7 @@ const styles = StyleSheet.create({
   cookingText: { fontFamily: fonts.extraBold, fontSize: 13, color: ui.deep },
   photo: { width: '100%', aspectRatio: 1, marginTop: 10, borderRadius: 16, backgroundColor: colors.cream },
   caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },
-  more: { fontFamily: fonts.bold, color: colors.muted },
+  more: { fontFamily: fonts.bold, fontSize: 14, color: colors.muted, paddingTop: 4 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingTop: 12 },
   act: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   n: { fontFamily: fonts.semiBold, fontSize: 16, color: ui.deep },
