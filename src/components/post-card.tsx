@@ -44,7 +44,6 @@ export function PostCard({
   const menuOff = useMenuOff();
   const photo = mediaUrl(post.media_path);
   const meta = ['Signature dish', meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at))].join(' · ');
-  const long = (post.caption?.length ?? 0) > 90;
 
   return (
     <View style={styles.post}>
@@ -79,21 +78,21 @@ export function PostCard({
       </View>
       {photo ? <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" /> : null}
       {post.caption ? (
-        <Pressable onPress={() => (long || cut) && setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? 'Show less' : 'Show the full description'}>
-          <Text verbatim style={styles.caption} numberOfLines={open ? undefined : 2}>
+        <Pressable onPress={() => cut && setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? 'Show less' : 'Show the full description'}>
+          <Text verbatim style={styles.caption} numberOfLines={open ? undefined : 1}>
             {post.caption}
           </Text>
-          {/* Invisible full-length copy: the only reliable way to know whether the 2-line version is cut off. */}
+          {/* Invisible full-length copy: the only reliable way to know whether the 1-line version is cut off. */}
           <Text
             verbatim
             style={[styles.caption, styles.measure]}
             pointerEvents="none"
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            onTextLayout={(e) => setCut(e.nativeEvent.lines.length > 2)}>
+            onTextLayout={(e) => setCut(e.nativeEvent.lines.length > 1)}>
             {post.caption}
           </Text>
-          {long || cut ? <Text style={styles.more}>{open ? 'less' : 'more'}</Text> : null}
+          {cut ? <Text style={styles.more}>{open ? 'less' : 'more'}</Text> : null}
         </Pressable>
       ) : null}
       <View style={styles.actions}>
