@@ -200,7 +200,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       }
       ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
     />
-      <FilterSheet visible={filterOpen} title="Menu filter" sub="Everything shows by default. Un-tick what you don’t want." sections={sections} onClose={() => { if (noneTicked) selectAll(); setFilterOpen(false); }} onSelectAll={selectAll} onClearAll={clearAll} />
+      <FilterSheet visible={filterOpen} title="Menu filter" sub="" sections={sections} onClose={() => { if (noneTicked) selectAll(); setFilterOpen(false); }} onSelectAll={selectAll} onClearAll={clearAll} />
     </>
   );
 }

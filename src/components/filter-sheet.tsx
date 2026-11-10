@@ -40,13 +40,15 @@ export function FilterSheet({
         <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <GrabHandle onClose={onClose} />
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.sub}>{sub}</Text>
-          {onSelectAll && onClearAll ? (
-            <Pressable onPress={bulk} style={styles.bulk} accessibilityRole="button" hitSlop={8}>
-              <Text style={styles.bulkText}>{allOn ? 'Clear all' : 'Select all'}</Text>
-            </Pressable>
-          ) : null}
+          <View style={styles.head}>
+            <Text style={styles.title}>{title}</Text>
+            {onSelectAll && onClearAll ? (
+              <Pressable onPress={bulk} accessibilityRole="button" hitSlop={10}>
+                <Text style={styles.bulkText}>{allOn ? 'Clear all' : 'Select all'}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          {sub ? <Text style={styles.sub}>{sub}</Text> : null}
           <ScrollView style={{ maxHeight: Math.round(height * 0.6) }} showsVerticalScrollIndicator>
             {sections.map((s) => (
               <View key={s.label}>
@@ -81,7 +83,7 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22 },
   title: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
   sub: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginBottom: 6 },
-  bulk: { alignSelf: 'flex-start', paddingVertical: 4 },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   bulkText: { fontFamily: fonts.bold, fontSize: 14, color: colors.teal },
   hint: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 10 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginTop: 14 },

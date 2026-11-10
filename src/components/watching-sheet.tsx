@@ -39,5 +39,5 @@ export function WatchingSheet({
       ],
     },
   ];
-  return <FilterSheet visible={visible} title="Feed filter" sub="Everything shows by default. Un-tick what you don’t want." sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} />;
+  return <FilterSheet visible={visible} title="Feed filter" sub="" sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} />;
 }
