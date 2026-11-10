@@ -22,6 +22,7 @@ import { fetchMemberships } from '@/lib/community';
  * Starts showing everything; the "Menu filter" sheet (same format as the Home feed filter) narrows by community and cuisine.
  */
 const NEARBY = 'nearby';
+const NONE = 'none';
 /** Search icon and placeholder colour from the design: a soft blue-grey. */
 const SLATE = 'rgba(1,49,62,.5)';
 /** How close a pickup point must be to the eater to count as "Nearby". */
@@ -100,11 +101,38 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
 
   const cuisineOptions = CUISINES.filter((c) => dishes.some((d) => d.cuisine === c));
   const allShown = !places.length && !cuisines.length;
-  const toggleIn = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+  // Everything shows ticked at first. Internally "nothing stored" means no limit, so ticking everything is stored as nothing.
+  // NONE is the "Clear all" state: it matches nothing until something is ticked.
+  const placeKeys = [NEARBY, ...(session ? mine.map((c) => c.id) : [])];
+  const placeOn = (k: string) => (places.includes(NONE) ? false : places.length ? places.includes(k) : true);
+  const cuisineOn = (k: string) => (cuisines.includes(NONE) ? false : cuisines.length ? cuisines.includes(k) : true);
+  const flip = (keys: string[], on: (k: string) => boolean, k: string) => {
+    const cur = keys.filter(on);
+    const next = on(k) ? cur.filter((x) => x !== k) : [...cur, k];
+    return next.length === keys.length ? [] : next.length ? next : [NONE];
+  };
+  // After "Clear all", ticking one row in a section means "just this, from anywhere" for the other section.
+  const pickPlace = (k: string) => {
+    setPlaces(flip(placeKeys, placeOn, k));
+    if (cuisines.includes(NONE)) setCuisines([]);
+  };
+  const pickCuisine = (k: string) => {
+    setCuisines(flip(cuisineOptions, cuisineOn, k));
+    if (places.includes(NONE)) setPlaces([]);
+  };
+  const noneTicked = !placeKeys.some(placeOn) && !cuisineOptions.some(cuisineOn);
+  const selectAll = () => {
+    setPlaces([]);
+    setCuisines([]);
+  };
+  const clearAll = () => {
+    setPlaces([NONE]);
+    setCuisines([NONE]);
+  };
   const sections = [
     {
       label: 'LOCATION',
-      rows: [{ key: NEARBY, icon: 'near-me' as const, label: 'Nearby', on: places.includes(NEARBY), onPress: () => setPlaces(toggleIn(places, NEARBY)) }],
+      rows: [{ key: NEARBY, icon: 'near-me' as const, label: 'Nearby', on: placeOn(NEARBY), onPress: () => pickPlace(NEARBY) }],
     },
     ...(session && mine.length
       ? [
@@ -114,8 +142,8 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
               key: c.id,
               icon: (c.kind === 'club' ? 'flag' : 'groups') as 'flag' | 'groups',
               label: c.name,
-              on: places.includes(c.id),
-              onPress: () => setPlaces(toggleIn(places, c.id)),
+              on: placeOn(c.id),
+              onPress: () => pickPlace(c.id),
             })),
           },
         ]
@@ -126,8 +154,8 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
         key: c,
         icon: 'restaurant' as const,
         label: c,
-        on: cuisines.includes(c),
-        onPress: () => setCuisines(toggleIn(cuisines, c)),
+        on: cuisineOn(c),
+        onPress: () => pickCuisine(c),
       })),
     },
   ];
@@ -172,7 +200,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       }
       ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
     />
-      <FilterSheet visible={filterOpen} title="Menu filter" sub="Tick what you want to see. Nothing ticked shows everything." sections={sections} onClose={() => setFilterOpen(false)} />
+      <FilterSheet visible={filterOpen} title="Menu filter" sub="Everything shows by default. Un-tick what you don’t want." sections={sections} onClose={() => { if (noneTicked) selectAll(); setFilterOpen(false); }} onSelectAll={selectAll} onClearAll={clearAll} />
     </>
   );
 }

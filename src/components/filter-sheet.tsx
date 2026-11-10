@@ -17,14 +17,23 @@ export function FilterSheet({
   sub,
   sections,
   onClose,
+  onSelectAll,
+  onClearAll,
 }: {
   visible: boolean;
   title: string;
   sub: string;
   sections: FilterSection[];
   onClose: () => void;
+  /** When given, a "Select all" / "Clear all" link sits above the list. */
+  onSelectAll?: () => void;
+  onClearAll?: () => void;
 }) {
   const { height } = useWindowDimensions();
+  const rows = sections.flatMap((s) => s.rows);
+  const allOn = rows.length > 0 && rows.every((r) => r.on);
+  const noneOn = rows.length > 0 && rows.every((r) => !r.on);
+  const bulk = allOn ? onClearAll : onSelectAll;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
@@ -33,6 +42,11 @@ export function FilterSheet({
           <GrabHandle onClose={onClose} />
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.sub}>{sub}</Text>
+          {onSelectAll && onClearAll ? (
+            <Pressable onPress={bulk} style={styles.bulk} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.bulkText}>{allOn ? 'Clear all' : 'Select all'}</Text>
+            </Pressable>
+          ) : null}
           <ScrollView style={{ maxHeight: Math.round(height * 0.6) }} showsVerticalScrollIndicator>
             {sections.map((s) => (
               <View key={s.label}>
@@ -43,7 +57,8 @@ export function FilterSheet({
               </View>
             ))}
           </ScrollView>
-          <PrimaryButton label="Apply" onPress={onClose} style={{ marginTop: 16, marginBottom: 12 }} />
+          {noneOn && onSelectAll ? <Text style={styles.hint}>Tick at least one to see posts.</Text> : null}
+          <PrimaryButton label="Apply" onPress={onClose} disabled={noneOn && !!onSelectAll} style={{ marginTop: 16, marginBottom: 12 }} />
         </SafeAreaView>
       </View>
     </Modal>
@@ -66,6 +81,9 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22 },
   title: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink },
   sub: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginBottom: 6 },
+  bulk: { alignSelf: 'flex-start', paddingVertical: 4 },
+  bulkText: { fontFamily: fonts.bold, fontSize: 14, color: colors.teal },
+  hint: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 10 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
