@@ -13,6 +13,7 @@ import { LikesSheet } from '@/components/likes-sheet';
 import { Logo } from '@/components/logo';
 import { PostCard } from '@/components/post-card';
 import { type Badge, fetchBadges } from '@/lib/rankings';
+import { fetchMemberships } from '@/lib/community';
 import { FadeBg } from '@/components/fade-bg';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
@@ -47,6 +48,8 @@ export default function Home() {
   const [mine, setMine] = useState<MyCommunity[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [watching, setWatching] = useState<Watching | null>(null);
+  // Which communities each cook belongs to: a cook shows under a community they live in even when a post was shared publicly.
+  const [memberships, setMemberships] = useState<Map<string, string[]>>(new Map());
   const [watchOpen, setWatchOpen] = useState(false);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [likesFor, setLikesFor] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export default function Home() {
       setPosts(feed);
       // Rank badges are a nicety: the feed shows without them if they fail to load.
       fetchBadges(feed.map((p) => p.author_id)).then(setBadges, () => {});
+      fetchMemberships(feed.map((p) => p.author_id)).then(setMemberships, () => {});
       // Live distance to each cook: my GPS now against their last known position. A nicety too.
       reportMyPosition()
         .then((pos) => (pos ? fetchLiveDistances(feed.map((p) => p.author_id), pos) : new Map<string, number>()))
@@ -118,7 +122,9 @@ export default function Home() {
     const list = posts.filter(
       (p) =>
         p.author_id !== me &&
-        ((p.community_ids.length ? p.community_ids.some((c) => watching.communities.includes(c)) : watching.nearby) ||
+        (p.community_ids.some((c) => watching.communities.includes(c)) ||
+          (memberships.get(p.author_id) ?? []).some((c) => watching.communities.includes(c)) ||
+          (!p.community_ids.length && watching.nearby) ||
           (watching.following && following.includes(p.author_id))),
     );
     // Nearby: public posts come after the community and followed posts, closest cooks first, farther ones at the end.
@@ -127,7 +133,7 @@ export default function Home() {
     const isPublic = (p: FeedPost) => !p.community_ids.length && p.author_id !== me && !(watching.following && following.includes(p.author_id));
     const dist = (p: FeedPost) => meters.get(p.author_id) ?? (p.spot ? distanceMeters(here, p.spot) : Infinity);
     return [...list.filter((p) => !isPublic(p)), ...list.filter(isPublic).sort((a, b) => dist(a) - dist(b))];
-  }, [posts, watching, following, me, here, meters]);
+  }, [posts, watching, following, me, here, meters, memberships]);
 
   const patch = (id: string, f: (p: FeedPost) => FeedPost) => setPosts((list) => list.map((p) => (p.id === id ? f(p) : p)));
 

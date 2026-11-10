@@ -87,3 +87,14 @@ export async function fetchMemberCounts(ids: string[]): Promise<Map<string, numb
   for (const r of data ?? []) out.set(r.community_id as string, (out.get(r.community_id as string) ?? 0) + 1);
   return out;
 }
+
+/** The communities each of these members belongs to, so a feed or menu filter can match a cook by where they live, not only by the audience on one post. */
+export async function fetchMemberships(userIds: string[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  const ids = [...new Set(userIds)];
+  if (!ids.length) return out;
+  const { data, error } = await supabase.from('community_members').select('user_id, community_id').in('user_id', ids).limit(10000);
+  if (error) throw error;
+  for (const r of data ?? []) out.set(r.user_id as string, [...(out.get(r.user_id as string) ?? []), r.community_id as string]);
+  return out;
+}
