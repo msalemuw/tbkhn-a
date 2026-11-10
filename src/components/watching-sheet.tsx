@@ -17,15 +17,18 @@ export function WatchingSheet({
   onChange: (w: Watching) => void;
   onClose: () => void;
 }) {
-  // Everything starts ticked. Tapping a row while everything is ticked shows only that row (one tap instead of un-ticking each);
-  // un-ticking the last one goes back to everything, so the feed is never emptied by accident.
-  const allOn = value.nearby && value.following && mine.every((c) => value.communities.includes(c.id));
+  // Everything starts ticked and each row is a normal tick box. "Clear all" lets you pick just one or two quickly;
+  // Apply waits until something is ticked, and closing with nothing ticked goes back to everything.
   const everything: Watching = { communities: mine.map((c) => c.id), nearby: true, following: true };
-  const set = (next: Watching) => onChange(!next.nearby && !next.following && !next.communities.length ? everything : next);
-  const toggle = (id: string) =>
-    set(allOn ? { communities: [id], nearby: false, following: false } : { ...value, communities: value.communities.includes(id) ? value.communities.filter((c) => c !== id) : [...value.communities, id] });
-  const toggleNearby = () => set(allOn ? { communities: [], nearby: true, following: false } : { ...value, nearby: !value.nearby });
-  const toggleFollowing = () => set(allOn ? { communities: [], nearby: false, following: true } : { ...value, following: !value.following });
+  const nothing: Watching = { communities: [], nearby: false, following: false };
+  const toggle = (id: string) => onChange({ ...value, communities: value.communities.includes(id) ? value.communities.filter((c) => c !== id) : [...value.communities, id] });
+  const toggleNearby = () => onChange({ ...value, nearby: !value.nearby });
+  const toggleFollowing = () => onChange({ ...value, following: !value.following });
+  const empty = !value.nearby && !value.following && !value.communities.length;
+  const close = () => {
+    if (empty) onChange(everything);
+    onClose();
+  };
   const sections: FilterSection[] = [
     {
       label: 'COMMUNITIES',
@@ -36,5 +39,5 @@ export function WatchingSheet({
       ],
     },
   ];
-  return <FilterSheet visible={visible} title="Feed filter" sub="Everything shows by default. Tap one to see only that." sections={sections} onClose={onClose} />;
+  return <FilterSheet visible={visible} title="Feed filter" sub="Everything shows by default. Un-tick what you don’t want." sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} />;
 }
