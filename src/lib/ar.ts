@@ -80,6 +80,7 @@ export const ar: Record<string, string> = {
   More: 'المزيد',
   'Feed filter': 'فلتر الصفحة',
   'Choose whose posts show on your Home feed.': 'اختار بوستات مين تظهر في صفحتك الرئيسية.',
+  'Everything shows by default. Tap one to see only that.': 'كل حاجة بتظهر تلقائيًا. اضغط على واحد عشان تشوفه لوحده.',
   Apply: 'تطبيق',
   Add: 'إضافة',
   'Add a story': 'ضيف ستوري',

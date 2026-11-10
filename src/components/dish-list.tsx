@@ -15,6 +15,7 @@ import { useSession } from '@/lib/session';
 import { supabaseConfigured } from '@/lib/supabase';
 import { usePullRefresh } from '@/lib/pull-refresh';
 import { useRetap } from '@/lib/tab-retap';
+import { fetchMemberships } from '@/lib/community';
 
 /**
  * Today's menu (s53): every dish neighbors share on today's menu, narrowed by community, cuisine or search.
@@ -32,6 +33,8 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
   const [mine, setMine] = useState<MyCommunity[]>([]);
+  // Which communities each cook belongs to, so a community filter also finds cooks who live there.
+  const [memberships, setMemberships] = useState<Map<string, string[]>>(new Map());
   // What the member ticked. Nothing ticked in a section means no limit for that section, so one tick is enough.
   // Places: 'nearby' or a community id (a dish shows if it matches any ticked place). Cuisines: any ticked cuisine.
   const [places, setPlaces] = useState<string[]>([]);
@@ -52,6 +55,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       setDishes(list);
       // Rank badges are a nicety: if they fail to load the cards still show.
       fetchBadges(list.map((d) => d.author_id)).then(setBadges, () => {});
+      fetchMemberships(list.map((d) => d.author_id)).then(setMemberships, () => {});
       if (session) setMine(await fetchMyCommunities(session.user.id));
       setFailed(false);
     } catch {
@@ -82,7 +86,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
     const near = (d: Dish) => !here || (d.pickup_point != null && distanceMeters(here, d.pickup_point) <= NEARBY_METERS);
     const list = dishes.filter(
       (d) =>
-        (!places.length || places.some((p) => (p === NEARBY ? near(d) : d.community_ids.includes(p)))) &&
+        (!places.length || places.some((p) => (p === NEARBY ? near(d) : d.community_ids.includes(p) || (memberships.get(d.author_id) ?? []).includes(p)))) &&
         (!cuisines.length || (d.cuisine != null && cuisines.includes(d.cuisine))) &&
         (!needle || d.dish_name.toLowerCase().includes(needle)),
     );
@@ -92,7 +96,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       return [...list].sort((a, b) => dist(a) - dist(b));
     }
     return list;
-  }, [dishes, places, cuisines, q, here]);
+  }, [dishes, places, cuisines, q, here, memberships]);
 
   const cuisineOptions = CUISINES.filter((c) => dishes.some((d) => d.cuisine === c));
   const allShown = !places.length && !cuisines.length;
