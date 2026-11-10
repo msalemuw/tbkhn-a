@@ -79,9 +79,19 @@ export function PostCard({
       {photo ? <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" /> : null}
       {post.caption ? (
         <Pressable onPress={() => cut && setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? 'Show less' : 'Show the full description'}>
-          <Text verbatim style={styles.caption} numberOfLines={open ? undefined : 1}>
-            {post.caption}
-          </Text>
+          {cut && !open ? (
+            // Like Instagram: the first line ends with "…" and "more" follows on the same line.
+            <View style={styles.firstLine}>
+              <Text verbatim style={[styles.caption, styles.firstText]} numberOfLines={1}>
+                {post.caption}
+              </Text>
+              <Text style={[styles.caption, styles.moreInline]}>more</Text>
+            </View>
+          ) : (
+            <Text verbatim style={styles.caption}>
+              {post.caption}
+            </Text>
+          )}
           {/* Invisible full-length copy: the only reliable way to know whether the 1-line version is cut off. */}
           <Text
             verbatim
@@ -92,7 +102,7 @@ export function PostCard({
             onTextLayout={(e) => setCut(e.nativeEvent.lines.length > 1)}>
             {post.caption}
           </Text>
-          {cut ? <Text style={styles.more}>{open ? 'less' : 'more'}</Text> : null}
+          {cut && open ? <Text style={styles.more}>less</Text> : null}
         </Pressable>
       ) : null}
       <View style={styles.actions}>
@@ -129,6 +139,9 @@ const styles = StyleSheet.create({
   photo: { width: '100%', aspectRatio: 1, marginTop: 10, borderRadius: 16, backgroundColor: colors.cream },
   caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },
   measure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
+  firstLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  firstText: { flexShrink: 1 },
+  moreInline: { fontFamily: fonts.bold, color: colors.muted, flexShrink: 0 },
   more: { fontFamily: fonts.bold, fontSize: 14, color: colors.muted, paddingTop: 4 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingTop: 12 },
   act: { flexDirection: 'row', alignItems: 'center', gap: 7 },
