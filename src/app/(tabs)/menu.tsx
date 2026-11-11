@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { DishList } from '@/components/dish-list';
-import { Logo } from '@/components/logo';
 import { colors, fonts, ui } from '@/constants/theme';
 import { fetchAppStatus, MENU_CLOSED_FALLBACK } from '@/lib/app-status';
 import { isRTL } from '@/lib/i18n';
@@ -71,7 +70,17 @@ export default function Menu() {
           retapTab="menu"
           header={
             <View style={styles.header}>
-              <Logo on="light" height={28} />
+              {/* Like Talabat's "Deliver to": where you are is the first thing on the screen. Pickup only, so it says pickup. */}
+              <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityRole="button" accessibilityLabel="Choose your location">
+                <MaterialIcons name="location-on" size={22} color={colors.teal} />
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={styles.locLabel} maxFontSizeMultiplier={1.15}>Pickup near</Text>
+                  <View style={styles.locLine}>
+                    <Text style={styles.locText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{place?.label || 'Set your location'}</Text>
+                    <MaterialIcons name="expand-more" size={20} color={colors.muted} />
+                  </View>
+                </View>
+              </Pressable>
               <View style={styles.titleRow}>
                 <Text style={styles.title} onLayout={(e) => setTitleW(e.nativeEvent.layout.width)}>Today’s menu</Text>
                 {titleW != null ? (
@@ -103,13 +112,6 @@ export default function Menu() {
               accessible={false}
             />
           )}
-          belowBar={
-            <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityRole="button" accessibilityLabel="Choose your location">
-              <MaterialIcons name="location-on" size={18} color={colors.teal} />
-              <Text style={styles.locText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{place?.label || 'Set your location'}</Text>
-              <MaterialIcons name="expand-more" size={20} color={colors.muted} />
-            </Pressable>
-          }
         />
       )}
     </SafeAreaView>
@@ -120,7 +122,9 @@ const styles = StyleSheet.create({
   header: { gap: 4, paddingTop: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'flex-start', marginTop: 12 },
   title: { fontFamily: fonts.serif, fontSize: 34, lineHeight: 42, color: ui.deep },
-  loc: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', maxWidth: '75%', paddingVertical: 4 },
+  loc: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', maxWidth: '80%', paddingVertical: 2 },
+  locLabel: { fontFamily: fonts.semiBold, fontSize: 11.5, color: colors.muted },
+  locLine: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep },
   soon: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
   soonTitle: { fontFamily: fonts.serif, fontSize: 32, color: ui.deep, textAlign: 'center' },

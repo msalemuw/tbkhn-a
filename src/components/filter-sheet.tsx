@@ -8,7 +8,8 @@ import { PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 
 export type FilterRow = { key: string; icon: React.ComponentProps<typeof MaterialIcons>['name']; label: string; on: boolean; onPress: () => void };
-export type FilterSection = { label: string; rows: FilterRow[] };
+/** A `radio` section lets exactly one row be picked (like a sort order); it takes no part in Select all / Clear all. */
+export type FilterSection = { label: string; rows: FilterRow[]; radio?: boolean };
 
 /** Checklist sheet used by the Home feed filter and the Menu filter: sections of checkable rows and an Apply button. */
 export function FilterSheet({
@@ -33,7 +34,7 @@ export function FilterSheet({
   applyLabel?: string;
 }) {
   const { height } = useWindowDimensions();
-  const rows = sections.flatMap((s) => s.rows);
+  const rows = sections.filter((s) => !s.radio).flatMap((s) => s.rows);
   const allOn = rows.length > 0 && rows.every((r) => r.on);
   const noneOn = rows.length > 0 && rows.every((r) => !r.on);
   const bulk = allOn ? onClearAll : onSelectAll;
@@ -57,7 +58,7 @@ export function FilterSheet({
               <View key={s.label}>
                 <Text style={styles.label}>{s.label}</Text>
                 {s.rows.map((r) => (
-                  <Row key={r.key} row={r} />
+                  <Row key={r.key} row={r} radio={s.radio} />
                 ))}
               </View>
             ))}
@@ -70,12 +71,12 @@ export function FilterSheet({
   );
 }
 
-function Row({ row }: { row: FilterRow }) {
+function Row({ row, radio }: { row: FilterRow; radio?: boolean }) {
   return (
-    <Pressable style={styles.row} onPress={row.onPress} accessibilityRole="checkbox" accessibilityState={{ checked: row.on }}>
+    <Pressable style={styles.row} onPress={row.onPress} accessibilityRole={radio ? 'radio' : 'checkbox'} accessibilityState={radio ? { selected: row.on } : { checked: row.on }}>
       <MaterialIcons name={row.icon} size={22} color={colors.teal} />
       <Text style={styles.rowText}>{row.label}</Text>
-      <View style={[styles.box, row.on ? styles.boxOn : styles.boxOff]}>{row.on ? <MaterialIcons name="check" size={16} color={colors.navy} /> : null}</View>
+      <View style={[styles.box, row.on ? styles.boxOn : styles.boxOff]}>{row.on ? radio ? <View style={styles.dot} /> : <MaterialIcons name="check" size={16} color={colors.navy} /> : null}</View>
     </Pressable>
   );
 }
@@ -94,5 +95,6 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
   box: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   boxOn: { backgroundColor: colors.teal },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.navy },
   boxOff: { borderWidth: 1.5, borderColor: colors.line },
 });
