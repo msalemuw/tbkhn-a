@@ -2,6 +2,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { startCompose } from '@/lib/photo-flow';
 import { type ReactNode, useCallback, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -169,7 +170,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
               </Pressable>
             )}
             {mine ? (
-              <Pressable onPress={() => router.push('/compose/story')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Add a story" style={styles.addStory}>
+              <Pressable onPress={() => startCompose('story', '/compose/story')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Add a story" style={styles.addStory}>
                 <MaterialIcons name="add" size={18} color={colors.navy} />
               </Pressable>
             ) : null}
