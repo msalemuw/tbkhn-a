@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
-import { FRAME_ASPECT, finishPhoto, type PhotoKind, type PickedPhoto, systemPick } from '@/lib/photo-flow';
+import { finishPhoto, type PhotoKind, type PickedPhoto, systemPick } from '@/lib/photo-flow';
 
 // The add-photo screen for stories, posts and menu dishes: a grid of recent photos with the camera as its first tile
 // (iPhone), and a camera that fills the screen. The final look is drawn while choosing: stories fill the screen,
@@ -22,6 +22,21 @@ const DIM = 'rgba(40,48,58,0.78)';
 const MAX_SIDE = 1440;
 
 type Mode = 'grid' | 'camera';
+type Shot = { uri: string; width: number; height: number };
+
+// What gets saved: stories and menu dishes are full screen (9:16) and posts are square. A menu dish also shows a 4:3 guide
+// inside the full screen photo: that middle part is what the dish card in the Menu shows, and the whole photo is the story.
+const FRAME_ASPECT: Record<PhotoKind, number> = { story: 9 / 16, post: 1, menu: 9 / 16 };
+const MENU_CARD_ASPECT = 4 / 3;
+
+// Turns whatever the camera or library gave us into an upright JPEG of a sensible size, and reports its real width and height.
+async function normalize(uri: string, width: number, height: number): Promise<Shot> {
+  const ctx = ImageManipulator.manipulate(uri);
+  if (Math.max(width, height) > MAX_SIDE) ctx.resize(width >= height ? { width: MAX_SIDE } : { height: MAX_SIDE });
+  const rendered = await ctx.renderAsync();
+  const out = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 });
+  return { uri: out.uri, width: out.width, height: out.height };
+}
 type Tile = { id: string; asset: MediaLibrary.Asset } | { id: 'camera' };
 
 const TITLES: Record<PhotoKind, string> = { story: 'Add to story', post: 'Add to post', menu: 'Add to menu' };
@@ -32,7 +47,7 @@ export default function AddPhoto() {
   const [mode, setMode] = useState<Mode>(params.mode === 'grid' && Platform.OS !== 'android' ? 'grid' : 'camera');
   const done = useRef(false);
   // A photo picked from the grid opens in the adjust step: move and zoom it inside the final frame, then Done.
-  const [adjusting, setAdjusting] = useState<{ uri: string; width: number; height: number } | null>(null);
+  const [adjusting, setAdjusting] = useState<Shot | null>(null);
 
   // Closing the screen any other way (swipe down, back) tells the form that nothing was chosen.
   useEffect(
@@ -63,7 +78,7 @@ export default function AddPhoto() {
       {mode === 'grid' ? (
         <Grid kind={kind} onCamera={() => setMode('camera')} onPick={setAdjusting} onDone={finish} />
       ) : (
-        <Camera kind={kind} onGrid={Platform.OS !== 'android' ? () => setMode('grid') : undefined} onDone={finish} />
+        <Camera kind={kind} onGrid={Platform.OS !== 'android' ? () => setMode('grid') : undefined} onCaptured={setAdjusting} onDone={finish} />
       )}
     </>
   );
@@ -71,7 +86,7 @@ export default function AddPhoto() {
 
 // ---------- Camera ----------
 
-function Camera({ kind, onGrid, onDone }: { kind: PhotoKind; onGrid?: () => void; onDone: (p: PickedPhoto | null) => void }) {
+function Camera({ kind, onGrid, onCaptured, onDone }: { kind: PhotoKind; onGrid?: () => void; onCaptured: (p: Shot) => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -81,45 +96,23 @@ function Camera({ kind, onGrid, onDone }: { kind: PhotoKind; onGrid?: () => void
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // The final frame: full width, as tall as the kind needs, centered on the screen.
-  const aspect = FRAME_ASPECT[kind];
-  // A story fills the whole screen (no frame to draw); posts and menu dishes show their frame in the middle.
-  const full = kind === 'story';
-  const frameH = full ? height : Math.min(width / aspect, height - insets.top - insets.bottom - 200);
-  const frameW = full ? Math.min(width, height * aspect) : frameH * aspect;
+  // Stories and menu dishes fill the whole screen (no frame); posts show their square in the middle.
+  const full = kind !== 'post';
+  const frameH = full ? height : Math.min(width, height - insets.top - insets.bottom - 200);
+  const frameW = full ? width : frameH;
   const frameTop = Math.round((height - frameH) / 2);
   const frameLeft = Math.round((width - frameW) / 2);
+  // A menu dish also shows the 4:3 part the Menu card will show.
+  const cardH = Math.round(width / MENU_CARD_ASPECT);
+  const cardTop = Math.round((height - cardH) / 2);
 
   async function shoot() {
     if (!camera.current || busy || !ready) return;
     setBusy(true);
     try {
-      const pic = await camera.current.takePictureAsync({ quality: 0.6, exif: false, base64: false });
-      // What the person saw through the frame is what gets kept: the screen shows the camera filling it, so cut the same part.
-      const screenAspect = width / height;
-      const picAspect = pic.width / pic.height;
-      // The preview fills the screen (cover). Work out which part of the picture the frame covers.
-      let visW = pic.width;
-      let visH = pic.height;
-      let visX = 0;
-      let visY = 0;
-      if (picAspect > screenAspect) {
-        visW = pic.height * screenAspect;
-        visX = (pic.width - visW) / 2;
-      } else {
-        visH = pic.width / screenAspect;
-        visY = (pic.height - visH) / 2;
-      }
-      const scale = visW / width;
-      const cropX = Math.round(visX + frameLeft * scale);
-      const cropY = Math.round(visY + frameTop * scale);
-      const cropW = Math.round(frameW * scale);
-      const cropH = Math.round(frameH * scale);
-      const ctx = ImageManipulator.manipulate(pic.uri).crop({ originX: Math.max(0, cropX), originY: Math.max(0, cropY), width: Math.min(cropW, pic.width - cropX), height: Math.min(cropH, pic.height - cropY) });
-      if (Math.max(cropW, cropH) > MAX_SIDE) ctx.resize(cropW >= cropH ? { width: MAX_SIDE } : { height: MAX_SIDE });
-      const rendered = await ctx.renderAsync();
-      const out = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.8 });
-      onDone({ uri: out.uri, mimeType: 'image/jpeg' });
+      const pic = await camera.current.takePictureAsync({ quality: 0.6, exif: false });
+      // The photo opens in the same Move and zoom step as a photo from the grid, so it can be adjusted before it is used.
+      onCaptured(await normalize(pic.uri, pic.width, pic.height));
     } catch {
       setBusy(false);
     }
@@ -159,7 +152,7 @@ function Camera({ kind, onGrid, onDone }: { kind: PhotoKind; onGrid?: () => void
     <View style={styles.screen}>
       <CameraView ref={camera} style={StyleSheet.absoluteFill} facing={facing} flash={flash} onCameraReady={() => setReady(true)} />
       {/* The dimmed area outside the frame, and a thin line around the frame itself. */}
-      {full ? null : (
+      {kind === 'post' ? (
         <>
           <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: frameTop }]} />
           <View pointerEvents="none" style={[styles.dim, { top: frameTop + frameH, left: 0, right: 0, bottom: 0 }]} />
@@ -167,7 +160,8 @@ function Camera({ kind, onGrid, onDone }: { kind: PhotoKind; onGrid?: () => void
           <View pointerEvents="none" style={[styles.dim, { top: frameTop, left: frameLeft + frameW, right: 0, height: frameH }]} />
           <View pointerEvents="none" style={[styles.frameLine, { top: frameTop, left: frameLeft, width: frameW, height: frameH }]} />
         </>
-      )}
+      ) : null}
+      {kind === 'menu' ? <MenuGuide top={cardTop} height={cardH} width={width} screenH={height} /> : null}
 
       <View style={[styles.camTop, { top: insets.top + 8 }]}>
         <IconButton name="close" onPress={() => onDone(null)} label="Close" />
@@ -191,9 +185,24 @@ function Camera({ kind, onGrid, onDone }: { kind: PhotoKind; onGrid?: () => void
 }
 
 
+
+// The 4:3 part of a menu dish photo that the dish card in the Menu shows. Everything else only shows in the story.
+function MenuGuide({ top, height, width, screenH }: { top: number; height: number; width: number; screenH: number }) {
+  return (
+    <>
+      <View pointerEvents="none" style={[styles.guideDim, { top: 0, left: 0, width, height: top }]} />
+      <View pointerEvents="none" style={[styles.guideDim, { top: top + height, left: 0, width, height: Math.max(0, screenH - top - height) }]} />
+      <View pointerEvents="none" style={[styles.frameLine, { top, left: 0, width, height }]} />
+      <View pointerEvents="none" style={[styles.guideTag, { top: top + 8, left: 10 }]}>
+        <Text style={styles.guideTagText}>Menu card</Text>
+      </View>
+    </>
+  );
+}
+
 // ---------- Adjust: move and zoom the photo inside the final frame ----------
 
-function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: { uri: string; width: number; height: number }; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
+function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: Shot; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
@@ -275,6 +284,7 @@ function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: { uri
             <Animated.View style={[{ width: frameW, height: frameH, alignItems: 'center', justifyContent: 'center' }, imageStyle]}>
               <Image source={{ uri: photo.uri }} style={{ width: photo.width * base, height: photo.height * base }} contentFit="fill" />
             </Animated.View>
+            {kind === 'menu' ? <MenuGuide top={Math.round((frameH - frameW / MENU_CARD_ASPECT) / 2)} height={Math.round(frameW / MENU_CARD_ASPECT)} width={frameW} screenH={frameH} /> : null}
           </View>
         </GestureDetector>
       </View>
@@ -289,7 +299,7 @@ function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: { uri
 
 // ---------- Photo grid (iPhone) ----------
 
-function Grid({ kind, onCamera, onPick, onDone }: { kind: PhotoKind; onCamera: () => void; onPick: (p: { uri: string; width: number; height: number }) => void; onDone: (p: PickedPhoto | null) => void }) {
+function Grid({ kind, onCamera, onPick, onDone }: { kind: PhotoKind; onCamera: () => void; onPick: (p: Shot) => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = MediaLibrary.usePermissions();
@@ -334,7 +344,7 @@ function Grid({ kind, onCamera, onPick, onDone }: { kind: PhotoKind; onCamera: (
     setBusy(true);
     try {
       const info = await asset.getInfo();
-      onPick({ uri: info.uri, width: info.width, height: info.height });
+      onPick(await normalize(info.uri, info.width, info.height));
     } catch {
       // stay on the grid
     }
@@ -444,6 +454,9 @@ const styles = StyleSheet.create({
   iconBtn: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(40,48,58,0.55)' },
   shutterRing: { width: 82, height: 82, borderRadius: 41, borderWidth: 4, borderColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   shutter: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.white },
+  guideDim: { position: 'absolute', backgroundColor: 'rgba(40,48,58,0.45)' },
+  guideTag: { position: 'absolute', backgroundColor: 'rgba(40,48,58,0.7)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  guideTagText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },
   adjustArea: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   busy: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(40,48,58,0.55)', alignItems: 'center', justifyContent: 'center' },
   gridTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 10 },
