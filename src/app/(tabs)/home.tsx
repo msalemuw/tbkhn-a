@@ -40,7 +40,8 @@ export default function Home() {
   const { session } = useSession();
   const me = session?.user.id ?? null;
   const here = useMyLocation();
-  const [unread, setUnread] = useState(0);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
+  const [unreadNotes, setUnreadNotes] = useState(0);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [stories, setStories] = useState<StoryGroup[]>([]);
   const [seen, setSeen] = useState<string[]>([]);
@@ -109,7 +110,14 @@ export default function Home() {
   // The unread dot follows new messages and notifications as they arrive.
   useFocusEffect(
     useCallback(() => {
-      if (me) Promise.all([unreadMessageCount(), unreadNotificationCount()]).then(([m, n]) => setUnread(m + n), () => null);
+      if (me)
+        Promise.all([unreadMessageCount(), unreadNotificationCount()]).then(
+          ([m, n]) => {
+            setUnreadMsgs(m);
+            setUnreadNotes(n);
+          },
+          () => null,
+        );
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [me, dataVersion]),
   );
@@ -198,10 +206,19 @@ export default function Home() {
       <SafeAreaView edges={['top']} style={{ backgroundColor: ui.card }}>
         <View style={styles.header}>
           <Logo on="light" height={28} />
-          <Pressable accessibilityLabel={unread ? `Inbox, ${unread} new` : 'Inbox'} onPress={() => router.push('/inbox')} hitSlop={8}>
-            <MaterialIcons name="mail-outline" size={26} color={ui.deep} />
-            {unread > 0 ? <View style={styles.dot} /> : null}
-          </Pressable>
+          <View style={styles.headerIcons}>
+            <Pressable
+              accessibilityLabel={unreadNotes ? `Notifications, ${unreadNotes} new` : 'Notifications'}
+              onPress={() => router.push({ pathname: '/inbox', params: { tab: 'notifications' } })}
+              hitSlop={8}>
+              <MaterialIcons name="notifications-none" size={27} color={ui.deep} />
+              {unreadNotes > 0 ? <View style={styles.dot} /> : null}
+            </Pressable>
+            <Pressable accessibilityLabel={unreadMsgs ? `Messages, ${unreadMsgs} new` : 'Messages'} onPress={() => router.push('/inbox')} hitSlop={8}>
+              <MaterialIcons name="mail-outline" size={26} color={ui.deep} />
+              {unreadMsgs > 0 ? <View style={styles.dot} /> : null}
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
       <FlatList
@@ -266,6 +283,7 @@ const styles = StyleSheet.create({
   // White behind the list so pulling down reveals white (the header's colour), not cream; the cream lives on the list content.
   screen: { flex: 1, backgroundColor: ui.card },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // The feed filter sits above the posts. Location lives on the Menu tab, like Talabat; Home is for social.
   bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },

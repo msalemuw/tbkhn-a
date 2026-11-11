@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,7 +22,8 @@ type Tab = 'messages' | 'notifications';
 export default function Inbox() {
   const params = useLocalSearchParams<{ tab?: Tab }>();
   const { session } = useSession();
-  const [tab, setTab] = useState<Tab>(params.tab === 'notifications' ? 'notifications' : 'messages');
+  // The bell on Home opens Notifications, the envelope opens Messages.
+  const tab: Tab = params.tab === 'notifications' ? 'notifications' : 'messages';
   const [convos, setConvos] = useState<Conversation[] | null>(null);
   const [notes, setNotes] = useState<Notification[] | null>(null);
   const [people, setPeople] = useState<Map<string, Person>>(new Map());
@@ -49,13 +50,15 @@ export default function Inbox() {
   const pull = usePullRefresh(load);
 
   const unreadNotes = notes?.filter((n) => !n.read_at).length ?? 0;
-  const unreadMsgs = convos?.reduce((s, c) => s + c.unread, 0) ?? 0;
 
-  function openNotifications() {
-    setTab('notifications');
-    // Seen once the tab is opened; the dots stay until the next visit so the member can spot them.
-    if (userId && unreadNotes) markNotificationsRead(userId);
-  }
+  // Notifications are seen once the screen is opened; the dots stay until the next visit so the member can spot them.
+  const seen = useRef(false);
+  useEffect(() => {
+    if (tab === 'notifications' && userId && unreadNotes && !seen.current) {
+      seen.current = true;
+      markNotificationsRead(userId);
+    }
+  }, [tab, userId, unreadNotes]);
 
   const shownConvos = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -77,11 +80,7 @@ export default function Inbox() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={{ paddingHorizontal: 20 }}>
-        <BackHeader title="Inbox" />
-        <View style={styles.tabs}>
-          <TabButton label="Messages" count={unreadMsgs} on={tab === 'messages'} onPress={() => setTab('messages')} />
-          <TabButton label="Notifications" count={unreadNotes} on={tab === 'notifications'} onPress={openNotifications} />
-        </View>
+        <BackHeader title={tab === 'messages' ? 'Messages' : 'Notifications'} />
       </View>
 
       {tab === 'messages' ? (
@@ -160,23 +159,8 @@ export default function Inbox() {
   );
 }
 
-function TabButton({ label, count, on, onPress }: { label: string; count: number; on: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.tab, on && styles.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: on }}>
-      <Text style={[styles.tabText, on && styles.tabTextOn]}>{label}</Text>
-      {count > 0 ? <Text style={styles.tabCount}>{count}</Text> : null}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  tabs: { flexDirection: 'row', backgroundColor: colors.lightBlue, borderRadius: 999, padding: 3, marginTop: 16 },
-  tab: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 999 },
-  tabOn: { backgroundColor: colors.white },
-  tabText: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.muted },
-  tabTextOn: { color: colors.ink, fontFamily: fonts.extraBold },
-  tabCount: { fontFamily: fonts.extraBold, fontSize: 11, color: colors.navy, backgroundColor: colors.yellow, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1, overflow: 'hidden' },
   list: { padding: 16, gap: 4, flexGrow: 1 },
   search: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.ink, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
