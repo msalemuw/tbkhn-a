@@ -24,6 +24,9 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
   const pp = dish.pickup_point;
   const dist = here && pp ? fmtDist(distanceMeters(here, areaLatLng(pp))) : null;
   const soldOut = dish.portions_left === 0;
+  // "Ready now" once it is ready, otherwise "Ready 6:59 PM", so a bare clock time is never a mystery.
+  const ready = fmtReady(Date.parse(dish.ready_at));
+  const readyLabel = ready === 'Ready now' ? ready : `Ready ${ready}`;
   const openMap = () => pp && router.push({ pathname: '/pickup-map', params: { lat: String(pp.area_lat), lng: String(pp.area_lng), area: '1', who: personName(dish.author) } });
   const openCook = () => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } });
 
@@ -49,7 +52,7 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
           <View style={styles.priceCol}>
             <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
             <Text style={[styles.muted, soldOut && { color: ui.deep, fontFamily: fonts.bold }]}>
-              {fmtReady(Date.parse(dish.ready_at))} · {soldOut ? 'Sold out' : `${dish.portions_left} left`}
+              {`${readyLabel} · ${soldOut ? 'Sold out' : `${dish.portions_left} left`}`}
             </Text>
           </View>
         </View>
