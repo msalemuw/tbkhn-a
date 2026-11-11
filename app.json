@@ -42,7 +42,7 @@
           "image": "./assets/images/splash-logo.png",
           "imageWidth": 260,
           "android": {
-            "image": "./assets/images/splash-icon-android.png",
+            "image": "./assets/images/splash-logo-android.png",
             "imageWidth": 288
           }
         }
