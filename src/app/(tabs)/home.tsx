@@ -15,7 +15,6 @@ import { PostCard } from '@/components/post-card';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { fetchMemberships } from '@/lib/community';
 import { FadeBg } from '@/components/fade-bg';
-import { ActiveOrderBanner } from '@/components/active-order-banner';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
@@ -243,7 +242,6 @@ export default function Home() {
           // White at the top (like the header) fading to the cream page by the time the first post starts.
           <View>
             <FadeBg from={[255, 255, 255]} to={PAGE_RGB} />
-            <ActiveOrderBanner />
             <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => router.push('/compose/story')} />
             <View style={styles.bar}>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">

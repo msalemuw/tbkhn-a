@@ -14,7 +14,7 @@ import { useSession } from '@/lib/session';
 
 const STATUS: Partial<Record<OrderStatus, string>> = { pending: 'Waiting', accepted: 'Cooking', ready: 'Ready' };
 
-/** Like Talabat's "your order" strip: when you have an order in progress, one tap from Home or Menu opens it. Nothing shows otherwise. */
+/** Like Talabat's "your order" strip: when you have an order in progress, one tap from the Menu opens it. Nothing shows otherwise. */
 export function ActiveOrderBanner() {
   const { session } = useSession();
   const me = session?.user.id;
@@ -50,7 +50,7 @@ export function ActiveOrderBanner() {
 }
 
 const styles = StyleSheet.create({
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, paddingVertical: 10, paddingHorizontal: 12, marginHorizontal: 14, marginTop: 10, marginBottom: 6 },
+  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, paddingVertical: 10, paddingHorizontal: 12, zIndex: 1 },
   icon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: fonts.extraBold, fontSize: 14.5, color: colors.ink },
   sub: { fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted },
