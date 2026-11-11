@@ -30,6 +30,16 @@ export function fmtReady(readyAt: number, now: number = Date.now()): string {
   return fmtClock(readyAt);
 }
 
+/** Time left until `at`: "in 45 min", "in 1 h 20 min", or "now" once it has passed. */
+export function fmtIn(at: number, now: number = Date.now()): string {
+  const mins = Math.ceil((at - now) / MINUTE);
+  if (mins <= 0) return 'now';
+  if (mins < 60) return `in ${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `in ${h} h ${m} min` : `in ${h} h`;
+}
+
 export function fmtClock(at: number): string {
   const d = new Date(at);
   const h = d.getHours() % 12 || 12;

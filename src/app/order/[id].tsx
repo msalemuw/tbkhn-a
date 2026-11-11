@@ -8,7 +8,9 @@ import { Text, TextInput } from '@/components/text';
 import { Alert } from '@/lib/alert';
 import { BackHeader, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
-import { fmtClock } from '@/lib/format';
+import { OrderProgress } from '@/components/order-progress';
+import { canCopy, copyText } from '@/lib/copy-text';
+import { fmtClock, fmtIn } from '@/lib/format';
 import { fetchCookInstapay, fetchOrder, type Order, type OrderStatus, setOrderStatus, setPayment, submitReview } from '@/lib/orders';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -26,6 +28,7 @@ export default function OrderScreen() {
   const [instapay, setInstapay] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -116,6 +119,18 @@ export default function OrderScreen() {
           {head.sub ? <Text style={styles.heroSub}>{head.sub}</Text> : null}
         </View>
 
+        <OrderProgress status={o.status} />
+
+        {o.pickup_at && ['pending', 'accepted', 'ready'].includes(o.status) ? (
+          <View style={[styles.card, styles.timeCard]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>PICKUP TIME</Text>
+              <Text style={styles.timeBig}>{o.status === 'ready' ? 'Ready now' : pickup}</Text>
+            </View>
+            {o.status !== 'ready' ? <Text style={styles.timeIn}>{fmtIn(Date.parse(o.pickup_at))}</Text> : null}
+          </View>
+        ) : null}
+
         {o.note ? (
           <View style={styles.card}>
             <Text style={styles.label}>NOTE FROM {isCook ? buyer.toUpperCase() : 'YOU'}</Text>
@@ -158,6 +173,16 @@ export default function OrderScreen() {
                 <Text style={styles.body}>
                   Send EGP {total} to {cookFirst}’s InstaPay: <Text selectable style={styles.handle}>{instapay ?? 'not added yet, message the cook'}</Text>
                 </Text>
+                {instapay && canCopy() ? (
+                  <Pressable
+                    style={styles.copy}
+                    onPress={() => copyText(instapay).then((ok) => { if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); } })}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy the InstaPay address">
+                    <MaterialIcons name={copied ? 'check' : 'content-copy'} size={16} color={colors.navy} />
+                    <Text style={styles.copyText}>{copied ? 'Copied' : 'Copy InstaPay address'}</Text>
+                  </Pressable>
+                ) : null}
                 <Text style={[styles.muted, { marginTop: 6 }]}>
                   {o.payment_status === 'none' ? 'Tap below once you’ve sent it.' : o.payment_status === 'sent' ? `Waiting for ${cookFirst} to confirm it arrived.` : `${cookFirst} confirmed the payment. Thank you!`}
                 </Text>
@@ -290,7 +315,12 @@ const styles = StyleSheet.create({
   heroSub: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, paddingHorizontal: 10 },
   card: { backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14, marginTop: 16 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 6 },
+  timeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22 },
+  timeBig: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 36, color: colors.ink },
+  timeIn: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.teal },
   body: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink, lineHeight: 20 },
+  copy: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: colors.lightBlue, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, marginTop: 10 },
+  copyText: { fontFamily: fonts.extraBold, fontSize: 13, color: colors.navy },
   handle: { fontFamily: fonts.extraBold, color: colors.ink },
   spotRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   spotLink: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.teal },

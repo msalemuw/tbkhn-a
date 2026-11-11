@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { ActiveOrderBanner } from '@/components/active-order-banner';
 import { DishList } from '@/components/dish-list';
 import { colors, fonts, ui } from '@/constants/theme';
 import { fetchAppStatus, MENU_CLOSED_FALLBACK } from '@/lib/app-status';
@@ -100,6 +101,7 @@ export default function Menu() {
                   />
                 ) : null}
               </View>
+              <ActiveOrderBanner />
             </View>
           }
           // The teal blob's lowest point rests on the top edge of the filter button, wherever the phone puts it.
