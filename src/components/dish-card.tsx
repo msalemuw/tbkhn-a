@@ -24,41 +24,49 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
   const pp = dish.pickup_point;
   const dist = here && pp ? fmtDist(distanceMeters(here, areaLatLng(pp))) : null;
   const soldOut = dish.portions_left === 0;
+  // "Ready now" once it is ready, otherwise "Ready 6:59 PM", so a bare clock time is never a mystery.
+  const ready = fmtReady(Date.parse(dish.ready_at));
+  const readyLabel = ready === 'Ready now' ? ready : `Ready ${ready}`;
   const openMap = () => pp && router.push({ pathname: '/pickup-map', params: { lat: String(pp.area_lat), lng: String(pp.area_lng), area: '1', who: personName(dish.author) } });
   const openCook = () => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } });
 
   return (
     <Pressable style={styles.card} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${dish.dish_name} by ${personName(dish.author)}`}>
-      <View style={styles.head}>
-        <Pressable onPress={openCook} accessibilityRole="link" accessibilityLabel={`${personName(dish.author)}'s profile`} hitSlop={6}>
-          <Avatar person={dish.author} size={46} />
-        </Pressable>
-        <View style={styles.nameCol}>
-          <Text style={styles.cook} numberOfLines={1} onPress={openCook} accessibilityRole="link">{personName(dish.author)}</Text>
-          {rating ? <Text style={styles.rating}>{`★ ${rating.avg.toFixed(1)} (${rating.n})`}</Text> : null}
-          {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
-        </View>
-      </View>
-      <View style={styles.body}>
+      <View>
         {photo ? (
           <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
         ) : (
           <View style={[styles.photo, styles.noPhoto]}>
-            <MaterialIcons name="soup-kitchen" size={30} color={ui.deepTeal} />
+            <MaterialIcons name="soup-kitchen" size={44} color={ui.deepTeal} />
           </View>
         )}
-        <View style={styles.info}>
+        {/* The cook's circle sits on the photo's top left, so the card has no empty strip of its own. */}
+        <Pressable style={styles.avatar} onPress={openCook} accessibilityRole="link" accessibilityLabel={`${personName(dish.author)}'s profile`} hitSlop={6}>
+          <Avatar person={dish.author} size={44} />
+        </Pressable>
+      </View>
+      <View style={styles.info}>
+        <View style={styles.titleRow}>
           <Text style={styles.dish} numberOfLines={2}>{dish.dish_name}</Text>
-          <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
+          {/* Price with the ready time and plates left under it, so the card needs no separate line for them. */}
+          <View style={styles.priceCol}>
+            <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
+            <Text style={[styles.muted, soldOut && { color: ui.deep, fontFamily: fonts.bold }]}>
+              {`${readyLabel} · ${soldOut ? 'Sold out' : `${dish.portions_left} left`}`}
+            </Text>
+          </View>
+        </View>
+        {/* One line: who cooks it, their rating, and how far the pickup area is. */}
+        <View style={styles.cookRow}>
+          <Text style={styles.cook} numberOfLines={1} onPress={openCook} accessibilityRole="link">{personName(dish.author)}</Text>
+          {rating ? <Text style={styles.rating}>{`★ ${rating.avg.toFixed(1)} (${rating.n})`}</Text> : null}
+          {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
           <Pressable style={styles.where} onPress={pp ? openMap : onPress} hitSlop={6} accessibilityRole={pp ? 'link' : undefined} accessibilityLabel={pp ? 'Pickup area. Show on map' : undefined}>
             <MaterialIcons name="location-on" size={17} color={SLATE} />
             <Text style={styles.whereText} numberOfLines={1}>
               {dist ? `${dist} away` : 'Pickup Only'}
             </Text>
           </Pressable>
-          <Text style={[styles.muted, soldOut && { color: ui.deep, fontFamily: fonts.bold }]}>
-            {fmtReady(Date.parse(dish.ready_at))} · {soldOut ? 'Sold out' : `${dish.portions_left} left`}
-          </Text>
         </View>
       </View>
       <Pressable style={[styles.order, soldOut && styles.orderOff]} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${soldOut ? 'See' : 'Order a plate of'} ${dish.dish_name}`}>
@@ -70,18 +78,19 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border, padding: 14, gap: 12 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  nameCol: { flex: 1, gap: 4 },
-  cook: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep },
-  rating: { fontFamily: fonts.semiBold, fontSize: 13, color: SLATE },
-  body: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
-  photo: { width: 128, height: 118, borderRadius: 16, backgroundColor: colors.cream },
+  card: { backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border, padding: 10, gap: 12 },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: colors.cream },
   noPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: ui.mint },
-  info: { flex: 1, gap: 5 },
-  dish: { fontFamily: fonts.extraBold, fontSize: 19, lineHeight: 24, color: ui.deep },
-  price: { fontFamily: fonts.extraBold, fontSize: 18, color: ui.bubble },
-  muted: { fontFamily: fonts.medium, fontSize: 14, color: SLATE },
+  avatar: { position: 'absolute', top: 10, left: 10, borderRadius: 999, borderWidth: 2.5, borderColor: colors.white, backgroundColor: colors.white },
+  info: { gap: 6, paddingHorizontal: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  dish: { flex: 1, fontFamily: fonts.extraBold, fontSize: 19, lineHeight: 24, color: ui.deep },
+  priceCol: { alignItems: 'flex-end', gap: 2 },
+  price: { fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 24, color: ui.bubble },
+  cookRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 4 },
+  cook: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 15, color: ui.deep },
+  rating: { fontFamily: fonts.semiBold, fontSize: 13, color: SLATE },
+  muted: { fontFamily: fonts.medium, fontSize: 13, color: SLATE },
   where: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whereText: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 14, color: SLATE },
   order: { flexDirection: 'row', alignItems: 'center', gap: 9, justifyContent: 'center', backgroundColor: ui.deepTeal, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 13 },

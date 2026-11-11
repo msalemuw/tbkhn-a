@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   msg: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   msgText: { fontFamily: fonts.bold, fontSize: 13, color: colors.navy },
   sub: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, marginTop: 2 },
-  photo: { width: '100%', aspectRatio: 1, borderRadius: 18, marginTop: 16, backgroundColor: colors.cream },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, marginTop: 16, backgroundColor: colors.cream },
   caption: { fontFamily: fonts.medium, fontSize: 14.5, color: colors.ink, lineHeight: 21, marginTop: 12 },
   section: { fontFamily: fonts.extraBold, fontSize: 11, letterSpacing: 0.6, color: colors.muted, marginTop: 22, marginBottom: 8 },
   dishRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14 },

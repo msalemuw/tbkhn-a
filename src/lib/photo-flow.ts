@@ -3,12 +3,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
-// Where a photo is going decides the final look: stories are full screen (9:16), posts and menu dishes are square.
+// Where a photo is going decides the final look: stories are full screen (9:16), posts are square and menu dishes are 4:3 landscape.
 export type PhotoKind = 'story' | 'post' | 'menu';
 export type PickedPhoto = { uri: string; mimeType: string };
 export type PhotoStart = 'auto' | 'camera' | 'gallery';
 
-export const FRAME_ASPECT: Record<PhotoKind, number> = { story: 9 / 16, post: 1, menu: 1 };
+export const FRAME_ASPECT: Record<PhotoKind, number> = { story: 9 / 16, post: 1, menu: 4 / 3 };
 
 // The new camera and photo grid need native code. Phones on an older store build do not have it yet and keep the
 // phone's own picker until they update. Check the native side first: a failed require() cannot be caught.
@@ -22,7 +22,7 @@ export function addPhotoScreenReady(): boolean {
 
 // The phone's own picker or camera (the way every phone worked before the new screen).
 export async function systemPick(kind: PhotoKind, camera: boolean): Promise<PickedPhoto | null> {
-  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: kind === 'story' ? [9, 16] : [1, 1] };
+  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: kind === 'story' ? [9, 16] : kind === 'menu' ? [4, 3] : [1, 1] };
   if (camera) {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) return null;

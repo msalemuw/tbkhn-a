@@ -15,7 +15,7 @@ import { FRAME_ASPECT, finishPhoto, type PhotoKind, type PickedPhoto, systemPick
 
 // The add-photo screen for stories, posts and menu dishes: a grid of recent photos with the camera as its first tile
 // (iPhone), and a camera that fills the screen. The final look is drawn while choosing: stories fill the screen,
-// posts and menu dishes show a square frame inside it. Phones on an older build never reach this screen (see photo-flow).
+// posts (square) and menu dishes (4:3) show a frame of that shape inside it. Phones on an older build never reach this screen (see photo-flow).
 const DIM = 'rgba(40,48,58,0.78)';
 const MAX_SIDE = 1440;
 
@@ -203,7 +203,9 @@ function Grid({ kind, onCamera, onDone }: { kind: PhotoKind; onCamera: () => voi
   const loading = useRef(false);
   const end = useRef(false);
   const asked = useRef(false);
+  // Posts and menu dishes show the frame's final look first, then "Next"; a menu dish is 4:3, a post is square.
   const square = kind !== 'story';
+  const previewH = width / FRAME_ASPECT[kind];
   const size = Math.floor((width - 4) / 3);
 
   const loadMore = useCallback(async (offset: number) => {
@@ -247,7 +249,7 @@ function Grid({ kind, onCamera, onDone }: { kind: PhotoKind; onCamera: () => voi
   function onTile(item: Tile) {
     if (item.id === 'camera') return onCamera();
     const asset = (item as { asset: MediaLibrary.Asset }).asset;
-    // Stories go straight on; posts and menu dishes show the square first, then "Next".
+    // Stories go straight on; posts and menu dishes show the frame's shape first, then "Next".
     if (square) setSelected(asset);
     else confirm(asset);
   }
@@ -286,8 +288,8 @@ function Grid({ kind, onCamera, onDone }: { kind: PhotoKind; onCamera: () => voi
       </View>
 
       {square ? (
-        // The final look of a post or menu dish: a square, cut from the middle of the photo.
-        <View style={{ width, height: width, backgroundColor: colors.navy }}>{selected ? <TileImage asset={selected} style={{ width, height: width }} fit /> : null}</View>
+        // The final look of a post (square) or menu dish (4:3): cut from the middle of the photo.
+        <View style={{ width, height: previewH, backgroundColor: colors.navy }}>{selected ? <TileImage asset={selected} style={{ width, height: previewH }} fit /> : null}</View>
       ) : null}
 
       <View style={styles.recentsRow}>
