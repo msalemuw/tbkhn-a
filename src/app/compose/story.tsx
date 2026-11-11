@@ -11,6 +11,7 @@ import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, typ
 import { colors, fonts } from '@/constants/theme';
 import { postStory } from '@/lib/stories';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
+import { useOpenPickerOnce } from '@/lib/open-picker';
 import { useSession } from '@/lib/session';
 
 // A food story: a photo and a few words that stay up for 24 hours. No price, no orders.
@@ -38,6 +39,8 @@ export default function ComposeStory() {
     const res = camera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
     if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
   }
+
+  useOpenPickerOnce(() => pickPhoto(false));
 
   async function onPost() {
     if (!uid) return;

@@ -11,6 +11,7 @@ import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, typ
 import { colors, fonts } from '@/constants/theme';
 import { postSignature } from '@/lib/feed';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
+import { useOpenPickerOnce } from '@/lib/open-picker';
 import { useSession } from '@/lib/session';
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
@@ -38,6 +39,8 @@ export default function ComposeSignature() {
     const res = camera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
     if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
   }
+
+  useOpenPickerOnce(() => pickPhoto(false));
 
   async function onPost() {
     if (!uid) return;

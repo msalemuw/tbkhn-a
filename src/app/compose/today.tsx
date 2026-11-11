@@ -23,6 +23,7 @@ import {
   takeNewPickupPoint,
   uploadPhoto,
 } from '@/lib/posts';
+import { useOpenPickerOnce } from '@/lib/open-picker';
 import { useSession } from '@/lib/session';
 import { endOfToday, readySlots } from '@/lib/slots';
 
@@ -68,6 +69,10 @@ export default function ComposeToday() {
       });
     }, [uid]),
   );
+
+  useOpenPickerOnce(() => {
+    if (uid) pickPhoto(false);
+  });
 
   if (!uid) {
     return (
