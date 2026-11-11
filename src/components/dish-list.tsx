@@ -29,7 +29,21 @@ const SLATE = 'rgba(1,49,62,.5)';
 /** How close a pickup point must be to the eater to count as "Nearby". */
 const NEARBY_METERS = 10_000;
 
-export function DishList({ header, filters = true, retapTab }: { header?: React.ReactElement; filters?: boolean; retapTab?: string }) {
+export function DishList({
+  header,
+  belowBar,
+  barArt,
+  filters = true,
+  retapTab,
+}: {
+  header?: React.ReactElement;
+  /** Shown under the search and filter row (the Menu puts the location here). */
+  belowBar?: React.ReactElement;
+  /** Artwork drawn behind the search and filter row; gets the y of the filter button's top edge inside that row. */
+  barArt?: (filterTop: number) => React.ReactElement;
+  filters?: boolean;
+  retapTab?: string;
+}) {
   const { session } = useSession();
   const here = useMyLocation();
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -43,6 +57,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
   const [places, setPlaces] = useState<string[]>([]);
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterTop, setFilterTop] = useState<number | null>(null);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   // Only a pull-down shows the spinner. Showing it for the automatic loads pushes the whole list down and leaves a blank gap.
@@ -187,18 +202,22 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
         <View style={{ gap: 14 }}>
           {header}
           {filters ? (
-            <View style={styles.bar}>
-              <View style={styles.searchBox}>
-                <MaterialIcons name="search" size={22} color={SLATE} />
-                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes" />
+            <View>
+              {barArt && filterTop != null ? barArt(filterTop) : null}
+              <View style={styles.bar}>
+                <View style={styles.searchBox}>
+                  <MaterialIcons name="search" size={22} color={SLATE} />
+                  <TextInput value={q} onChangeText={setQ} placeholder="Search dishes" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes" />
+                </View>
+                <Pressable style={styles.filter} onLayout={(e) => setFilterTop(e.nativeEvent.layout.y)} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
+                  <MaterialIcons name="tune" size={18} color={colors.white} />
+                  <Text style={styles.filterText} maxFontSizeMultiplier={1.15}>{allShown ? 'Everyone' : 'Custom'}</Text>
+                  <MaterialIcons name="expand-more" size={18} color={colors.white} />
+                </Pressable>
               </View>
-              <Pressable style={styles.filter} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
-                <MaterialIcons name="tune" size={18} color={colors.white} />
-                <Text style={styles.filterText} maxFontSizeMultiplier={1.15}>{allShown ? 'Everyone' : 'Custom'}</Text>
-                <MaterialIcons name="expand-more" size={18} color={colors.white} />
-              </Pressable>
             </View>
           ) : null}
+          {belowBar}
         </View>
       }
       ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}

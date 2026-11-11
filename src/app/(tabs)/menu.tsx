@@ -5,22 +5,35 @@ import { useCallback, useState } from 'react';
 import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { DishList } from '@/components/dish-list';
 import { Logo } from '@/components/logo';
 import { colors, fonts, ui } from '@/constants/theme';
 import { fetchAppStatus, MENU_CLOSED_FALLBACK } from '@/lib/app-status';
+import { isRTL } from '@/lib/i18n';
 import { usePlace } from '@/lib/location';
 
-const ART = require('@/assets/images/menu-header-art.png');
+// The founder's artwork, split in two so each half can sit where it belongs: the sparkles by the title, the blobs behind the filter button.
+const SPARKS = require('@/assets/images/menu-art-sparkles.png');
+const BLOBS = require('@/assets/images/menu-art-blobs.png');
+const ART_W = 1448; // size of the original artwork, in its own pixels
+const ART_H = 1086;
+const BLOBS_X = 0.23; // blobs: left edge as a fraction of the screen width, so they sit flush with the right edge
+const TEAL_BOTTOM = 678 / ART_H; // the teal blob's lowest point, as a fraction of the blobs image height
+const SPARK = { w: 191, h: 190, tipX: 64, tipY: 124 }; // sparkles crop and the lower-left end of its middle stroke (artwork pixels)
+// The middle sparkle stroke starts at the top-right corner of the last letter of the title: just past its right edge, at x-height.
+const TITLE_X_HEIGHT = 15; // from the top of the title text box down to the top of the lowercase letters (pt)
+
 const ASKED_KEY = 'tabkheen.menu-location-asked';
 
 // Flow 14, screen s53: Today's menu. Staff can switch it off from the admin website (Controls): then the tab shows a "coming soon" message.
 export default function Menu() {
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const [titleW, setTitleW] = useState<number | null>(null);
+  // One artwork pixel in points: the art is drawn at 83% of the screen width, as in the design.
+  const k = (width * 0.83) / ART_W;
   const { place, ready } = usePlace();
   // undefined = not checked yet; a failed check (null status) leaves the menu open so nobody is locked out by a bad connection.
   const [closed, setClosed] = useState<{ message: string } | null | undefined>(undefined);
@@ -58,18 +71,44 @@ export default function Menu() {
           retapTab="menu"
           header={
             <View style={styles.header}>
-              {/* The founder's artwork (sparkle strokes and the teal blob over light blue), placed like the design: about 83% of the screen width, flush with the top-right. */}
-              <Image source={ART} style={[styles.art, { top: 28 - (insets.top + 14), left: width * 0.23 - 14, width: width * 0.83 }]} contentFit="contain" pointerEvents="none" accessible={false} />
               <Logo on="light" height={28} />
               <View style={styles.titleRow}>
-                <Text style={styles.title}>Today’s menu</Text>
+                <Text style={styles.title} onLayout={(e) => setTitleW(e.nativeEvent.layout.width)}>Today’s menu</Text>
+                {titleW != null ? (
+                  <Image
+                    source={SPARKS}
+                    style={{
+                      position: 'absolute',
+                      width: SPARK.w * k,
+                      height: SPARK.h * k,
+                      left: titleW + 3 - SPARK.tipX * k,
+                      top: TITLE_X_HEIGHT - 2 - SPARK.tipY * k,
+                      transform: isRTL ? [{ scaleX: -1 }] : undefined,
+                    }}
+                    contentFit="contain"
+                    pointerEvents="none"
+                    accessible={false}
+                  />
+                ) : null}
               </View>
-              <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityRole="button" accessibilityLabel="Choose your location">
-                <MaterialIcons name="location-on" size={18} color={colors.teal} />
-                <Text style={styles.locText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{place?.label || 'Set your location'}</Text>
-                <MaterialIcons name="expand-more" size={20} color={colors.muted} />
-              </Pressable>
             </View>
+          }
+          // The teal blob's lowest point rests on the top edge of the filter button, wherever the phone puts it.
+          barArt={(filterTop) => (
+            <Image
+              source={BLOBS}
+              style={{ position: 'absolute', width: ART_W * k, height: ART_H * k, left: width * BLOBS_X - 14, top: filterTop + 1 - TEAL_BOTTOM * ART_H * k }}
+              contentFit="contain"
+              pointerEvents="none"
+              accessible={false}
+            />
+          )}
+          belowBar={
+            <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityRole="button" accessibilityLabel="Choose your location">
+              <MaterialIcons name="location-on" size={18} color={colors.teal} />
+              <Text style={styles.locText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{place?.label || 'Set your location'}</Text>
+              <MaterialIcons name="expand-more" size={20} color={colors.muted} />
+            </Pressable>
           }
         />
       )}
@@ -79,7 +118,6 @@ export default function Menu() {
 
 const styles = StyleSheet.create({
   header: { gap: 4, paddingTop: 4 },
-  art: { position: 'absolute', aspectRatio: 1448 / 1086 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'flex-start', marginTop: 12 },
   title: { fontFamily: fonts.serif, fontSize: 34, lineHeight: 42, color: ui.deep },
   loc: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', maxWidth: '75%', paddingVertical: 4 },
