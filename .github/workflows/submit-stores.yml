@@ -1,0 +1,42 @@
+# Sends the newest finished production build to the store (iPhone: TestFlight / App Store Connect, Android: Google Play).
+# Start it from the Actions tab: "Submit to stores" > "Run workflow". Run "Build iPhone app" / "Build Android app" with
+# "production" first and wait until the build shows Finished on expo.dev.
+name: Submit to stores
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which store gets the newest production build
+        type: choice
+        options:
+          - ios
+          - android
+        default: ios
+jobs:
+  submit:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      # Same Apple API key as the iPhone build, so Expo can upload without a Mac.
+      - name: Apple API key
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          if [ -n "$ASC_API_KEY_P8" ] && [ -n "$ASC_KEY_ID" ]; then
+            printf '%s\n' "$ASC_API_KEY_P8" > "$RUNNER_TEMP/AuthKey.p8"
+            echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+            echo "EXPO_ASC_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"
+            echo "EXPO_ASC_ISSUER_ID=0f3d6df9-773e-49f9-93ba-57dc94dcc7ba" >> "$GITHUB_ENV"
+          fi
+      - run: eas submit --platform ${{ inputs.platform }} --profile production --latest --non-interactive --no-wait
