@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // The feed filter sits above the posts. Location lives on the Menu tab, like Talabat; Home is for social.
-  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
+  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
   watchText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
