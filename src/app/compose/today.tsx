@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   topTitle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   closeHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
   pad: { paddingHorizontal: 18, paddingBottom: 30 },
-  photo: { width: '100%', aspectRatio: 1, borderRadius: 18, backgroundColor: colors.cream },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 18, backgroundColor: colors.cream },
   previews: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   storyPhoto: { width: '100%', aspectRatio: 9 / 16, borderRadius: 14, backgroundColor: colors.cream },
   previewLabel: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted, marginTop: 6 },

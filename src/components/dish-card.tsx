@@ -74,7 +74,7 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
 
 const styles = StyleSheet.create({
   card: { backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border, padding: 10, gap: 12 },
-  photo: { width: '100%', aspectRatio: 1.6, borderRadius: 16, backgroundColor: colors.cream },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: colors.cream },
   noPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: ui.mint },
   avatar: { position: 'absolute', top: 10, left: 10, borderRadius: 999, borderWidth: 2.5, borderColor: colors.white, backgroundColor: colors.white },
   info: { gap: 6, paddingHorizontal: 4 },
