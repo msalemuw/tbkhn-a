@@ -155,6 +155,7 @@ function Viewer({
   const [liked, setLikedState] = useState(item.liked);
   const [sent, setSent] = useState(false);
   const photo = mediaUrl(item.media_path);
+  const [wide, setWide] = useState(false);
   const order = item.kind === 'cooking_today';
   const menuOff = useMenuOff();
 
@@ -253,7 +254,15 @@ function Viewer({
 
   return (
     <View style={styles.screen} {...pan.panHandlers}>
-      {photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <View style={[StyleSheet.absoluteFill, styles.plain]} />}
+      {photo ? (
+        <>
+          {/* A wide photo (a menu dish is 4:3) is shown whole over a blurred copy of itself instead of zoomed in. */}
+          {wide ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={40} /> : null}
+          <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit={wide ? 'contain' : 'cover'} onLoad={(e) => setWide(e.source.width / e.source.height > 0.7)} />
+        </>
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.plain]} />
+      )}
       <View style={[StyleSheet.absoluteFill, styles.shade]} pointerEvents="none" />
       <View style={StyleSheet.absoluteFill}>
         <Pressable style={styles.tapPrev} onPress={onPrev} onPressIn={() => setHolding(true)} onPressOut={() => setHolding(false)} onLongPress={() => {}} delayLongPress={250} accessibilityLabel="Previous" />
