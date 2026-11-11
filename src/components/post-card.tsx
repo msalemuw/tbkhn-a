@@ -2,8 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
@@ -42,6 +42,23 @@ export function PostCard({
   const [open, setOpen] = useState(false);
   const [cut, setCut] = useState(false);
   const menuOff = useMenuOff();
+  // Double-tap the photo to like, like Instagram: a heart pops up on the photo. It only likes; the heart button below is what unlikes.
+  const lastTap = useRef(0);
+  const [pop] = useState(() => new Animated.Value(0));
+  function onPhotoTap(now: number) {
+    if (now - lastTap.current > 320) {
+      lastTap.current = now;
+      return;
+    }
+    lastTap.current = 0;
+    if (!post.liked) onLike();
+    pop.setValue(0);
+    Animated.sequence([
+      Animated.spring(pop, { toValue: 1, useNativeDriver: true, friction: 5, tension: 160 }),
+      Animated.delay(350),
+      Animated.timing(pop, { toValue: 0, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }
   const photo = mediaUrl(post.media_path);
   const meta = ['Signature dish', meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at))].join(' · ');
 
@@ -76,7 +93,14 @@ export function PostCard({
           <MaterialIcons name="more-horiz" size={22} color={colors.muted} />
         </Pressable>
       </View>
-      {photo ? <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" /> : null}
+      {photo ? (
+        <Pressable onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false} style={styles.photoWrap}>
+          <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
+          <Animated.View pointerEvents="none" style={[styles.burst, { opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.1] }) }] }]}>
+            <Ionicons name="heart" size={96} color={colors.white} style={styles.burstHeart} />
+          </Animated.View>
+        </Pressable>
+      ) : null}
       {post.caption ? (
         <Pressable onPress={() => cut && setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? 'Show less' : 'Show the full description'}>
           {cut && !open ? (
@@ -136,7 +160,10 @@ const styles = StyleSheet.create({
   meta: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted },
   cooking: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2, alignSelf: 'flex-start' },
   cookingText: { fontFamily: fonts.extraBold, fontSize: 13, color: ui.deep },
-  photo: { width: '100%', aspectRatio: 1, marginTop: 10, borderRadius: 16, backgroundColor: colors.cream },
+  photoWrap: { marginTop: 10 },
+  photo: { width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: colors.cream },
+  burst: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  burstHeart: { textShadowColor: 'rgba(0,0,0,.35)', textShadowRadius: 14 },
   caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },
   measure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
   firstLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },

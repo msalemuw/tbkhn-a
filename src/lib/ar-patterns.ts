@@ -26,6 +26,10 @@ const DAYS_AR = ['الأحد', 'الاتنين', 'التلات', 'الأربع',
 
 export const arPatterns: [RegExp, To][] = [
   // Time and distance (format.ts)
+  [/^Show (\d+) posts?$/, 'اعرض $1 منشور'],
+  [/^Show (\d+) (?:dish|dishes)$/, 'اعرض $1 أكلة'],
+  [/^Pickup near (.+)$/, (_, a) => `الاستلام قريب من ${nm(a)}`],
+  [/^The exact pickup spot is shared once (.+) (?:accepts your order|accepts)\.$/, 'مكان الاستلام بالظبط هيظهر لك لما $1 يقبل الطلب.'],
   [/^(\d+)m$/, '$1د'],
   [/^(\d+)h$/, '$1س'],
   [/^(\d+) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/, (_, d, m) => `${d} ${MONTHS_AR[MONTHS.indexOf(m)]}`],

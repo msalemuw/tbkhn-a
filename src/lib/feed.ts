@@ -70,7 +70,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
     me ? supabase.from('likes').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
     supabase.from('reviews').select('cook_id, rating').in('cook_id', authors),
     supabase.from('posts').select('id, author_id').eq('kind', 'cooking_today').gt('expires_at', new Date().toISOString()).in('author_id', authors),
-    supabase.from('pickup_points').select('owner_id, lat, lng').in('owner_id', authors),
+    supabase.from('pickup_points').select('owner_id, area_lat, area_lng').in('owner_id', authors),
   ]);
   const likedSet = new Set((mine.data ?? []).map((l) => l.post_id));
   const sums = new Map<string, { sum: number; n: number }>();
@@ -81,7 +81,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
   const liveBy = new Map<string, string>();
   for (const p of live.data ?? []) if (!liveBy.has(p.author_id)) liveBy.set(p.author_id, p.id);
   const spotBy = new Map<string, LatLng>();
-  for (const p of spots.data ?? []) if (!spotBy.has(p.owner_id)) spotBy.set(p.owner_id, { lat: p.lat, lng: p.lng });
+  for (const p of spots.data ?? []) if (!spotBy.has(p.owner_id)) spotBy.set(p.owner_id, { lat: p.area_lat, lng: p.area_lng });
   return rows.map((r) => {
     const s = sums.get(r.author_id);
     return {

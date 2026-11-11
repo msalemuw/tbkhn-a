@@ -9,6 +9,11 @@ export const INGREDIENTS = ['Vegetables', 'Beef', 'Chicken', 'Seafood', 'Dairy']
 
 export type Person = { id: string; username: string | null; display_name: string | null; avatar_path: string | null };
 export type PickupPoint = { id: string; label: string; lat: number; lng: number };
+/** What everyone may see of a pickup spot: a position shifted a few hundred metres from the real one (the exact spot follows an accepted order). */
+export type AreaPoint = { id: string; area_lat: number; area_lng: number };
+/** What a stranger is told about where the pickup is: the cook's area, never the exact spot. */
+export const pickupAreaText = (area: string | null | undefined) => (area ? `Pickup near ${area}` : 'Pickup nearby');
+export const areaLatLng = (p: { area_lat: number; area_lng: number }) => ({ lat: p.area_lat, lng: p.area_lng });
 
 export type Dish = {
   id: string;
@@ -27,15 +32,15 @@ export type Dish = {
   community_id: string | null;
   /** Every community the dish is for (empty = public). */
   community_ids: string[];
-  author: Person;
-  pickup_point: PickupPoint | null;
+  author: Person & { area?: string | null };
+  pickup_point: AreaPoint | null;
   community: { name: string } | null;
 };
 
 const DISH_SELECT =
   'id, author_id, caption, media_path, dish_name, cuisine, main_ingredients, price_egp, portions_total, portions_left, ready_at, expires_at, created_at, community_id, community_ids,' +
-  ' author:profiles!author_id(id, username, display_name, avatar_path),' +
-  ' pickup_point:pickup_points(id, label, lat, lng),' +
+  ' author:profiles!author_id(id, username, display_name, avatar_path, area),' +
+  ' pickup_point:pickup_points(id, area_lat, area_lng),' +
   ' community:communities(name)';
 
 /** Everything still being served today, newest first. */

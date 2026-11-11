@@ -19,6 +19,7 @@ export function FilterSheet({
   onClose,
   onSelectAll,
   onClearAll,
+  applyLabel,
 }: {
   visible: boolean;
   title: string;
@@ -28,6 +29,8 @@ export function FilterSheet({
   /** When given, a "Select all" / "Clear all" link sits above the list. */
   onSelectAll?: () => void;
   onClearAll?: () => void;
+  /** The Apply button's words; with a result count it reads like "Show 12 posts". */
+  applyLabel?: string;
 }) {
   const { height } = useWindowDimensions();
   const rows = sections.flatMap((s) => s.rows);
@@ -60,7 +63,7 @@ export function FilterSheet({
             ))}
           </ScrollView>
           {noneOn && onSelectAll ? <Text style={styles.hint}>Tick at least one to see posts.</Text> : null}
-          <PrimaryButton label="Apply" onPress={onClose} disabled={noneOn && !!onSelectAll} style={{ marginTop: 16, marginBottom: 12 }} />
+          <PrimaryButton label={applyLabel ?? 'Apply'} onPress={onClose} disabled={noneOn && !!onSelectAll} style={{ marginTop: 16, marginBottom: 12 }} />
         </SafeAreaView>
       </View>
     </Modal>

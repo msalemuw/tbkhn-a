@@ -75,7 +75,10 @@ export default function OrderScreen() {
   const dish = o.post?.dish_name ?? 'Your dish';
   const total = Number(o.post?.price_egp ?? 0) * o.plates;
   const pickup = o.pickup_at ? fmtClock(Date.parse(o.pickup_at)) : null;
-  const summary = `${o.plates} × ${dish} · EGP ${total}${pickup ? ` · Pickup ${pickup}` : ''}${o.post?.pickup_point ? `, ${o.post.pickup_point.label}` : ''}`;
+  // The exact pickup spot is only shared once the cook has accepted (the cook always sees their own).
+  const spotOpen = isCook || ['accepted', 'ready', 'picked_up'].includes(o.status);
+  const spot = o.post?.pickup_point ?? null;
+  const summary = `${o.plates} × ${dish} · EGP ${total}${pickup ? ` · Pickup ${pickup}` : ''}${spot && spotOpen ? `, ${spot.label}` : ''}`;
 
   async function run(key: string, fn: () => Promise<void>) {
     setBusy(key);
@@ -117,6 +120,28 @@ export default function OrderScreen() {
           <View style={styles.card}>
             <Text style={styles.label}>NOTE FROM {isCook ? buyer.toUpperCase() : 'YOU'}</Text>
             <Text verbatim style={styles.body}>{o.note}</Text>
+          </View>
+        ) : null}
+
+        {spot && ['pending', 'accepted', 'ready'].includes(o.status) ? (
+          <View style={styles.card}>
+            <Text style={styles.label}>PICKUP SPOT</Text>
+            {spotOpen ? (
+              <Pressable
+                onPress={() => router.push({ pathname: '/pickup-map', params: { lat: String(spot.lat), lng: String(spot.lng), label: spot.label } })}
+                accessibilityRole="button"
+                accessibilityLabel="Show the pickup spot on the map"
+                style={styles.spotRow}>
+                <MaterialIcons name="location-on" size={20} color={colors.teal} />
+                <Text style={[styles.body, { flex: 1 }]}>{spot.label}</Text>
+                <Text style={styles.spotLink}>Map</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.spotRow}>
+                <MaterialIcons name="lock-outline" size={20} color={colors.teal} />
+                <Text style={[styles.body, { flex: 1 }]}>{`The exact pickup spot is shared once ${cookFirst} accepts.`}</Text>
+              </View>
+            )}
           </View>
         ) : null}
 
@@ -267,6 +292,8 @@ const styles = StyleSheet.create({
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 6 },
   body: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink, lineHeight: 20 },
   handle: { fontFamily: fonts.extraBold, color: colors.ink },
+  spotRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  spotLink: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.teal },
   muted: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, lineHeight: 18 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
   thanks: { textAlign: 'center', marginTop: 20 },
