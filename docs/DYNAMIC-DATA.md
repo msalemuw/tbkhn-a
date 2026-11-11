@@ -30,6 +30,7 @@ Rules:
 - Recompute whenever the user's location changes ("Use current location", area change).
 - The Home location follows the phone's GPS (on app open and each time the app returns to the front, once the phone has moved 300 m) until the member pins a spot by hand on the map; tapping "use my current location" and confirming hands it back to the GPS (`manual` in `src/lib/location.tsx`).
 - Never store a distance string; store coordinates for each pickup point (`lat`, `lng`) and the user's last known position.
+- Pickup privacy (2026-11-11): everyone except the cook and, after acceptance, the buyer sees only each pickup point's **area position** (`area_lat`, `area_lng`: the real spot shifted 250 to 450 m once, when the spot is saved). Distances, the Nearby filter and the map circle on a dish use it. The exact `label`, `lat` and `lng` show on the order screen once the cook has accepted (migration 0054; hiding the exact columns at the database is a later step).
 - Sort/filter by distance ("Watching: Nearby", Menu filters) must use the same computed value.
 - Menu filter "Nearby" keeps a dish when its pickup point is within `NEARBY_METERS` (10 km, `src/components/dish-list.tsx`) of the member's current location; with no known location it does not narrow the list.
 

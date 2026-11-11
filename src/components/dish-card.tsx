@@ -9,7 +9,7 @@ import { Avatar } from '@/components/avatar';
 import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts, ui } from '@/constants/theme';
 import { distanceMeters, fmtDist, fmtReady, type LatLng } from '@/lib/format';
-import { type Dish, mediaUrl, personName } from '@/lib/posts';
+import { areaLatLng, type Dish, mediaUrl, personName } from '@/lib/posts';
 import type { Badge } from '@/lib/rankings';
 
 /** Secondary text colour from the design: a soft blue-grey. */
@@ -17,14 +17,14 @@ const SLATE = 'rgba(1,49,62,.55)';
 
 /**
  * One offering in Today's menu (s53), laid out like the new design: cook line with a "rank badge, the photo beside
- * the dish details, and an "Order a plate" button. The pin line names the pickup spot (not the community) and opens its map.
+ * the dish details, and an "Order a plate" button. The pin line shows the distance to the pickup area (never the exact spot) and opens its map.
  */
-export function DishCard({ dish, here, badges, onPress }: { dish: Dish; here: LatLng | null; badges?: Badge[]; onPress: () => void }) {
+export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; here: LatLng | null; badges?: Badge[]; rating?: { avg: number; n: number }; onPress: () => void }) {
   const photo = mediaUrl(dish.media_path);
   const pp = dish.pickup_point;
-  const dist = here && pp ? fmtDist(distanceMeters(here, pp)) : null;
+  const dist = here && pp ? fmtDist(distanceMeters(here, areaLatLng(pp))) : null;
   const soldOut = dish.portions_left === 0;
-  const openMap = () => pp && router.push({ pathname: '/pickup-map', params: { lat: String(pp.lat), lng: String(pp.lng), label: pp.label } });
+  const openMap = () => pp && router.push({ pathname: '/pickup-map', params: { lat: String(pp.area_lat), lng: String(pp.area_lng), area: '1', who: personName(dish.author) } });
   const openCook = () => router.push({ pathname: '/cook/[id]', params: { id: dish.author_id } });
 
   return (
@@ -35,6 +35,7 @@ export function DishCard({ dish, here, badges, onPress }: { dish: Dish; here: La
         </Pressable>
         <View style={styles.nameCol}>
           <Text style={styles.cook} numberOfLines={1} onPress={openCook} accessibilityRole="link">{personName(dish.author)}</Text>
+          {rating ? <Text style={styles.rating}>{`★ ${rating.avg.toFixed(1)} (${rating.n})`}</Text> : null}
           {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
         </View>
       </View>
@@ -49,7 +50,7 @@ export function DishCard({ dish, here, badges, onPress }: { dish: Dish; here: La
         <View style={styles.info}>
           <Text style={styles.dish} numberOfLines={2}>{dish.dish_name}</Text>
           <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
-          <Pressable style={styles.where} onPress={pp ? openMap : onPress} hitSlop={6} accessibilityRole={pp ? 'link' : undefined} accessibilityLabel={pp ? `Pickup spot: ${pp.label}. Show on map` : undefined}>
+          <Pressable style={styles.where} onPress={pp ? openMap : onPress} hitSlop={6} accessibilityRole={pp ? 'link' : undefined} accessibilityLabel={pp ? 'Pickup area. Show on map' : undefined}>
             <MaterialIcons name="location-on" size={17} color={SLATE} />
             <Text style={styles.whereText} numberOfLines={1}>
               {dist ? `${dist} away` : 'Pickup Only'}
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   nameCol: { flex: 1, gap: 4 },
   cook: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep },
+  rating: { fontFamily: fonts.semiBold, fontSize: 13, color: SLATE },
   body: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
   photo: { width: 128, height: 118, borderRadius: 16, backgroundColor: colors.cream },
   noPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: ui.mint },

@@ -1,8 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Easing, PanResponder, type PanResponderGestureState, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
@@ -29,6 +29,8 @@ const STORY_MS = 5000;
 const closeStory = () => (router.canGoBack() ? router.back() : router.replace('/home'));
 
 // Story viewer (design flows 4 and 17): tap to move on, progress bars on top, reply and heart below.
+// Like Instagram: tap the sides for the next or previous story, swipe left or right for the next or previous person,
+// hold a finger down to pause, swipe down to close.
 // An "On today's menu" story carries the dish, its price and a Reserve button.
 export default function StoryViewer() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -102,11 +104,41 @@ export default function StoryViewer() {
           setIi(0);
         }
       }}
+      onNextPerson={() => {
+        if (gi < groups.length - 1) {
+          setGi(gi + 1);
+          setIi(0);
+        } else closeStory();
+      }}
+      onPrevPerson={() => {
+        if (gi > 0) {
+          setGi(gi - 1);
+          setIi(0);
+        }
+      }}
     />
   );
 }
 
-function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryGroup; index: number; me: string | null; onNext: () => void; onPrev: () => void; onDeleted: (id: string) => void }) {
+function Viewer({
+  group,
+  index,
+  me,
+  onNext,
+  onPrev,
+  onNextPerson,
+  onPrevPerson,
+  onDeleted,
+}: {
+  group: StoryGroup;
+  index: number;
+  me: string | null;
+  onNext: () => void;
+  onPrev: () => void;
+  onNextPerson: () => void;
+  onPrevPerson: () => void;
+  onDeleted: (id: string) => void;
+}) {
   const item = group.items[index];
   const mine = group.author.id === me;
   const here = useMyLocation();
@@ -114,6 +146,9 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
   const insets = useOverlayInsets();
   const [progress] = useState(() => new Animated.Value(0));
   const [paused, setPaused] = useState(false);
+  // A finger held on the story pauses it, and letting go carries on from the same spot.
+  const [holding, setHolding] = useState(false);
+  const stopped = paused || holding;
   const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
   const [report, setReport] = useState<ReportTarget | null>(null);
   const [draft, setDraft] = useState('');
@@ -127,13 +162,38 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
     markSeen([item.id]);
   }, [item.id]);
 
+  // The bar keeps its place while paused: a resume runs only the time that is left.
+  const done = useRef(0);
   useEffect(() => {
-    if (paused) return;
-    const anim = Animated.timing(progress, { toValue: 1, duration: STORY_MS, easing: Easing.linear, useNativeDriver: false });
-    progress.setValue(0);
+    const id = progress.addListener(({ value }) => {
+      done.current = value;
+    });
+    return () => progress.removeListener(id);
+  }, [progress]);
+  useEffect(() => {
+    if (stopped) return;
+    const anim = Animated.timing(progress, { toValue: 1, duration: Math.max(1, STORY_MS * (1 - done.current)), easing: Easing.linear, useNativeDriver: false });
     anim.start(({ finished }) => finished && onNext());
     return () => anim.stop();
-  }, [paused, progress, onNext]);
+  }, [stopped, progress, onNext]);
+
+  // Swipes: sideways moves between people, downwards closes. The responder is made once (it keeps the gesture's progress);
+  // `latest` carries the current handlers into it.
+  const latest = useRef({ next: onNextPerson, prev: onPrevPerson, typing: false });
+  useEffect(() => {
+    latest.current = { next: onNextPerson, prev: onPrevPerson, typing: keyboard > 0 };
+  });
+  // Only a real drag takes over from the buttons and tap areas; a tap goes through untouched.
+  const capture = useCallback((_: unknown, g: PanResponderGestureState) => !latest.current.typing && (Math.abs(g.dx) > 14 || g.dy > 14) && (Math.abs(g.dx) > Math.abs(g.dy) || g.dy > 0), []);
+  const release = useCallback((_: unknown, g: PanResponderGestureState) => {
+    if (Math.abs(g.dx) > Math.abs(g.dy)) {
+      if (g.dx < -50) latest.current.next();
+      else if (g.dx > 50) latest.current.prev();
+    } else if (g.dy > 70) closeStory();
+  }, []);
+  // The handlers only read `latest` while a finger is moving, never while rendering.
+  // eslint-disable-next-line react-hooks/refs
+  const [pan] = useState(() => PanResponder.create({ onMoveShouldSetPanResponderCapture: capture, onPanResponderRelease: release }));
 
   const toggleLike = useCallback(async () => {
     if (!me) return router.push('/sign-up');
@@ -192,12 +252,12 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} {...pan.panHandlers}>
       {photo ? <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <View style={[StyleSheet.absoluteFill, styles.plain]} />}
       <View style={[StyleSheet.absoluteFill, styles.shade]} pointerEvents="none" />
       <View style={StyleSheet.absoluteFill}>
-        <Pressable style={styles.tapPrev} onPress={onPrev} accessibilityLabel="Previous" />
-        <Pressable style={styles.tapNext} onPress={onNext} accessibilityLabel="Next" />
+        <Pressable style={styles.tapPrev} onPress={onPrev} onPressIn={() => setHolding(true)} onPressOut={() => setHolding(false)} onLongPress={() => {}} delayLongPress={250} accessibilityLabel="Previous" />
+        <Pressable style={styles.tapNext} onPress={onNext} onPressIn={() => setHolding(true)} onPressOut={() => setHolding(false)} onLongPress={() => {}} delayLongPress={250} accessibilityLabel="Next" />
       </View>
       <View style={[styles.top, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
         <View style={styles.bars}>
@@ -244,7 +304,7 @@ function Viewer({ group, index, me, onNext, onPrev, onDeleted }: { group: StoryG
             <Text style={styles.caption}>{item.dish_name}</Text>
             <Text style={styles.sub}>
               EGP {Number(item.price_egp)} · {item.ready_at ? fmtReady(Date.parse(item.ready_at)) : ''} · {item.portions_left ?? 0} left
-              {here && item.pickup_point ? ` · ${fmtDist(distanceMeters(here, item.pickup_point))} away` : ''}
+              {here && item.pickup_point ? ` · ${fmtDist(distanceMeters(here, { lat: item.pickup_point.area_lat, lng: item.pickup_point.area_lng }))} away` : ''}
             </Text>
           </>
         ) : null}

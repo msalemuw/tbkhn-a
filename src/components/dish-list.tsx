@@ -9,13 +9,14 @@ import { FilterSheet } from '@/components/filter-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
 import { distanceMeters } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
-import { CUISINES, type Dish, fetchMyCommunities, fetchTodaysDishes, type MyCommunity } from '@/lib/posts';
+import { areaLatLng, CUISINES, type Dish, fetchMyCommunities, fetchTodaysDishes, type MyCommunity } from '@/lib/posts';
 import { fetchBadges, type Badge } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
 import { supabaseConfigured } from '@/lib/supabase';
 import { usePullRefresh } from '@/lib/pull-refresh';
 import { useRetap } from '@/lib/tab-retap';
 import { fetchMemberships } from '@/lib/community';
+import { fetchRatings } from '@/lib/cooks';
 
 /**
  * Today's menu (s53): every dish neighbors share on today's menu, narrowed by community, cuisine or search.
@@ -33,6 +34,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
   const here = useMyLocation();
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [badges, setBadges] = useState<Map<string, Badge[]>>(new Map());
+  const [ratings, setRatings] = useState<Map<string, { avg: number; n: number }>>(new Map());
   const [mine, setMine] = useState<MyCommunity[]>([]);
   // Which communities each cook belongs to, so a community filter also finds cooks who live there.
   const [memberships, setMemberships] = useState<Map<string, string[]>>(new Map());
@@ -57,6 +59,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       // Rank badges are a nicety: if they fail to load the cards still show.
       fetchBadges(list.map((d) => d.author_id)).then(setBadges, () => {});
       fetchMemberships(list.map((d) => d.author_id)).then(setMemberships, () => {});
+      fetchRatings(list.map((d) => d.author_id)).then(setRatings, () => {});
       if (session) setMine(await fetchMyCommunities(session.user.id));
       setFailed(false);
     } catch {
@@ -84,7 +87,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
     const needle = q.trim().toLowerCase();
     // Nearby is the one place filter based on distance: the dish's pickup point against where the eater is now.
     // Without a known location it can't narrow anything, so it lets every dish through.
-    const near = (d: Dish) => !here || (d.pickup_point != null && distanceMeters(here, d.pickup_point) <= NEARBY_METERS);
+    const near = (d: Dish) => !here || (d.pickup_point != null && distanceMeters(here, areaLatLng(d.pickup_point)) <= NEARBY_METERS);
     const list = dishes.filter(
       (d) =>
         (!places.length || places.some((p) => (p === NEARBY ? near(d) : d.community_ids.includes(p) || (memberships.get(d.author_id) ?? []).includes(p)))) &&
@@ -93,7 +96,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
     );
     // Nearest first once we know where the member is; otherwise newest first.
     if (here) {
-      const dist = (d: Dish) => (d.pickup_point ? distanceMeters(here, d.pickup_point) : Infinity);
+      const dist = (d: Dish) => (d.pickup_point ? distanceMeters(here, areaLatLng(d.pickup_point)) : Infinity);
       return [...list].sort((a, b) => dist(a) - dist(b));
     }
     return list;
@@ -176,7 +179,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       ref={listRef}
       data={shown}
       keyExtractor={(d) => d.id}
-      renderItem={({ item }) => <DishCard dish={item} here={here} badges={badges.get(item.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
+      renderItem={({ item }) => <DishCard dish={item} here={here} badges={badges.get(item.author_id)} rating={ratings.get(item.author_id)} onPress={() => router.push({ pathname: '/dish/[id]', params: { id: item.id } })} />}
       style={{ backgroundColor: ui.page }}
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={ui.deepTeal} />}
@@ -200,7 +203,7 @@ export function DishList({ header, filters = true, retapTab }: { header?: React.
       }
       ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
     />
-      <FilterSheet visible={filterOpen} title="Menu filter" sub="" sections={sections} onClose={() => { if (noneTicked) selectAll(); setFilterOpen(false); }} onSelectAll={selectAll} onClearAll={clearAll} />
+      <FilterSheet visible={filterOpen} title="Menu filter" sub="" sections={sections} onClose={() => { if (noneTicked) selectAll(); setFilterOpen(false); }} onSelectAll={selectAll} onClearAll={clearAll} applyLabel={shown.length ? `Show ${shown.length} ${shown.length === 1 ? 'dish' : 'dishes'}` : 'No dishes match'} />
     </>
   );
 }

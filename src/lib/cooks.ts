@@ -54,6 +54,22 @@ export async function fetchCookStats(id: string): Promise<CookStats> {
   return { followers, following, communities, reviews: ratings.length, rating };
 }
 
+/** Average star rating and number of reviews for each of these cooks (the Menu cards show "★ 4.7 (12)", like Talabat). Cooks with no reviews are left out. */
+export async function fetchRatings(cookIds: string[]): Promise<Map<string, { avg: number; n: number }>> {
+  const out = new Map<string, { avg: number; n: number }>();
+  const ids = [...new Set(cookIds)];
+  if (!ids.length) return out;
+  const { data, error } = await supabase.from('reviews').select('cook_id, rating').in('cook_id', ids).limit(5000);
+  if (error) throw error;
+  const sums = new Map<string, { sum: number; n: number }>();
+  for (const r of data ?? []) {
+    const s = sums.get(r.cook_id) ?? { sum: 0, n: 0 };
+    sums.set(r.cook_id, { sum: s.sum + r.rating, n: s.n + 1 });
+  }
+  for (const [id, s] of sums) out.set(id, { avg: s.sum / s.n, n: s.n });
+  return out;
+}
+
 export async function fetchReviews(cookId: string): Promise<Review[]> {
   const { data, error } = await supabase
     .from('reviews')
@@ -131,13 +147,13 @@ async function searchCooksAll(text: string, me: string | null, here: LatLng | nu
   if (!ids.length) return [];
   const [profiles, points] = await Promise.all([
     supabase.from('profiles').select(cols).not('username', 'is', null).in('id', ids),
-    here ? supabase.from('pickup_points').select('owner_id, lat, lng').in('owner_id', ids) : Promise.resolve({ data: [], error: null }),
+    here ? supabase.from('pickup_points').select('owner_id, area_lat, area_lng').in('owner_id', ids) : Promise.resolve({ data: [], error: null }),
   ]);
   if (profiles.error) throw profiles.error;
   if (points.error) throw points.error;
   const near = new Map<string, number>();
   for (const pt of points.data ?? []) {
-    const d = distanceMeters(here!, { lat: pt.lat as number, lng: pt.lng as number });
+    const d = distanceMeters(here!, { lat: pt.area_lat as number, lng: pt.area_lng as number });
     near.set(pt.owner_id as string, Math.min(near.get(pt.owner_id as string) ?? Infinity, d));
   }
   const rank = (id: string) => {

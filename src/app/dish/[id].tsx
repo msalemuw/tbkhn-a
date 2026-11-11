@@ -17,7 +17,7 @@ import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
 import { removeDish } from '@/lib/feed';
 import { placeOrder } from '@/lib/orders';
-import { type Dish, fetchDish, mediaUrl, personName } from '@/lib/posts';
+import { areaLatLng, type Dish, fetchDish, fetchMyPickupPoints, mediaUrl, personName, type PickupPoint, pickupAreaText } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { pickupSlots } from '@/lib/slots';
 import { VerifiedTick } from '@/lib/verified';
@@ -32,6 +32,8 @@ export default function DishScreen() {
   const here = useMyLocation();
   const [dish, setDish] = useState<Dish | null | undefined>(undefined);
   const [badges, setBadges] = useState<Badge[]>([]);
+  // The cook sees their own exact spot on their dish; everyone else only sees the area until an order is accepted.
+  const [exact, setExact] = useState<PickupPoint | null>(null);
   const [plates, setPlates] = useState(1);
   const [pickupAt, setPickupAt] = useState<number | null>(null);
   const [note, setNote] = useState('');
@@ -46,8 +48,10 @@ export default function DishScreen() {
     fetchDish(id).then((d) => {
       setDish(d);
       if (d) fetchBadges([d.author_id]).then((m) => setBadges(m.get(d.author_id) ?? []), () => {});
+      const me = session?.user.id;
+      if (d && me && me === d.author_id && d.pickup_point) fetchMyPickupPoints(me).then((l) => setExact(l.find((x) => x.id === d.pickup_point!.id) ?? null), () => {});
     }, () => setDish(null));
-  }, [id]);
+  }, [id, session]);
   useLive(load);
 
   // Pickup choices and "Ready now" move with the clock.
@@ -193,16 +197,28 @@ export default function DishScreen() {
             <Pressable
               style={styles.line}
               disabled={!pp}
-              onPress={() => pp && router.push({ pathname: '/pickup-map', params: { lat: String(pp.lat), lng: String(pp.lng), label: pp.label } })}
+              onPress={() =>
+                pp &&
+                router.push({
+                  pathname: '/pickup-map',
+                  params: exact ? { lat: String(exact.lat), lng: String(exact.lng), label: exact.label } : { lat: String(pp.area_lat), lng: String(pp.area_lng), area: '1', who: cook },
+                })
+              }
               accessibilityRole="button"
-              accessibilityLabel="See the pickup spot on the map">
+              accessibilityLabel={exact ? 'See the pickup spot on the map' : 'See the pickup area on the map'}>
               <MaterialIcons name="location-on" size={19} color={colors.teal} />
               <Text style={styles.lineText}>
-                {pp?.label ?? 'Ask the cook'}
-                {here && pp ? <Text style={styles.muted}> · {fmtDist(distanceMeters(here, pp))} away</Text> : null}
+                {pp ? (exact ? exact.label : pickupAreaText(dish.author.area)) : 'Ask the cook'}
+                {here && pp ? <Text style={styles.muted}> · {fmtDist(distanceMeters(here, areaLatLng(pp)))} away</Text> : null}
               </Text>
               {pp ? <Text style={styles.mapLink}>Map</Text> : null}
             </Pressable>
+            {pp && !exact && !mine ? (
+              <View style={styles.line}>
+                <MaterialIcons name="lock-outline" size={19} color={colors.teal} />
+                <Text style={styles.lineText}>The exact pickup spot is shared once {cook} accepts your order.</Text>
+              </View>
+            ) : null}
             <Pressable
               style={styles.line}
               disabled={mine || closed}

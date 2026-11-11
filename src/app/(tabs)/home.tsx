@@ -21,7 +21,7 @@ import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked } from '@/lib/feed';
 import { distanceMeters } from '@/lib/format';
 import { useDataVersion } from '@/lib/live';
-import { reportMyPosition, useMyLocation, usePlace } from '@/lib/location';
+import { reportMyPosition, useMyLocation } from '@/lib/location';
 import { unreadMessageCount } from '@/lib/chat';
 import { unreadNotificationCount } from '@/lib/notifications';
 import { fetchMyCommunities, type MyCommunity, personName } from '@/lib/posts';
@@ -39,7 +39,6 @@ import { useRetap } from '@/lib/tab-retap';
 export default function Home() {
   const { session } = useSession();
   const me = session?.user.id ?? null;
-  const { place } = usePlace();
   const here = useMyLocation();
   const [unread, setUnread] = useState(0);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -228,11 +227,6 @@ export default function Home() {
             <FadeBg from={[255, 255, 255]} to={PAGE_RGB} />
             <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => router.push('/compose/story')} />
             <View style={styles.bar}>
-              <Pressable style={styles.loc} onPress={() => router.push('/location')} accessibilityLabel="Choose your location">
-                <MaterialIcons name="location-on" size={18} color={colors.teal} />
-                <Text style={styles.locText} numberOfLines={1} maxFontSizeMultiplier={1.15}>{place?.label || 'Location'}</Text>
-                <MaterialIcons name="expand-more" size={20} color={colors.muted} />
-              </Pressable>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
                 <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : 'Custom'}</Text>
@@ -244,7 +238,21 @@ export default function Home() {
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
         contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
-      {watching ? <WatchingSheet visible={watchOpen} mine={mine} value={watching} onChange={setWatching} onClose={() => setWatchOpen(false)} /> : null}
+      {watching ? <WatchingSheet
+          visible={watchOpen}
+          mine={mine}
+          value={watching}
+          onChange={setWatching}
+          onClose={() => setWatchOpen(false)}
+          // "Nearby" needs somewhere to be near: with no saved location, ticking it opens the location picker.
+          onNearbyOn={() => {
+            if (!here) {
+              setWatchOpen(false);
+              router.push('/location');
+            }
+          }}
+          applyLabel={shown.length ? `Show ${shown.length} ${shown.length === 1 ? 'post' : 'posts'}` : 'No posts match'}
+        /> : null}
       <ActionSheet title={menu?.title ?? null} actions={menu?.actions ?? []} onClose={() => setMenu(null)} />
       <LikesSheet postId={likesFor} onClose={() => setLikesFor(null)} />
       <CommentsSheet postId={commentsFor} me={me} onClose={() => setCommentsFor(null)} onAdded={(id) => patch(id, (x) => ({ ...x, comments: x.comments + 1 }))} onRemoved={(id) => patch(id, (x) => ({ ...x, comments: Math.max(0, x.comments - 1) }))} />
@@ -259,10 +267,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: ui.card },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: ui.card },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
-  // Location and Feed filter share one soft white card above the posts, as in the design.
-  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, gap: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  loc: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
-  locText: { flexShrink: 1, fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep },
+  // The feed filter sits above the posts. Location lives on the Menu tab, like Talabat; Home is for social.
+  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
   watchText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
