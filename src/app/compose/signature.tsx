@@ -1,6 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -12,13 +11,14 @@ import { colors, fonts } from '@/constants/theme';
 import { postSignature } from '@/lib/feed';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
 import { useOpenPickerOnce } from '@/lib/open-picker';
+import { choosePhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
 import { useSession } from '@/lib/session';
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
 export default function ComposeSignature() {
   const { session } = useSession();
   const uid = session?.user.id;
-  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [photo, setPhoto] = useState<PickedPhoto | null>(null);
   const [caption, setCaption] = useState('');
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
@@ -30,17 +30,12 @@ export default function ComposeSignature() {
     if (uid) fetchMyCommunities(uid).then(setCommunities, () => null);
   }, [uid]);
 
-  async function pickPhoto(camera: boolean) {
-    const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] };
-    if (camera) {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return;
-    }
-    const res = camera ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
-    if (!res.canceled && res.assets[0]) setPhoto(res.assets[0]);
+  async function pickPhoto(start: PhotoStart) {
+    const res = await choosePhoto('post', start);
+    if (res) setPhoto(res);
   }
 
-  useOpenPickerOnce(() => pickPhoto(false));
+  useOpenPickerOnce(() => pickPhoto('auto'));
 
   async function onPost() {
     if (!uid) return;
@@ -77,18 +72,18 @@ export default function ComposeSignature() {
           {photo ? (
             <View>
               <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" />
-              <Pressable style={styles.retake} onPress={() => pickPhoto(false)}>
+              <Pressable style={styles.retake} onPress={() => pickPhoto('gallery')}>
                 <MaterialIcons name="autorenew" size={16} color={colors.white} />
                 <Text style={styles.retakeText}>Change</Text>
               </Pressable>
             </View>
           ) : (
             <View style={styles.photoEmpty}>
-              <Pressable style={styles.photoBtn} onPress={() => pickPhoto(true)}>
+              <Pressable style={styles.photoBtn} onPress={() => pickPhoto('camera')}>
                 <MaterialIcons name="photo-camera" size={26} color={colors.teal} />
                 <Text style={styles.photoBtnText}>Take a photo</Text>
               </Pressable>
-              <Pressable style={styles.photoBtn} onPress={() => pickPhoto(false)}>
+              <Pressable style={styles.photoBtn} onPress={() => pickPhoto('gallery')}>
                 <MaterialIcons name="photo-library" size={26} color={colors.teal} />
                 <Text style={styles.photoBtnText}>From gallery</Text>
               </Pressable>

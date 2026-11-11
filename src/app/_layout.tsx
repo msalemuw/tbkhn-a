@@ -85,6 +85,7 @@ export default function RootLayout() {
         <Stack.Screen name="compose/today" options={{ presentation: 'modal' }} />
         <Stack.Screen name="compose/signature" options={{ presentation: 'modal' }} />
         <Stack.Screen name="compose/story" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="add-photo" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="story/[id]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="dish/[id]" />
         <Stack.Screen name="order/[id]" />
