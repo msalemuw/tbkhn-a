@@ -10,15 +10,16 @@ import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, typ
 import { colors, fonts } from '@/constants/theme';
 import { postSignature } from '@/lib/feed';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
-import { useOpenPickerOnce } from '@/lib/open-picker';
-import { choosePhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
+import { choosePhoto, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
 import { useSession } from '@/lib/session';
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
 export default function ComposeSignature() {
   const { session } = useSession();
   const uid = session?.user.id;
-  const [photo, setPhoto] = useState<PickedPhoto | null>(null);
+  const [photo, setPhoto] = useState<PickedPhoto | null>(() => peekPendingPhoto());
+  // The photo was handed over once; later visits start empty.
+  useEffect(() => setPendingPhoto(null), []);
   const [caption, setCaption] = useState('');
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
@@ -35,7 +36,6 @@ export default function ComposeSignature() {
     if (res) setPhoto(res);
   }
 
-  useOpenPickerOnce(() => pickPhoto('auto'));
 
   async function onPost() {
     if (!uid) return;

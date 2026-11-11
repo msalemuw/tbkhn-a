@@ -8,15 +8,16 @@ import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { colors, fonts } from '@/constants/theme';
 import { fetchAppStatus } from '@/lib/app-status';
+import { choosePhoto, setPendingPhoto } from '@/lib/photo-flow';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
 // Post sheet: "What do you want to share?" The first cooking-today post makes a member an eCook.
 // Story and signature post come in a later step.
-const OPTIONS: { title: string; note: string; icon: IconName; href?: Href }[] = [
-  { title: 'Today’s menu', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen', href: '/compose/today' },
-  { title: 'Story', note: 'Just a moment · no price, no orders · stays 24 hours', icon: 'history-toggle-off', href: '/compose/story' },
-  { title: 'Post', note: 'Signature dish on your profile · not for ordering', icon: 'grid-view', href: '/compose/signature' },
+const OPTIONS: { title: string; note: string; icon: IconName; href?: Href; kind?: 'menu' | 'story' | 'post' }[] = [
+  { title: 'Today’s menu', note: 'Neighbors can order it · a story is created automatically', icon: 'soup-kitchen', href: '/compose/today', kind: 'menu' },
+  { title: 'Story', note: 'Just a moment · no price, no orders · stays 24 hours', icon: 'history-toggle-off', href: '/compose/story', kind: 'story' },
+  { title: 'Post', note: 'Signature dish on your profile · not for ordering', icon: 'grid-view', href: '/compose/signature', kind: 'post' },
 ];
 
 export default function Post() {
@@ -27,13 +28,30 @@ export default function Post() {
       fetchAppStatus().then((s) => setMenuOff(!!s && s.menu_enabled === false));
     }, []),
   );
+  // Like Instagram: the photo picker opens first, and the form opens with the photo already chosen.
+  // Closing the picker without a photo leaves you here.
+  const [opening, setOpening] = useState(false);
+  async function open(o: (typeof OPTIONS)[number]) {
+    if (!o.href || opening) return;
+    if (!o.kind) return router.push(o.href);
+    setOpening(true);
+    try {
+      const photo = await choosePhoto(o.kind, 'auto');
+      if (photo) {
+        setPendingPhoto(photo);
+        router.push(o.href);
+      }
+    } finally {
+      setOpening(false);
+    }
+  }
   const off = (o: (typeof OPTIONS)[number]) => menuOff && o.href === '/compose/today';
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text style={styles.title}>What do you want to share?</Text>
       <View style={styles.list}>
         {OPTIONS.map((o) => (
-          <Pressable key={o.title} style={[styles.row, (!o.href || off(o)) && { opacity: 0.5 }]} disabled={!o.href || off(o)} onPress={() => o.href && router.push(o.href)}>
+          <Pressable key={o.title} style={[styles.row, (!o.href || off(o)) && { opacity: 0.5 }]} disabled={!o.href || off(o)} onPress={() => open(o)}>
             <View style={styles.icon}>
               <MaterialIcons name={o.icon} size={22} color={colors.teal} />
             </View>

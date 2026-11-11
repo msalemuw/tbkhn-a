@@ -10,15 +10,16 @@ import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, typ
 import { colors, fonts } from '@/constants/theme';
 import { postStory } from '@/lib/stories';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
-import { useOpenPickerOnce } from '@/lib/open-picker';
-import { choosePhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
+import { choosePhoto, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
 import { useSession } from '@/lib/session';
 
 // A food story: a photo and a few words that stay up for 24 hours. No price, no orders.
 export default function ComposeStory() {
   const { session } = useSession();
   const uid = session?.user.id;
-  const [photo, setPhoto] = useState<PickedPhoto | null>(null);
+  const [photo, setPhoto] = useState<PickedPhoto | null>(() => peekPendingPhoto());
+  // The photo was handed over once; later visits start empty.
+  useEffect(() => setPendingPhoto(null), []);
   const [caption, setCaption] = useState('');
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
@@ -35,7 +36,6 @@ export default function ComposeStory() {
     if (res) setPhoto(res);
   }
 
-  useOpenPickerOnce(() => pickPhoto('auto'));
 
   async function onPost() {
     if (!uid) return;
