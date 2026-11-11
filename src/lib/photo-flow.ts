@@ -1,6 +1,6 @@
 import { requireOptionalNativeModule } from 'expo';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { Platform } from 'react-native';
 
 // Where a photo is going decides the final look: stories are full screen (9:16), posts are square and menu dishes are 4:3 landscape.
@@ -62,4 +62,13 @@ export function setPendingPhoto(photo: PickedPhoto | null) {
 }
 export function peekPendingPhoto(): PickedPhoto | null {
   return pending;
+}
+
+// One way in for every place that starts a post: picker first, then the form with the photo already in it.
+export async function startCompose(kind: PhotoKind, href: Href): Promise<boolean> {
+  const photo = await choosePhoto(kind, 'auto');
+  if (!photo) return false;
+  setPendingPhoto(photo);
+  router.push(href);
+  return true;
 }

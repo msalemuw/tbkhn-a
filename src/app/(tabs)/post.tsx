@@ -8,7 +8,7 @@ import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { colors, fonts } from '@/constants/theme';
 import { fetchAppStatus } from '@/lib/app-status';
-import { choosePhoto, setPendingPhoto } from '@/lib/photo-flow';
+import { startCompose } from '@/lib/photo-flow';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
@@ -36,11 +36,7 @@ export default function Post() {
     if (!o.kind) return router.push(o.href);
     setOpening(true);
     try {
-      const photo = await choosePhoto(o.kind, 'auto');
-      if (photo) {
-        setPendingPhoto(photo);
-        router.push(o.href);
-      }
+      await startCompose(o.kind, o.href);
     } finally {
       setOpening(false);
     }

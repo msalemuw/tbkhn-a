@@ -1,5 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect } from 'expo-router';
+import { startCompose } from '@/lib/photo-flow';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, Share, StyleSheet, View } from 'react-native';
@@ -242,7 +243,7 @@ export default function Home() {
           // White at the top (like the header) fading to the cream page by the time the first post starts.
           <View>
             <FadeBg from={[255, 255, 255]} to={PAGE_RGB} />
-            <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => router.push('/compose/story')} />
+            <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => startCompose('story', '/compose/story')} />
             <View style={styles.bar}>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
