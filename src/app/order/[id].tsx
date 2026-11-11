@@ -8,7 +8,8 @@ import { Text, TextInput } from '@/components/text';
 import { Alert } from '@/lib/alert';
 import { BackHeader, formStyles, PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
-import { fmtClock } from '@/lib/format';
+import { OrderProgress } from '@/components/order-progress';
+import { fmtClock, fmtIn } from '@/lib/format';
 import { fetchCookInstapay, fetchOrder, type Order, type OrderStatus, setOrderStatus, setPayment, submitReview } from '@/lib/orders';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -115,6 +116,18 @@ export default function OrderScreen() {
           <Text style={styles.summary}>{summary}</Text>
           {head.sub ? <Text style={styles.heroSub}>{head.sub}</Text> : null}
         </View>
+
+        <OrderProgress status={o.status} />
+
+        {o.pickup_at && ['pending', 'accepted', 'ready'].includes(o.status) ? (
+          <View style={[styles.card, styles.timeCard]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>PICKUP TIME</Text>
+              <Text style={styles.timeBig}>{o.status === 'ready' ? 'Ready now' : pickup}</Text>
+            </View>
+            {o.status !== 'ready' ? <Text style={styles.timeIn}>{fmtIn(Date.parse(o.pickup_at))}</Text> : null}
+          </View>
+        ) : null}
 
         {o.note ? (
           <View style={styles.card}>
@@ -290,6 +303,9 @@ const styles = StyleSheet.create({
   heroSub: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted, textAlign: 'center', lineHeight: 20, paddingHorizontal: 10 },
   card: { backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.line, padding: 14, marginTop: 16 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginBottom: 6 },
+  timeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 22 },
+  timeBig: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 36, color: colors.ink },
+  timeIn: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.teal },
   body: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.ink, lineHeight: 20 },
   handle: { fontFamily: fonts.extraBold, color: colors.ink },
   spotRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
