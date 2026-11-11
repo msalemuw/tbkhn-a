@@ -60,7 +60,7 @@ export function PostCard({
     ]).start();
   }
   const photo = mediaUrl(post.media_path);
-  const meta = ['Signature dish', meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at))].join(' · ');
+  const meta = meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at));
 
   return (
     <View style={styles.post}>
