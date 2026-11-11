@@ -53,3 +53,13 @@ export function finishPhoto(photo: PickedPhoto | null) {
   waiting = null;
   done?.(photo);
 }
+
+// The Post tab opens the picker first, then the compose screen opens with the chosen photo already in it
+// (no half-second flash of the empty form before the picker appears).
+let pending: PickedPhoto | null = null;
+export function setPendingPhoto(photo: PickedPhoto | null) {
+  pending = photo;
+}
+export function peekPendingPhoto(): PickedPhoto | null {
+  return pending;
+}

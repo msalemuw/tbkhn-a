@@ -22,8 +22,7 @@ import {
   takeNewPickupPoint,
   uploadPhoto,
 } from '@/lib/posts';
-import { useOpenPickerOnce } from '@/lib/open-picker';
-import { choosePhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
+import { choosePhoto, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
 import { useSession } from '@/lib/session';
 import { endOfToday, readySlots } from '@/lib/slots';
 
@@ -32,7 +31,9 @@ import { endOfToday, readySlots } from '@/lib/slots';
 export default function ComposeToday() {
   const { session } = useSession();
   const uid = session?.user.id;
-  const [photo, setPhoto] = useState<PickedPhoto | null>(null);
+  const [photo, setPhoto] = useState<PickedPhoto | null>(() => peekPendingPhoto());
+  // The photo was handed over once; later visits start empty.
+  useEffect(() => setPendingPhoto(null), []);
   const [dish, setDish] = useState('');
   const [price, setPrice] = useState('');
   const [portions, setPortions] = useState('');
@@ -70,9 +71,6 @@ export default function ComposeToday() {
     }, [uid]),
   );
 
-  useOpenPickerOnce(() => {
-    if (uid) pickPhoto('auto');
-  });
 
   if (!uid) {
     return (
