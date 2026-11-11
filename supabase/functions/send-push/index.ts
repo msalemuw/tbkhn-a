@@ -40,6 +40,7 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
     case 'cooking_today': return { title: `${who} added to today’s menu`, body: dish, url: p.post_id ? `/dish/${p.post_id}` : inbox };
     case 'post_liked': return { title: `${who} liked your post`, body: p.dish, url: p.post_id ? `/dish/${p.post_id}` : p.ref && p.profile_id ? `/post/${p.ref}?by=${p.profile_id}` : p.profile_id ? `/cook/${p.profile_id}` : inbox };
     case 'post_commented': return { title: `${who} commented on your post`, body: p.text, url: p.post_id ? `/dish/${p.post_id}` : p.ref && p.profile_id ? `/post/${p.ref}?by=${p.profile_id}` : p.profile_id ? `/cook/${p.profile_id}` : inbox };
+    case 'comment_replied': return { title: `${who} replied to your comment`, body: p.text, url: p.post_id ? `/dish/${p.post_id}` : p.ref && p.profile_id ? `/post/${p.ref}?by=${p.profile_id}` : p.profile_id ? `/cook/${p.profile_id}` : inbox };
     case 'new_follower': return { title: `${who} started following you`, url: p.profile_id ? `/cook/${p.profile_id}` : inbox };
     case 'community_approved': return { title: `Your community “${p.name ?? 'request'}” was approved`, body: 'Tap to see it in Notifications', url: inbox };
     case 'community_rejected': return { title: `Your community request “${p.name ?? ''}” wasn’t approved`, body: p.note, url: inbox };

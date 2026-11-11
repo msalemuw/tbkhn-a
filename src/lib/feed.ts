@@ -114,12 +114,13 @@ export async function setLiked(me: string, postId: string, liked: boolean): Prom
   dataChanged();
 }
 
-export type Comment = { id: string; body: string; created_at: string; author: Person };
+/** `parent_id` is the top-level comment a reply sits under; `reply_to_id` is the exact comment it answers (null for a top-level comment). */
+export type Comment = { id: string; body: string; created_at: string; author: Person; parent_id: string | null; reply_to_id: string | null };
 
 export async function fetchComments(postId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from('comments')
-    .select('id, body, created_at, author:profiles!author_id(id, username, display_name, avatar_path)')
+    .select('id, body, created_at, parent_id, reply_to_id, author:profiles!author_id(id, username, display_name, avatar_path)')
     .eq('post_id', postId)
     .order('created_at', { ascending: true })
     .limit(200);
@@ -139,8 +140,8 @@ export async function fetchLikers(postId: string): Promise<Person[]> {
   return ((data ?? []) as unknown as { user: Person | null }[]).map((r) => r.user).filter((u): u is Person => u != null);
 }
 
-export async function addComment(me: string, postId: string, body: string): Promise<void> {
-  const { error } = await supabase.from('comments').insert({ post_id: postId, author_id: me, body: body.trim() });
+export async function addComment(me: string, postId: string, body: string, reply?: { parentId: string; replyToId: string }): Promise<void> {
+  const { error } = await supabase.from('comments').insert({ post_id: postId, author_id: me, body: body.trim(), ...(reply ? { parent_id: reply.parentId, reply_to_id: reply.replyToId } : {}) });
   if (error) throw error;
   dataChanged();
 }

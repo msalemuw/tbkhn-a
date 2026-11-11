@@ -73,6 +73,8 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: `${who} liked your post`, sub: n.payload.dish, icon: 'favorite' };
     case 'post_commented':
       return { title: `${who} commented on your post`, sub: n.payload.text, icon: 'chat-bubble' };
+    case 'comment_replied':
+      return { title: `${who} replied to your comment`, sub: n.payload.text, icon: 'reply' };
     case 'new_follower':
       return { title: `${who} started following you`, icon: 'person-add' };
     case 'community_approved':
@@ -97,7 +99,7 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
 
 /** A like or comment on a signature or ordinary post (not a menu dish): the post is in `ref` and its author is the profile. */
 export function isPostReaction(n: Notification): boolean {
-  return (n.kind === 'post_liked' || n.kind === 'post_commented') && !n.payload.post_id && !!n.payload.ref && !!n.payload.profile_id;
+  return (n.kind === 'post_liked' || n.kind === 'post_commented' || n.kind === 'comment_replied') && !n.payload.post_id && !!n.payload.ref && !!n.payload.profile_id;
 }
 
 /** The Notifications tab of the inbox (the plain `/inbox` opens Messages). */
