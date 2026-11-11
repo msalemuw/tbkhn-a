@@ -59,6 +59,22 @@ export async function fetchStories(me: string | null): Promise<StoryGroup[]> {
   return me ? [...list.filter((g) => g.author.id === me), ...list.filter((g) => g.author.id !== me)] : list;
 }
 
+/** Does this member have a live story or dish, and has this phone seen all of it? Drives the ring on their profile photo. */
+export async function fetchStoryRing(authorId: string): Promise<'none' | 'unseen' | 'seen'> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, author_id')
+    .eq('author_id', authorId)
+    .in('kind', ['story', 'cooking_today'])
+    .gt('expires_at', new Date().toISOString())
+    .limit(50);
+  if (error) throw error;
+  const rows = await withoutBlocked(data ?? [], (r) => r.author_id);
+  if (!rows.length) return 'none';
+  const seen = new Set(await loadSeen());
+  return rows.every((r) => seen.has(r.id)) ? 'seen' : 'unseen';
+}
+
 export async function postStory(me: string, caption: string, mediaPath: string, communityId: string | null): Promise<string> {
   const { data, error } = await supabase
     .from('posts')
