@@ -34,6 +34,7 @@ import { useMyLocation } from '@/lib/location';
 import { type Dish, mediaUrl, personName } from '@/lib/posts';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { useSession } from '@/lib/session';
+import { fetchStoryRing } from '@/lib/stories';
 import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
 import { tr } from '@/lib/i18n';
@@ -65,6 +66,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
   const [following, setFollowingState] = useState(false);
   const [busy, setBusy] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [ring, setRing] = useState<'none' | 'unseen' | 'seen'>('none');
   const [menu, setMenu] = useState<{ title: string; actions: SheetAction[] } | null>(null);
   const [report, setReport] = useState<ReportTarget | null>(null);
 
@@ -78,6 +80,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
     fetchSignatures(id).then(setPosts, () => setPosts([]));
     fetchReviews(id).then(setReviews, () => setReviews([]));
     fetchBadges([id]).then((m) => setBadges(m.get(id) ?? []), () => {});
+    fetchStoryRing(id).then(setRing, () => setRing('none'));
     if (me && !mine) {
       isFollowing(me, id).then(setFollowingState, () => {});
       isBlocked(id).then(setBlocked, () => {});
@@ -156,7 +159,21 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.top}>
-          <Avatar person={cook} size={86} />
+          <View style={styles.avatarBox}>
+            {ring === 'none' ? (
+              <Avatar person={cook} size={86} />
+            ) : (
+              // Like Instagram: a live story puts a ring around the photo, and tapping the photo opens the story.
+              <Pressable onPress={() => router.push({ pathname: '/story/[id]', params: { id } })} accessibilityRole="button" accessibilityLabel={mine ? 'Your story' : `${personName(cook)}'s story`} style={[styles.storyRing, ring === 'unseen' ? styles.ringUnseen : styles.ringSeen]}>
+                <Avatar person={cook} size={74} />
+              </Pressable>
+            )}
+            {mine ? (
+              <Pressable onPress={() => router.push('/compose/story')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Add a story" style={styles.addStory}>
+                <MaterialIcons name="add" size={18} color={colors.navy} />
+              </Pressable>
+            ) : null}
+          </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.row}>
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
@@ -304,6 +321,12 @@ const styles = StyleSheet.create({
   barSlot: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   handle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 22, paddingTop: 14 },
+  // Same size as the plain photo (86), so the page does not move when a story starts or ends.
+  avatarBox: { width: 86, height: 86 },
+  addStory: { position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.white },
+  storyRing: { width: 86, height: 86, borderRadius: 43, borderWidth: 3, alignItems: 'center', justifyContent: 'center' },
+  ringUnseen: { borderColor: colors.yellow },
+  ringSeen: { borderColor: 'rgba(40,48,58,0.2)' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { fontFamily: fonts.extraBold, fontSize: 21, color: colors.ink, flexShrink: 1 },
   badges: { gap: 5, marginTop: 4 },
