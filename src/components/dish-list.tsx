@@ -28,6 +28,14 @@ const NONE = 'none';
 const SLATE = 'rgba(1,49,62,.5)';
 /** How close a pickup point must be to the eater to count as "Nearby". */
 const NEARBY_METERS = 10_000;
+/** The order the list is in. Nearest is the default (newest first while no location is known). */
+type Sort = 'nearest' | 'ready' | 'rating' | 'price';
+const SORTS: { key: Sort; icon: React.ComponentProps<typeof MaterialIcons>['name']; label: string }[] = [
+  { key: 'nearest', icon: 'near-me', label: 'Nearest' },
+  { key: 'ready', icon: 'schedule', label: 'Ready soonest' },
+  { key: 'rating', icon: 'star', label: 'Top rated' },
+  { key: 'price', icon: 'payments', label: 'Lowest price' },
+];
 
 export function DishList({
   header,
@@ -56,6 +64,7 @@ export function DishList({
   // Places: 'nearby' or a community id (a dish shows if it matches any ticked place). Cuisines: any ticked cuisine.
   const [places, setPlaces] = useState<string[]>([]);
   const [cuisines, setCuisines] = useState<string[]>([]);
+  const [sort, setSort] = useState<Sort>('nearest');
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterTop, setFilterTop] = useState<number | null>(null);
   const [q, setQ] = useState('');
@@ -109,16 +118,16 @@ export function DishList({
         (!cuisines.length || (d.cuisine != null && cuisines.includes(d.cuisine))) &&
         (!needle || d.dish_name.toLowerCase().includes(needle)),
     );
-    // Nearest first once we know where the member is; otherwise newest first.
-    if (here) {
-      const dist = (d: Dish) => (d.pickup_point ? distanceMeters(here, areaLatLng(d.pickup_point)) : Infinity);
-      return [...list].sort((a, b) => dist(a) - dist(b));
-    }
-    return list;
-  }, [dishes, places, cuisines, q, here, memberships]);
+    // Nearest is the default: closest first once we know where the member is, otherwise newest first. Ties keep that order.
+    const dist = (d: Dish) => (here && d.pickup_point ? distanceMeters(here, areaLatLng(d.pickup_point)) : Infinity);
+    if (sort === 'ready') return [...list].sort((a, b) => Date.parse(a.ready_at) - Date.parse(b.ready_at) || dist(a) - dist(b));
+    if (sort === 'rating') return [...list].sort((a, b) => (ratings.get(b.author_id)?.avg ?? -1) - (ratings.get(a.author_id)?.avg ?? -1) || dist(a) - dist(b));
+    if (sort === 'price') return [...list].sort((a, b) => a.price_egp - b.price_egp || dist(a) - dist(b));
+    return here ? [...list].sort((a, b) => dist(a) - dist(b)) : list;
+  }, [dishes, places, cuisines, q, here, memberships, sort, ratings]);
 
   const cuisineOptions = CUISINES.filter((c) => dishes.some((d) => d.cuisine === c));
-  const allShown = !places.length && !cuisines.length;
+  const allShown = !places.length && !cuisines.length && sort === 'nearest';
   // Everything shows ticked at first. Internally "nothing stored" means no limit, so ticking everything is stored as nothing.
   // NONE is the "Clear all" state: it matches nothing until something is ticked.
   const placeKeys = [NEARBY, ...(session ? mine.map((c) => c.id) : [])];
@@ -143,11 +152,13 @@ export function DishList({
     setPlaces([]);
     setCuisines([]);
   };
+  // Not the Sort section: Select all and Clear all only touch the ticks.
   const clearAll = () => {
     setPlaces([NONE]);
     setCuisines([NONE]);
   };
   const sections = [
+    { label: 'SORT BY', radio: true, rows: SORTS.map((o) => ({ key: o.key, icon: o.icon, label: o.label, on: sort === o.key, onPress: () => setSort(o.key) })) },
     {
       label: 'LOCATION',
       rows: [{ key: NEARBY, icon: 'near-me' as const, label: 'Nearby', on: placeOn(NEARBY), onPress: () => pickPlace(NEARBY) }],
@@ -209,7 +220,7 @@ export function DishList({
                   <MaterialIcons name="search" size={22} color={SLATE} />
                   <TextInput value={q} onChangeText={setQ} placeholder="Search dishes" placeholderTextColor={SLATE} style={styles.search} accessibilityLabel="Search dishes" />
                 </View>
-                <Pressable style={styles.filter} onLayout={(e) => setFilterTop(e.nativeEvent.layout.y)} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the menu">
+                <Pressable style={styles.filter} onLayout={(e) => setFilterTop(e.nativeEvent.layout.y)} onPress={() => setFilterOpen(true)} accessibilityRole="button" accessibilityLabel="Sort and filter the menu">
                   <MaterialIcons name="tune" size={18} color={colors.white} />
                   <Text style={styles.filterText} maxFontSizeMultiplier={1.15}>{allShown ? 'Everyone' : 'Custom'}</Text>
                   <MaterialIcons name="expand-more" size={18} color={colors.white} />
