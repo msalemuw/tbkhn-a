@@ -6,7 +6,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, PixelRatio, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -308,10 +308,10 @@ function Grid({ kind, onCamera, onPick, onDone }: { kind: PhotoKind; onCamera: (
       const page = await new MediaLibrary.Query()
         .eq(MediaLibrary.AssetField.MEDIA_TYPE, MediaLibrary.MediaType.IMAGE)
         .orderBy({ key: MediaLibrary.AssetField.CREATION_TIME, ascending: false })
-        .limit(60)
+        .limit(30)
         .offset(offset)
         .exe();
-      if (page.length < 60) end.current = true;
+      if (page.length < 30) end.current = true;
       setAssets((cur) => (offset === 0 ? page : [...cur, ...page]));
     } finally {
       loading.current = false;
@@ -384,7 +384,10 @@ function Grid({ kind, onCamera, onPick, onDone }: { kind: PhotoKind; onCamera: (
         columnWrapperStyle={{ gap: 2 }}
         contentContainerStyle={{ gap: 2, paddingBottom: insets.bottom + 12 }}
         onEndReached={() => loadMore(assets.length)}
-        onEndReachedThreshold={0.6}
+        onEndReachedThreshold={1.5}
+        initialNumToRender={15}
+        windowSize={7}
+        removeClippedSubviews
         renderItem={({ item }) => (
           <Pressable onPress={() => onTile(item)} style={{ width: size, height: size * (square ? 1 : 1.5) }} accessibilityRole="button" accessibilityLabel={item.id === 'camera' ? 'Take a photo' : 'Photo'}>
             {item.id === 'camera' ? (
@@ -418,7 +421,9 @@ function TileImage({ asset, style, fit }: { asset: MediaLibrary.Asset; style: { 
       live = false;
     };
   }, [asset]);
-  return uri ? <Image source={{ uri }} style={style} contentFit="cover" recyclingKey={asset.id} transition={fit ? 0 : 80} /> : <View style={[style, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />;
+  // The size hint makes the phone decode a small copy for the tile instead of the full photo, which is what made the grid slow.
+  const px = Math.round(Math.max(style.width, style.height) * PixelRatio.get());
+  return uri ? <Image source={{ uri, width: px, height: px }} style={style} contentFit="cover" recyclingKey={asset.id} transition={fit ? 0 : 60} /> : <View style={[style, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />;
 }
 
 function IconButton({ name, onPress, label, size = 26, style }: { name: React.ComponentProps<typeof MaterialIcons>['name']; onPress: () => void; label: string; size?: number; style?: object }) {
