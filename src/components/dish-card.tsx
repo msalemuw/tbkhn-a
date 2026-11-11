@@ -45,23 +45,25 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
       <View style={styles.info}>
         <View style={styles.titleRow}>
           <Text style={styles.dish} numberOfLines={2}>{dish.dish_name}</Text>
-          <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
+          {/* Price with the ready time and plates left under it, so the card needs no separate line for them. */}
+          <View style={styles.priceCol}>
+            <Text style={styles.price}>EGP {Number(dish.price_egp)}</Text>
+            <Text style={[styles.muted, soldOut && { color: ui.deep, fontFamily: fonts.bold }]}>
+              {fmtReady(Date.parse(dish.ready_at))} · {soldOut ? 'Sold out' : `${dish.portions_left} left`}
+            </Text>
+          </View>
         </View>
+        {/* One line: who cooks it, their rating, and how far the pickup area is. */}
         <View style={styles.cookRow}>
           <Text style={styles.cook} numberOfLines={1} onPress={openCook} accessibilityRole="link">{personName(dish.author)}</Text>
           {rating ? <Text style={styles.rating}>{`★ ${rating.avg.toFixed(1)} (${rating.n})`}</Text> : null}
           {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
-        </View>
-        <View style={styles.metaRow}>
           <Pressable style={styles.where} onPress={pp ? openMap : onPress} hitSlop={6} accessibilityRole={pp ? 'link' : undefined} accessibilityLabel={pp ? 'Pickup area. Show on map' : undefined}>
             <MaterialIcons name="location-on" size={17} color={SLATE} />
             <Text style={styles.whereText} numberOfLines={1}>
               {dist ? `${dist} away` : 'Pickup Only'}
             </Text>
           </Pressable>
-          <Text style={[styles.muted, soldOut && { color: ui.deep, fontFamily: fonts.bold }]}>
-            {fmtReady(Date.parse(dish.ready_at))} · {soldOut ? 'Sold out' : `${dish.portions_left} left`}
-          </Text>
         </View>
       </View>
       <Pressable style={[styles.order, soldOut && styles.orderOff]} onPress={onPress} accessibilityRole="button" accessibilityLabel={`${soldOut ? 'See' : 'Order a plate of'} ${dish.dish_name}`}>
@@ -80,12 +82,12 @@ const styles = StyleSheet.create({
   info: { gap: 6, paddingHorizontal: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   dish: { flex: 1, fontFamily: fonts.extraBold, fontSize: 19, lineHeight: 24, color: ui.deep },
+  priceCol: { alignItems: 'flex-end', gap: 2 },
   price: { fontFamily: fonts.extraBold, fontSize: 18, lineHeight: 24, color: ui.bubble },
-  cookRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 8, rowGap: 4 },
+  cookRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 4 },
   cook: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 15, color: ui.deep },
   rating: { fontFamily: fonts.semiBold, fontSize: 13, color: SLATE },
-  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 14, rowGap: 4 },
-  muted: { fontFamily: fonts.medium, fontSize: 14, color: SLATE },
+  muted: { fontFamily: fonts.medium, fontSize: 13, color: SLATE },
   where: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   whereText: { flexShrink: 1, fontFamily: fonts.medium, fontSize: 14, color: SLATE },
   order: { flexDirection: 'row', alignItems: 'center', gap: 9, justifyContent: 'center', backgroundColor: ui.deepTeal, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 13 },
