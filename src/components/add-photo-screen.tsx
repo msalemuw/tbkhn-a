@@ -94,7 +94,7 @@ function Camera({ kind, onGrid, onDone }: { kind: PhotoKind; onGrid?: () => void
     if (!camera.current || busy || !ready) return;
     setBusy(true);
     try {
-      const pic = await camera.current.takePictureAsync({ quality: 0.9 });
+      const pic = await camera.current.takePictureAsync({ quality: 0.6, exif: false, base64: false });
       // What the person saw through the frame is what gets kept: the screen shows the camera filling it, so cut the same part.
       const screenAspect = width / height;
       const picAspect = pic.width / pic.height;
