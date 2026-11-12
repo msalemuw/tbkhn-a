@@ -3,7 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { startCompose } from '@/lib/photo-flow';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Share, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -30,7 +30,7 @@ import { useSession } from '@/lib/session';
 import { confirmBlock } from '@/lib/blocks';
 import { fetchStories, loadSeen, type StoryGroup } from '@/lib/stories';
 import { supabaseConfigured } from '@/lib/supabase';
-import { tr } from '@/lib/i18n';
+import { shareLink } from '@/lib/share';
 import { usePullRefresh } from '@/lib/pull-refresh';
 import { useRetap } from '@/lib/tab-retap';
 
@@ -158,7 +158,7 @@ export default function Home() {
 
   function onShare(p: FeedPost) {
     const text = p.caption ? `${personName(p.author)} on tabkheen A: ${p.caption}` : `${personName(p.author)}’s signature dish on tabkheen A`;
-    Share.share({ message: tr(text) }).catch(() => null);
+    shareLink('post', p.id, text, p.author_id);
   }
 
   function onMore(p: FeedPost) {

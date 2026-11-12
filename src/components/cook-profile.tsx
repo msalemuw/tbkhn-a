@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { startCompose } from '@/lib/photo-flow';
 import { type ReactNode, useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -38,7 +38,7 @@ import { useSession } from '@/lib/session';
 import { fetchStoryRing } from '@/lib/stories';
 import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
-import { tr } from '@/lib/i18n';
+import { shareLink } from '@/lib/share';
 
 type Tab = 'posts' | 'today' | 'reviews';
 
@@ -153,7 +153,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
         <Text style={styles.handle}>{handle}</Text>
         {barRight ?? (
           <View style={styles.barRightRow}>
-            <BarIcon name="ios-share" label="Share profile" onPress={() => Share.share({ message: tr(`${personName(cook)} on tabkheen A (${handle})`) }).catch(() => {})} />
+            <BarIcon name="ios-share" label="Share profile" onPress={() => shareLink('cook', cook.id, `${personName(cook)} on tabkheen A (${handle})`)} />
             {me && !mine ? <BarIcon name="more-horiz" label="More" onPress={openMore} /> : null}
           </View>
         )}

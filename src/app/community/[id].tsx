@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -20,6 +20,7 @@ import { useBadges } from '@/lib/use-badges';
 import { useSession } from '@/lib/session';
 import { VerifiedTick } from '@/lib/verified';
 import { tr } from '@/lib/i18n';
+import { shareLink } from '@/lib/share';
 
 type Top = { service: TopCook[]; likes: TopCook[]; people: Map<string, Person> };
 
@@ -181,7 +182,7 @@ export default function CommunityScreen() {
           </Pressable>
           <Pressable
             style={[styles.btn, { backgroundColor: colors.lightBlue, borderColor: colors.lightBlue, paddingHorizontal: 16 }]}
-            onPress={() => Share.share({ message: tr(`${info.name} on tabkheen A`) }).catch(() => {})}
+            onPress={() => shareLink('community', info.id, `${info.name} on tabkheen A`)}
             accessibilityRole="button"
             accessibilityLabel="Share community">
             <MaterialIcons name="ios-share" size={20} color={colors.ink} />
