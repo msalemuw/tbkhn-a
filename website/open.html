@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>tabkheen A · طابخين إيه</title>
+<meta property="og:title" content="tabkheen A · طابخين إيه">
+<meta property="og:description" content="Good food brings us closer. Home-cooked dishes from people you trust in your community.">
+<meta property="og:image" content="https://tabkheen-a.com/art.jpg">
+<meta name="theme-color" content="#28303a">
+<link rel="icon" href="/favicon.png">
+<style>
+  :root { --navy:#28303a; --yellow:#ffc107; --white:#fff; --blue:#cae7f1; --teal:#00c2a8; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px; background:var(--navy); color:var(--white); font-family:-apple-system,system-ui,'Segoe UI',sans-serif; text-align:center; }
+  main { max-width:380px; width:100%; }
+  img { width:96px; height:auto; margin-bottom:18px; }
+  h1 { font-size:24px; margin:0 0 8px; }
+  p { margin:0 0 22px; color:var(--blue); line-height:1.5; }
+  a.btn { display:block; padding:14px 18px; border-radius:999px; font-weight:700; text-decoration:none; margin-bottom:12px; }
+  a.open { background:var(--teal); color:var(--navy); }
+  a.join { background:transparent; color:var(--white); border:1.5px solid var(--blue); }
+</style>
+</head>
+<body>
+<main>
+  <img src="/logo.png" alt="tabkheen A">
+  <h1>Open in tabkheen A</h1>
+  <p>اضغط لفتح الصفحة في التطبيق · Tap to open this in the app.</p>
+  <a class="btn open" id="open" href="/">Open in the app · افتح في التطبيق</a>
+  <a class="btn join" href="/">Create your account · اعمل حسابك</a>
+</main>
+<script>
+  // /post/ID, /cook/ID and /community/ID open the same screen inside the app (custom link tbkhna://).
+  var m = location.pathname.match(/^\/(post|cook|community)\/([A-Za-z0-9-]+)/);
+  if (m) {
+    var app = 'tbkhna://' + m[1] + '/' + m[2] + location.search;
+    document.getElementById('open').href = app;
+    if (/iPhone|iPad|Android/i.test(navigator.userAgent)) setTimeout(function () { location.href = app; }, 300);
+  }
+</script>
+</body>
+</html>
