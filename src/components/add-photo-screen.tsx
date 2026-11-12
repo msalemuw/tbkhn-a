@@ -168,7 +168,7 @@ function Camera({ kind, onCaptured, onDone }: { kind: PhotoKind; onCaptured: (p:
           <View pointerEvents="none" style={[styles.frameLine, { top: frameTop, left: frameLeft, width: frameW, height: frameH }]} />
         </>
       ) : null}
-      {kind === 'menu' ? <MenuGuide top={cardTop} height={cardH} width={width} screenH={height} /> : null}
+      {kind === 'menu' ? <MenuGuide top={cardTop} height={cardH} width={width} screenH={height} storyTagTop={insets.top + 70} /> : null}
 
       <View style={[styles.camTop, { top: insets.top + 8 }]}>
         <IconButton name="close" onPress={() => onDone(null)} label="Close" />
@@ -193,8 +193,8 @@ function Camera({ kind, onCaptured, onDone }: { kind: PhotoKind; onCaptured: (p:
 
 
 
-// The 4:3 part of a menu dish photo that the dish card in the Menu shows. Everything else only shows in the story.
-function MenuGuide({ top, height, width, screenH }: { top: number; height: number; width: number; screenH: number }) {
+// The 4:3 part of a menu dish photo that the dish card in the Menu shows (labeled Menu card). The whole photo is the story (labeled Story).
+function MenuGuide({ top, height, width, screenH, storyTagTop }: { top: number; height: number; width: number; screenH: number; storyTagTop: number }) {
   return (
     <>
       <View pointerEvents="none" style={[styles.guideDim, { top: 0, left: 0, width, height: top }]} />
@@ -202,6 +202,9 @@ function MenuGuide({ top, height, width, screenH }: { top: number; height: numbe
       <View pointerEvents="none" style={[styles.frameLine, { top, left: 0, width, height }]} />
       <View pointerEvents="none" style={[styles.guideTag, { top: top + 8, left: 10 }]}>
         <Text style={styles.guideTagText}>Menu card</Text>
+      </View>
+      <View pointerEvents="none" style={[styles.guideTag, { top: storyTagTop, right: 10 }]}>
+        <Text style={styles.guideTagText}>Story (full screen)</Text>
       </View>
     </>
   );
@@ -291,7 +294,7 @@ function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: Shot;
             <Animated.View style={[{ width: frameW, height: frameH, alignItems: 'center', justifyContent: 'center' }, imageStyle]}>
               <Image source={{ uri: photo.uri }} style={{ width: photo.width * base, height: photo.height * base }} contentFit="fill" />
             </Animated.View>
-            {kind === 'menu' ? <MenuGuide top={Math.round((frameH - frameW / MENU_CARD_ASPECT) / 2)} height={Math.round(frameW / MENU_CARD_ASPECT)} width={frameW} screenH={frameH} /> : null}
+            {kind === 'menu' ? <MenuGuide top={Math.round((frameH - frameW / MENU_CARD_ASPECT) / 2)} height={Math.round(frameW / MENU_CARD_ASPECT)} width={frameW} screenH={frameH} storyTagTop={8} /> : null}
           </View>
         </GestureDetector>
       </View>
