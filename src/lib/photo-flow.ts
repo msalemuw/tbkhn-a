@@ -16,8 +16,7 @@ export function addPhotoScreenReady(): boolean {
   if (Platform.OS === 'web') return false;
   const camera = !!requireOptionalNativeModule('ExpoCamera');
   const crop = !!requireOptionalNativeModule('ExpoImageManipulator');
-  const library = Platform.OS === 'ios' ? !!requireOptionalNativeModule('ExpoMediaLibraryNext') : true;
-  return camera && crop && library;
+  return camera && crop;
 }
 
 // The phone's own picker or camera (the way every phone worked before the new screen).
@@ -34,12 +33,10 @@ export async function systemPick(kind: PhotoKind, camera: boolean): Promise<Pick
 
 let waiting: ((photo: PickedPhoto | null) => void) | null = null;
 
-// Opens the add-photo screen (grid with a camera tile on iPhone, full-screen camera on Android) and resolves with the photo, or null if they close it.
+// Opens the add-photo screen (a full-screen camera with a button for the phone's photo picker) and resolves with the photo, or null if they close it.
 export function choosePhoto(kind: PhotoKind, start: PhotoStart = 'auto'): Promise<PickedPhoto | null> {
   if (!addPhotoScreenReady()) return systemPick(kind, start === 'camera');
-  // Android keeps the system photo picker for the gallery: it needs no broad photo permission.
-  if (Platform.OS === 'android' && start === 'gallery') return systemPick(kind, false);
-  const mode = start === 'camera' ? 'camera' : start === 'gallery' ? 'grid' : Platform.OS === 'ios' ? 'grid' : 'camera';
+  const mode = start === 'gallery' ? 'gallery' : 'camera';
   return new Promise((resolve) => {
     waiting?.(null);
     waiting = resolve;

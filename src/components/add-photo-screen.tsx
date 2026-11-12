@@ -2,26 +2,24 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { CameraView, type FlashMode, useCameraPermissions } from 'expo-camera';
 import { Image } from 'expo-image';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import * as MediaLibrary from 'expo-media-library';
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, PixelRatio, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
-import { finishPhoto, type PhotoKind, type PickedPhoto, systemPick } from '@/lib/photo-flow';
+import { finishPhoto, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
 
-// The add-photo screen for stories, posts and menu dishes: a grid of recent photos with the camera as its first tile
-// (iPhone), and a camera that fills the screen. The final look is drawn while choosing: stories fill the screen,
+// The add-photo screen for stories, posts and menu dishes: a camera that fills the screen, with a button for the phone's own photo picker. The final look is drawn while choosing: stories fill the screen,
 // posts (square) and menu dishes (4:3) show a frame of that shape inside it. Phones on an older build never reach this screen (see photo-flow).
 const DIM = 'rgba(40,48,58,0.78)';
 const MAX_SIDE = 1440;
 
-type Mode = 'grid' | 'camera';
 type Shot = { uri: string; width: number; height: number };
 
 // What gets saved: stories and menu dishes are full screen (9:16) and posts are square. A menu dish also shows a 4:3 guide
@@ -37,14 +35,17 @@ async function normalize(uri: string, width: number, height: number): Promise<Sh
   const out = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.85 });
   return { uri: out.uri, width: out.width, height: out.height };
 }
-type Tile = { id: string; asset: MediaLibrary.Asset } | { id: 'camera' };
-
-const TITLES: Record<PhotoKind, string> = { story: 'Add to story', post: 'Add to post', menu: 'Add to menu' };
+// The phone's own photo picker (fast, and it asks for no broad photo access). The chosen photo goes to the Move and zoom step.
+async function pickFromLibrary(): Promise<Shot | null> {
+  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, allowsEditing: false });
+  const a = !res.canceled ? res.assets[0] : null;
+  return a ? normalize(a.uri, a.width, a.height) : null;
+}
 
 export default function AddPhoto() {
   const params = useLocalSearchParams<{ kind?: string; mode?: string }>();
   const kind: PhotoKind = params.kind === 'story' || params.kind === 'post' ? params.kind : 'menu';
-  const [mode, setMode] = useState<Mode>(params.mode === 'grid' && Platform.OS !== 'android' ? 'grid' : 'camera');
+  const startInLibrary = params.mode === 'gallery';
   const done = useRef(false);
   // A photo picked from the grid opens in the adjust step: move and zoom it inside the final frame, then Done.
   const [adjusting, setAdjusting] = useState<Shot | null>(null);
@@ -56,6 +57,15 @@ export default function AddPhoto() {
     },
     [],
   );
+
+  // Coming from "From gallery": open the phone's photo picker straight away; closing it closes this screen.
+  useEffect(() => {
+    if (!startInLibrary) return;
+    pickFromLibrary().then(
+      (shot) => (shot ? setAdjusting(shot) : router.back()),
+      () => router.back(),
+    );
+  }, [startInLibrary]);
 
   const finish = useCallback((photo: PickedPhoto | null) => {
     done.current = true;
@@ -75,18 +85,14 @@ export default function AddPhoto() {
   return (
     <>
       <StatusBar style="light" />
-      {mode === 'grid' ? (
-        <Grid kind={kind} onCamera={() => setMode('camera')} onPick={setAdjusting} onDone={finish} />
-      ) : (
-        <Camera kind={kind} onGrid={Platform.OS !== 'android' ? () => setMode('grid') : undefined} onCaptured={setAdjusting} onDone={finish} />
-      )}
+      {startInLibrary ? <View style={styles.screen} /> : <Camera kind={kind} onCaptured={setAdjusting} onDone={finish} />}
     </>
   );
 }
 
 // ---------- Camera ----------
 
-function Camera({ kind, onGrid, onCaptured, onDone }: { kind: PhotoKind; onGrid?: () => void; onCaptured: (p: Shot) => void; onDone: (p: PickedPhoto | null) => void }) {
+function Camera({ kind, onCaptured, onDone }: { kind: PhotoKind; onCaptured: (p: Shot) => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -118,10 +124,17 @@ function Camera({ kind, onGrid, onCaptured, onDone }: { kind: PhotoKind; onGrid?
     }
   }
 
-  // Android: the phone's own photo picker (it asks for no broad photo access). Staying here if they close it.
-  async function androidGallery() {
-    const photo = await systemPick(kind, false);
-    if (photo) onDone(photo);
+  // The phone's own photo picker. Staying here if they close it.
+  async function gallery() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const shot = await pickFromLibrary();
+      if (shot) return onCaptured(shot);
+    } catch {
+      // stay on the camera
+    }
+    setBusy(false);
   }
 
   if (!permission) return <View style={styles.screen} />;
@@ -135,15 +148,9 @@ function Camera({ kind, onGrid, onCaptured, onDone }: { kind: PhotoKind; onGrid?
         <Pressable style={styles.cta} onPress={() => (permission.canAskAgain ? requestPermission() : Linking.openSettings())}>
           <Text style={styles.ctaText}>{permission.canAskAgain ? 'Allow camera' : 'Open settings'}</Text>
         </Pressable>
-        {onGrid ? (
-          <Pressable style={styles.link} onPress={onGrid}>
-            <Text style={styles.linkText}>Choose from photos instead</Text>
-          </Pressable>
-        ) : (
-          <Pressable style={styles.link} onPress={androidGallery}>
-            <Text style={styles.linkText}>Choose from gallery instead</Text>
-          </Pressable>
-        )}
+        <Pressable style={styles.link} onPress={gallery}>
+          <Text style={styles.linkText}>Choose from gallery instead</Text>
+        </Pressable>
       </View>
     );
   }
@@ -169,7 +176,7 @@ function Camera({ kind, onGrid, onCaptured, onDone }: { kind: PhotoKind; onGrid?
       </View>
 
       <View style={[styles.camBottom, { bottom: insets.bottom + 22 }]}>
-        <IconButton name="photo-library" size={30} onPress={onGrid ?? androidGallery} label="Photos" />
+        <IconButton name="photo-library" size={30} onPress={gallery} label="Photos" />
         <Pressable onPress={shoot} disabled={!ready || busy} accessibilityRole="button" accessibilityLabel="Take photo" style={styles.shutterRing}>
           <View style={[styles.shutter, (!ready || busy) && { opacity: 0.5 }]} />
         </Pressable>
@@ -295,145 +302,6 @@ function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: Shot;
       ) : null}
     </GestureHandlerRootView>
   );
-}
-
-// ---------- Photo grid (iPhone) ----------
-
-function Grid({ kind, onCamera, onPick, onDone }: { kind: PhotoKind; onCamera: () => void; onPick: (p: Shot) => void; onDone: (p: PickedPhoto | null) => void }) {
-  const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const [permission, requestPermission] = MediaLibrary.usePermissions();
-  const [assets, setAssets] = useState<MediaLibrary.Asset[]>([]);
-  const [busy, setBusy] = useState(false);
-  const loading = useRef(false);
-  const end = useRef(false);
-  const asked = useRef(false);
-  const square = kind !== 'story';
-  const size = Math.floor((width - 4) / 3);
-
-  const loadMore = useCallback(async (offset: number) => {
-    if (loading.current || end.current) return;
-    loading.current = true;
-    try {
-      const page = await new MediaLibrary.Query()
-        .eq(MediaLibrary.AssetField.MEDIA_TYPE, MediaLibrary.MediaType.IMAGE)
-        .orderBy({ key: MediaLibrary.AssetField.CREATION_TIME, ascending: false })
-        .limit(30)
-        .offset(offset)
-        .exe();
-      if (page.length < 30) end.current = true;
-      setAssets((cur) => (offset === 0 ? page : [...cur, ...page]));
-    } finally {
-      loading.current = false;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!permission) return;
-    if (permission.granted) {
-      loadMore(0);
-    } else if (permission.canAskAgain && !asked.current) {
-      asked.current = true;
-      requestPermission();
-    }
-  }, [permission, requestPermission, loadMore]);
-
-  async function onTile(item: Tile) {
-    if (item.id === 'camera') return onCamera();
-    const asset = (item as { asset: MediaLibrary.Asset }).asset;
-    setBusy(true);
-    try {
-      const info = await asset.getInfo();
-      onPick(await normalize(info.uri, info.width, info.height));
-    } catch {
-      // stay on the grid
-    }
-    setBusy(false);
-  }
-
-  if (permission && !permission.granted && !permission.canAskAgain) {
-    return (
-      <View style={[styles.screen, styles.center, { paddingTop: insets.top }]}>
-        <IconButton name="close" onPress={() => onDone(null)} style={{ position: 'absolute', top: insets.top + 8, left: 12 }} label="Close" />
-        <MaterialIcons name="photo-library" size={44} color={colors.teal} />
-        <Text style={styles.noteTitle}>Allow your photos</Text>
-        <Text style={styles.note}>So you can pick a picture of your dish from your phone.</Text>
-        <Pressable style={styles.cta} onPress={() => Linking.openSettings()}>
-          <Text style={styles.ctaText}>Open settings</Text>
-        </Pressable>
-        <Pressable style={styles.link} onPress={onCamera}>
-          <Text style={styles.linkText}>Take a photo instead</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
-  const data: Tile[] = [{ id: 'camera' }, ...assets.map((a) => ({ id: a.id, asset: a }))];
-
-  return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      <View style={styles.gridTop}>
-        <IconButton name="close" onPress={() => onDone(null)} label="Close" />
-        <Text style={styles.gridTitle}>{TITLES[kind]}</Text>
-        <View style={styles.next} />
-      </View>
-
-      <View style={styles.recentsRow}>
-        <Text style={styles.recents}>Recents</Text>
-        {permission?.accessPrivileges === 'limited' ? (
-          <Pressable onPress={() => MediaLibrary.presentPermissionsPicker(['photo']).catch(() => null)} hitSlop={8}>
-            <Text style={styles.manage}>Manage</Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      <FlatList
-        data={data}
-        numColumns={3}
-        keyExtractor={(t) => t.id}
-        columnWrapperStyle={{ gap: 2 }}
-        contentContainerStyle={{ gap: 2, paddingBottom: insets.bottom + 12 }}
-        onEndReached={() => loadMore(assets.length)}
-        onEndReachedThreshold={1.5}
-        initialNumToRender={15}
-        windowSize={7}
-        removeClippedSubviews
-        renderItem={({ item }) => (
-          <Pressable onPress={() => onTile(item)} style={{ width: size, height: size * (square ? 1 : 1.5) }} accessibilityRole="button" accessibilityLabel={item.id === 'camera' ? 'Take a photo' : 'Photo'}>
-            {item.id === 'camera' ? (
-              <View style={styles.cameraTile}>
-                <MaterialIcons name="photo-camera" size={34} color={colors.white} />
-              </View>
-            ) : (
-              <>
-                <TileImage asset={(item as { asset: MediaLibrary.Asset }).asset} style={{ width: size, height: size * (square ? 1 : 1.5) }} />
-              </>
-            )}
-          </Pressable>
-        )}
-      />
-      {busy ? (
-        <View style={styles.busy}>
-          <ActivityIndicator color={colors.white} />
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
-// One photo of the grid. The address is looked up when the tile appears.
-function TileImage({ asset, style, fit }: { asset: MediaLibrary.Asset; style: { width: number; height: number }; fit?: boolean }) {
-  const [uri, setUri] = useState<string | null>(null);
-  useEffect(() => {
-    let live = true;
-    asset.getUri().then((u) => live && setUri(u), () => null);
-    return () => {
-      live = false;
-    };
-  }, [asset]);
-  // The size hint makes the phone decode a small copy for the tile instead of the full photo, which is what made the grid slow.
-  const px = Math.round(Math.max(style.width, style.height) * PixelRatio.get());
-  return uri ? <Image source={{ uri, width: px, height: px }} style={style} contentFit="cover" recyclingKey={asset.id} transition={fit ? 0 : 60} /> : <View style={[style, { backgroundColor: 'rgba(255,255,255,0.08)' }]} />;
 }
 
 function IconButton({ name, onPress, label, size = 26, style }: { name: React.ComponentProps<typeof MaterialIcons>['name']; onPress: () => void; label: string; size?: number; style?: object }) {
