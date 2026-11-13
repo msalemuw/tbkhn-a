@@ -54,7 +54,7 @@ export const ar: Record<string, string> = {
   'Apple sign-in isn’t available on this device.': 'تسجيل الدخول بـ Apple مش متاح على الجهاز ده.',
   'That email or password isn’t right.': 'الإيميل أو كلمة السر مش صح.',
 
-  'Your post (square)': 'بوستك (مربع)',
+  'Your menu card': 'كارت المنيو بتاعك',
   'Your story (full screen)': 'الستوري بتاعتك (ملء الشاشة)',
 
   // Home, feed and post card

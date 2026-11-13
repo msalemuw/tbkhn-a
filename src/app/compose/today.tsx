@@ -150,7 +150,7 @@ export default function ComposeToday() {
               <View style={styles.previews}>
                 <View style={{ flex: 62 }}>
                   <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" />
-                  <Text style={styles.previewLabel}>Your post (square)</Text>
+                  <Text style={styles.previewLabel}>Your menu card</Text>
                 </View>
                 <View style={{ flex: 34 }}>
                   <Image source={{ uri: photo.uri }} style={styles.storyPhoto} contentFit="cover" />
