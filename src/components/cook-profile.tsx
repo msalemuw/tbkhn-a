@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { startCompose } from '@/lib/photo-flow';
 import { type ReactNode, useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -56,6 +56,8 @@ const TABS: { key: Tab; label: string }[] = [
  */
 export function CookProfileView({ id, onBack, actions, footer, barRight }: { id: string; onBack?: () => void; actions?: ReactNode; footer?: ReactNode; barRight?: ReactNode}) {
   const { session } = useSession();
+  const { width: screenW } = useWindowDimensions();
+  const tile = Math.floor((screenW - 44 - 8) / 2);
   const here = useMyLocation();
   const [cook, setCook] = useState<CookProfile | null | undefined>(undefined);
   const [stats, setStats] = useState<CookStats | null>(null);
@@ -242,7 +244,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
               {posts.map((p) => {
                 const uri = mediaUrl(p.media_path);
                 return (
-                  <Pressable key={p.id} style={styles.cell} onPress={() => router.push({ pathname: '/post/[id]', params: { id: p.id, by: id } })} accessibilityRole="button" accessibilityLabel={p.caption ?? 'Signature dish'}>
+                  <Pressable key={p.id} style={[styles.cell, { width: tile, height: tile }]} onPress={() => router.push({ pathname: '/post/[id]', params: { id: p.id, by: id } })} accessibilityRole="button" accessibilityLabel={p.caption ?? 'Signature dish'}>
                     {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Text verbatim style={styles.cellText} numberOfLines={5}>{p.caption}</Text>}
                   </Pressable>
                 );
@@ -351,7 +353,7 @@ const styles = StyleSheet.create({
   tabText: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted },
   tabTextOn: { fontFamily: fonts.extraBold, color: colors.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 22, paddingTop: 12, paddingBottom: 20 },
-  cell: { width: '48.5%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: colors.cream, padding: 10, justifyContent: 'center' },
+  cell: { borderRadius: 12, overflow: 'hidden', backgroundColor: colors.cream, padding: 10, justifyContent: 'center' },
   cellText: { fontFamily: fonts.medium, fontSize: 13, color: colors.ink },
   list: { gap: 12, paddingHorizontal: 22, paddingTop: 14 },
   empty: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, textAlign: 'center', paddingTop: 22, paddingHorizontal: 22 },
