@@ -1,0 +1,17 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tabkheen.a",
+      "sha256_cert_fingerprints": [
+        "BF:89:A3:70:E9:EB:8E:5E:2D:AB:F1:AD:B1:5A:FF:08:85:93:49:77:C6:55:B2:7A:AE:F6:E3:22:5E:24:08:A3",
+        "D9:24:5B:56:5D:3E:5A:9C:7A:50:1D:2C:81:62:1B:71:AD:CF:ED:59:4F:AD:C0:A5:81:37:A2:8B:54:28:5F:85",
+        "C8:7C:30:35:2D:DF:51:78:97:49:44:DD:AB:54:75:45:46:BB:58:6C:6B:8E:33:85:7F:C5:5C:D8:C1:F4:E7:51"
+      ]
+    }
+  }
+]
