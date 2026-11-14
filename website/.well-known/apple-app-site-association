@@ -1,0 +1,23 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "9RU29593H4.com.tabkheen.a"
+        ],
+        "components": [
+          {
+            "/": "/post/*"
+          },
+          {
+            "/": "/cook/*"
+          },
+          {
+            "/": "/community/*"
+          }
+        ]
+      }
+    ]
+  }
+}
