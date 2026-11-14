@@ -3,3 +3,6 @@
   Cache-Control: no-store
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
+
+/.well-known/apple-app-site-association
+  Content-Type: application/json

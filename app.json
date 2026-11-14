@@ -25,7 +25,19 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.ACCESS_MEDIA_LOCATION"
       ],
-      "package": "com.tabkheen.a"
+      "package": "com.tabkheen.a",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "tabkheen-a.com", "pathPrefix": "/post" },
+            { "scheme": "https", "host": "tabkheen-a.com", "pathPrefix": "/cook" },
+            { "scheme": "https", "host": "tabkheen-a.com", "pathPrefix": "/community" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",
@@ -92,6 +104,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.tabkheen.a",
+      "associatedDomains": ["applinks:tabkheen-a.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleLocalizations": [
