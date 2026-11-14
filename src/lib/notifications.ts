@@ -27,8 +27,9 @@ export async function unreadNotificationCount(): Promise<number> {
   return count ?? 0;
 }
 
-export async function markNotificationsRead(userId: string) {
-  await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', userId).is('read_at', null);
+/** Marks one notification read (the one the member tapped). */
+export async function markNotificationRead(id: string) {
+  await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id).is('read_at', null);
 }
 
 /** Title, optional second line and icon for one notification; `who` is the other person's name. */

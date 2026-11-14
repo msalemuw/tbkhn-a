@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -11,7 +11,7 @@ import { colors, fonts } from '@/constants/theme';
 import { type Conversation, fetchConversations, fetchPeople } from '@/lib/chat';
 import { fmtAgo } from '@/lib/format';
 import { useLive } from '@/lib/live';
-import { describe, fetchNotifications, isPostReaction, markNotificationsRead, type Notification } from '@/lib/notifications';
+import { describe, fetchNotifications, isPostReaction, markNotificationRead, type Notification } from '@/lib/notifications';
 import { type Person, personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { usePullRefresh } from '@/lib/pull-refresh';
@@ -49,16 +49,13 @@ export default function Inbox() {
 
   const pull = usePullRefresh(load);
 
-  const unreadNotes = notes?.filter((n) => !n.read_at).length ?? 0;
-
-  // Notifications are seen once the screen is opened; the dots stay until the next visit so the member can spot them.
-  const seen = useRef(false);
-  useEffect(() => {
-    if (tab === 'notifications' && userId && unreadNotes && !seen.current) {
-      seen.current = true;
-      markNotificationsRead(userId);
-    }
-  }, [tab, userId, unreadNotes]);
+  // Like Instagram: a notification is read only when the member taps it; the rest keep their dot.
+  const openNote = (n: Notification) => {
+    if (n.read_at) return;
+    const at = new Date().toISOString();
+    setNotes((list) => list?.map((x) => (x.id === n.id ? { ...x, read_at: at } : x)) ?? list);
+    markNotificationRead(n.id);
+  };
 
   const shownConvos = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -137,7 +134,7 @@ export default function Inbox() {
                   ? { pathname: '/cook/[id]' as const, params: { id: item.payload.profile_id } }
                   : null;
             return (
-              <Pressable style={styles.row} onPress={target ? () => router.push(target) : undefined} accessibilityRole={target ? 'button' : undefined}>
+              <Pressable style={styles.row} onPress={() => { openNote(item); if (target) router.push(target); }} accessibilityRole={target ? 'button' : undefined}>
                 <View style={styles.noteIcon}>
                   <MaterialIcons name={d.icon} size={20} color={colors.navy} />
                 </View>
