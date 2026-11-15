@@ -17,7 +17,7 @@ import { HEARD, OTHER_DETAIL } from '@/lib/heard';
 import { cleanPhoneInput, DIALS, dialFor, formatPhone, isValidPhone, splitE164, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
 import { nameToUsername } from '@/lib/username';
-import { type Country, fetchCountries, fetchRegions, type Region, topFirst } from '@/lib/regions';
+import { type Country, fetchCountries, fetchRegions, pinAreasFirst, type Region, topFirst } from '@/lib/regions';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
@@ -180,7 +180,7 @@ export default function ProfileStep() {
     [regions, communities, country],
   );
   const typedRegion = countries.length > 0 && regions.length === 0;
-  const areas = all.filter((c) => c.kind === 'area' && c.governorate === gov && inCountry(c));
+  const areas = pinAreasFirst(all.filter((c) => c.kind === 'area' && c.governorate === gov && inCountry(c)));
   const byId = (id?: string | null) => all.find((c) => c.id === id);
   const label = (c: Community) => (c.pending ? `${c.name} (pending approval)` : c.name);
 

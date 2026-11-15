@@ -11,7 +11,7 @@ import { Avatar } from '@/components/avatar';
 import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { normalizeSocial, SOCIALS } from '@/lib/social';
-import { type Country, fetchCountries, fetchRegions, topFirst } from '@/lib/regions';
+import { type Country, fetchCountries, fetchRegions, pinAreasFirst, topFirst } from '@/lib/regions';
 import { uploadPhoto } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
@@ -67,7 +67,7 @@ export default function EditProfile() {
   }, [country]);
   const inCountry = areas.filter((a) => (a.country_code ?? 'EG') === country);
   const governorates = topFirst(regionNames.length ? regionNames : [...new Set([...inCountry.map((a) => a.governorate), ...(country === profileCountry && profile?.governorate ? [profile.governorate] : [])])].sort());
-  const govAreas = inCountry.filter((a) => a.governorate === gov);
+  const govAreas = pinAreasFirst(inCountry.filter((a) => a.governorate === gov));
   const placeChanged = country !== profileCountry || gov !== (profile?.governorate ?? null) || areaName !== (profile?.area ?? null);
 
   async function pickPhoto() {

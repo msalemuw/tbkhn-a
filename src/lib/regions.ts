@@ -24,3 +24,11 @@ export function topFirst<T extends string>(names: T[]): T[] {
   const top = TOP.filter((n) => names.includes(n as T)) as T[];
   return [...top, ...names.filter((n) => !TOP.includes(n))];
 }
+
+const PINNED_AREAS = ['Sheikh Zayed'];
+const isPinned = (name: string) => PINNED_AREAS.some((p) => name === p || name.startsWith(`${p} `));
+
+/** Areas with Sheikh Zayed first, so nobody mistakes the next entry (6th of October) for it. The rest keep their order. */
+export function pinAreasFirst<T extends { name: string }>(areas: T[]): T[] {
+  return [...areas.filter((a) => isPinned(a.name)), ...areas.filter((a) => !isPinned(a.name))];
+}
