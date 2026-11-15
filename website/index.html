@@ -218,6 +218,11 @@
         <label class="f" for="name"><span data-t="fName"></span> <span class="req">*</span></label>
         <input id="name" type="text" autocomplete="name" maxlength="60">
 
+        <div id="emailBox" hidden>
+          <label class="f" data-t="fEmail"></label>
+          <div class="ltr"><span id="emailShown" class="pre" style="flex:1;border-radius:14px;overflow:hidden;text-overflow:ellipsis;font-weight:500"></span></div>
+        </div>
+
         <label class="f" for="whatsapp" data-t="fWhatsapp"></label>
         <div class="ltr"><select id="dial" class="pre" aria-label="Country code"></select><input id="whatsapp" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10 1234 5678" maxlength="18"></div>
         <p class="hint" data-t="whatsappHint"></p>
@@ -369,17 +374,17 @@
       stepOf: function (n) { return 'Step ' + n + ' of 3'; },
       signedInAs: function (p) { return 'Signed in with ' + p + ' as '; },
       photoAdd: 'Add a profile photo (optional)', photoChange: 'Change photo',
-      fName: 'FULL NAME', fUsername: 'USERNAME', fWhatsapp: 'MOBILE NUMBER',
+      fName: 'FULL NAME', fEmail: 'EMAIL', fUsername: 'USERNAME', fWhatsapp: 'MOBILE NUMBER',
       whatsappHint: 'We’ll message you here the day the app opens. Only our team sees it.',
       secAbout: 'ABOUT YOU (OPTIONAL)', lovesCooking: 'I love cooking', lovesEating: 'I love eating', lovesBoth: 'I love cooking and eating',
       errLoves: 'Please choose what you love: cooking, eating or both.',
       secCommunities: 'WHERE DO YOU LIVE?',
       secCommunitiesSub: 'Your area is your first community, a group of neighbours. You’ll see its cooks and posts, and they’ll see yours.',
       fCountry: 'COUNTRY', fGov: 'GOVERNORATE', fArea: 'AREA', choose: 'Choose', chooseGovFirst: 'Choose a governorate first', none: 'None',
-      notListedArea: 'Can’t find your area? Type it', areaTypedPh: 'example: Rehab City',
+      notListedArea: 'Can’t find your area? Request it', areaTypedPh: 'example: Rehab City',
       areaTypedHint: 'We’ll add it after a quick check, and you’ll join it automatically.',
       optional: { club: 'CLUB', sahel: 'SAHEL', school: 'SCHOOL', work: 'WORK' },
-      notListedOpt: { club: 'Can’t find your club? Type it', sahel: 'Can’t find your Sahel community? Type it', school: 'Can’t find your school? Type it', work: 'Can’t find your workplace? Type it' },
+      notListedOpt: { club: 'Can’t find your club? Request it', sahel: 'Can’t find your sahel? Request it', school: 'Can’t find your school? Request it', work: 'Can’t find your work? Request it' },
       optTypedPh: 'Type the name', errOptTyped: 'Please type the name of the community you want to add.',
       moreOpt: 'More details (optional): club, school, work, InstaPay',
       moreLater: 'A community is a group of neighbours: your club, Sahel compound, school or workplace. Join any that fit to see their cooks and posts. You can also do it anytime in the app.',
@@ -393,8 +398,8 @@
       consent: 'By creating an account you agree to the <a href="privacy.html?lang=en">privacy notice</a>.',
       submit: 'Create my account', sending: 'Saving…',
       notYou: 'Not you? Use another account',
-      errName: 'Please write your name.', errUsername: 'Please choose an available username.',
-      errPhone: 'Please write a valid mobile number for the country code you chose (Egypt example: 010 1234 5678).',
+      errName: 'Please write your name.', errUsername: 'Please choose a username of at least 3 letters or numbers.', errUsernameTaken: 'That username is taken. Tap one of the suggestions or type another.', errUsernameChecking: 'One moment, we are checking that the username is free. Tap Continue again.',
+      errPhone: function (ex) { return 'Please finish your mobile number (example: ' + ex + ') or clear it.'; },
       errGov: 'Please choose your governorate.', errArea: 'Please choose or type your area.',
       errNet: 'We couldn’t save your account. Check your connection and try again.',
       errSignIn: 'We couldn’t sign you in. Please try again.',
@@ -436,17 +441,17 @@
       stepOf: function (n) { return 'الخطوة ' + n + ' من ٣'; },
       signedInAs: function (p) { return 'داخل بحساب ' + p + ': '; },
       photoAdd: 'ضيف صورتك (اختياري)', photoChange: 'غيّر الصورة',
-      fName: 'الاسم بالكامل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الموبايل',
+      fName: 'الاسم بالكامل', fEmail: 'الإيميل', fUsername: 'اسم المستخدم', fWhatsapp: 'رقم الموبايل',
       whatsappHint: 'هنبعتلك عليه أول يوم التطبيق ينزل. فريقنا بس اللي يشوفه.',
       secAbout: 'عنك (اختياري)', lovesCooking: 'بحب الطبخ', lovesEating: 'بحب الأكل', lovesBoth: 'بحب الطبخ والأكل',
       errLoves: 'من فضلك اختار: بتحب الطبخ، الأكل، ولا الاتنين.',
       secCommunities: 'إنت ساكن فين؟',
       secCommunitiesSub: 'منطقتك هي أول مجتمع ليك، مجموعة من الجيران. هتشوف الطباخين والبوستات اللي فيها وهما هيشوفوا بتاعتك.',
       fCountry: 'الدولة', fGov: 'المحافظة', fArea: 'المنطقة', choose: 'اختار', chooseGovFirst: 'اختار المحافظة الأول', none: 'لا يوجد',
-      notListedArea: 'منطقتك مش موجودة؟ اكتبها', areaTypedPh: 'مثال: مدينة الرحاب',
+      notListedArea: 'منطقتك مش موجودة؟ اطلبها', areaTypedPh: 'مثال: مدينة الرحاب',
       areaTypedHint: 'هنضيفها بعد مراجعة سريعة، وهتنضم لها تلقائيًا.',
       optional: { club: 'النادي', sahel: 'الساحل', school: 'المدرسة', work: 'الشغل' },
-      notListedOpt: { club: 'ناديك مش موجود؟ اكتبه', sahel: 'مكانك في الساحل مش موجود؟ اكتبه', school: 'مدرستك مش موجودة؟ اكتبها', work: 'شغلك مش موجود؟ اكتبه' },
+      notListedOpt: { club: 'ناديك مش موجود؟ اطلبه', sahel: 'مكانك في الساحل مش موجود؟ اطلبه', school: 'مدرستك مش موجودة؟ اطلبها', work: 'شغلك مش موجود؟ اطلبه' },
       optTypedPh: 'اكتب الاسم', errOptTyped: 'اكتب اسم المجتمع اللي عايز تضيفه.',
       moreOpt: 'تفاصيل زيادة (اختياري): نادي، مدرسة، شغل، إنستاباي',
       moreLater: 'المجتمع هو مجموعة جيران: ناديك أو قريتك في الساحل أو مدرستك أو شغلك. انضم لأي واحد يناسبك علشان تشوف الطباخين والبوستات بتوعه. وتقدر تعمل كده في أي وقت من التطبيق.',
@@ -460,8 +465,8 @@
       consent: 'لما تعمل حسابك تبقى موافق على <a href="privacy.html?lang=ar">سياسة الخصوصية</a>.',
       submit: 'اعمل حسابي', sending: 'جاري الحفظ…',
       notYou: 'مش إنت؟ ادخل بحساب تاني',
-      errName: 'من فضلك اكتب اسمك.', errUsername: 'من فضلك اختار اسم مستخدم متاح.',
-      errPhone: 'من فضلك اكتب رقم موبايل صحيح لكود الدولة اللي اخترته (مثال مصر: 010 1234 5678).',
+      errName: 'من فضلك اكتب اسمك.', errUsername: 'من فضلك اختار اسم مستخدم من 3 حروف أو أرقام على الأقل.', errUsernameTaken: 'اسم المستخدم ده مستخدم. اختار واحد من الاقتراحات أو اكتب غيره.', errUsernameChecking: 'لحظة، بنتأكد إن اسم المستخدم متاح. دوس "كمّل" تاني.',
+      errPhone: function (ex) { return 'من فضلك كمّل رقم الموبايل (مثال: ' + ex + ') أو امسحه.'; },
       errGov: 'من فضلك اختار محافظتك.', errArea: 'من فضلك اختار أو اكتب منطقتك.',
       errNet: 'مقدرناش نحفظ حسابك. اتأكد من الإنترنت وجرّب تاني.',
       errSignIn: 'مقدرناش ندخلك. جرّب تاني.',
@@ -623,6 +628,7 @@
     $('stepStart').hidden = state.step !== 'start';
     $('stepProfile').hidden = state.step !== 'profile';
     $('stepDone').hidden = state.step !== 'done';
+    $('emailBox').hidden = !(state.user && state.user.email); if (state.user && state.user.email) $('emailShown').textContent = state.user.email;
     if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
     // Inside Instagram/Facebook the way out (open the browser) comes first; the sign-in buttons stay below it for those who can use them.
     var showIab = state.step === 'start' && !!inApp;
@@ -1044,7 +1050,7 @@
   function nameKey(n) {
     return n.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي');
   }
-  function fail(k, boxId) { var e = $(boxId || 'err'); e.textContent = t(k); e.classList.add('show'); }
+  function fail(k, boxId) { var e = $(boxId || 'err'); var m = t(k); if (typeof m === 'function') m = m($('whatsapp').placeholder); e.textContent = m; e.classList.add('show'); }
 
   // ---------- optional profile photo, like the app: a square crop, kept small ----------
   var photoBlob = null;
@@ -1110,7 +1116,9 @@
     // Step 1: photo, name and username are saved first, so the account exists even if step 2 is never finished.
     if (state.part !== 2 && state.part !== 3) {
       if (!name) return fail('errName');
-      if (username.length < 3 || state.taken !== false) return fail('errUsername');
+      if (username.length < 3) return fail('errUsername');
+      if (state.taken === true) return fail('errUsernameTaken');
+      if (state.taken !== false) return fail('errUsernameChecking');
       // Not required, so nobody drops out here, and nothing says it is optional; a half-typed number must be finished.
       var wa1 = $('whatsapp').value.trim(), whatsapp1 = wa1 ? normalizePhone(wa1, $('dial').value) : null;
       if (wa1 && !whatsapp1) return fail('errPhone');
@@ -1125,7 +1133,7 @@
         if (step.sourceFailed) row.signup_source = source;
         return sb.update('profiles', 'id=eq.' + uid1, row);
       }).then(function (res) {
-        if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsername' }; }
+        if (res.error && res.error.code === '23505') { state.taken = true; renderUsername(); logFunnel('identifier_conflict', { type: 'username' }); throw { msg: 'errUsernameTaken' }; }
         if (res.error) throw res.error;
         logFunnel('basics_saved', { photo: !!photoBlob });
         logFunnel('details_started');
