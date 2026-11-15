@@ -28,10 +28,12 @@ export function topFirst<T extends string>(names: T[]): T[] {
   return [...top, ...names.filter((n) => !TOP.includes(n))];
 }
 
-const PINNED_AREAS = ['Sheikh Zayed'];
-const isPinned = (name: string) => PINNED_AREAS.some((p) => name === p || name.startsWith(`${p} `));
+// In this order (founder, 2026-11-15). Names are bilingual ("Sheikh Zayed الشيخ زايد"), so match on the English start.
+const PINNED_AREAS = ['Sheikh Zayed', 'Newgiza'];
+const pinRank = (name: string) => PINNED_AREAS.findIndex((p) => name === p || name.startsWith(`${p} `));
 
-/** Areas with Sheikh Zayed first, so nobody mistakes the next entry (6th of October) for it. The rest keep their order. */
+/** Areas with Sheikh Zayed first, then Newgiza, so nobody mistakes 6th of October for either. The rest keep their order. */
 export function pinAreasFirst<T extends { name: string }>(areas: T[]): T[] {
-  return [...areas.filter((a) => isPinned(a.name)), ...areas.filter((a) => !isPinned(a.name))];
+  const pinned = areas.filter((a) => pinRank(a.name) >= 0).sort((x, y) => pinRank(x.name) - pinRank(y.name));
+  return [...pinned, ...areas.filter((a) => pinRank(a.name) < 0)];
 }

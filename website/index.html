@@ -915,9 +915,11 @@
   function fillAreas() {
     var gov = $('gov').value, cur = $('area').value;
     var areas = state.communities.filter(function (c) { return c.kind === 'area' && c.governorate === gov; });
-    // Sheikh Zayed first (same as the app), so nobody mistakes the next entry, 6th of October, for it.
-    var isZayed = function (c) { return c.name === 'Sheikh Zayed' || c.name.indexOf('Sheikh Zayed ') === 0; };
-    areas = areas.filter(isZayed).concat(areas.filter(function (c) { return !isZayed(c); }));
+    // Sheikh Zayed first, then Newgiza (same as the app), so nobody mistakes 6th of October for either.
+    var PINNED = ['Sheikh Zayed', 'Newgiza'];
+    var pinRank = function (c) { for (var i = 0; i < PINNED.length; i++) { if (c.name === PINNED[i] || c.name.indexOf(PINNED[i] + ' ') === 0) return i; } return -1; };
+    areas = areas.filter(function (c) { return pinRank(c) >= 0; }).sort(function (x, y) { return pinRank(x) - pinRank(y); })
+      .concat(areas.filter(function (c) { return pinRank(c) < 0; }));
     var items = gov ? [{ value: '', label: t('choose') }].concat(areas.map(function (a) { return { value: a.id, label: communityLabel(a) }; }), [{ value: OTHER, label: t('notListedArea') }])
                     : [{ value: '', label: t('chooseGovFirst') }];
     fillSelect($('area'), items, cur);
