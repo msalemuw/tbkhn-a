@@ -909,6 +909,9 @@
   function fillAreas() {
     var gov = $('gov').value, cur = $('area').value;
     var areas = state.communities.filter(function (c) { return c.kind === 'area' && c.governorate === gov; });
+    // Sheikh Zayed first (same as the app), so nobody mistakes the next entry, 6th of October, for it.
+    var isZayed = function (c) { return c.name === 'Sheikh Zayed' || c.name.indexOf('Sheikh Zayed ') === 0; };
+    areas = areas.filter(isZayed).concat(areas.filter(function (c) { return !isZayed(c); }));
     var items = gov ? [{ value: '', label: t('choose') }].concat(areas.map(function (a) { return { value: a.id, label: communityLabel(a) }; }), [{ value: OTHER, label: t('notListedArea') }])
                     : [{ value: '', label: t('chooseGovFirst') }];
     fillSelect($('area'), items, cur);
