@@ -1,5 +1,8 @@
 import { supabase } from '@/lib/supabase';
 
+/** Sahel communities (North Coast compounds and resorts) are always in Matrouh, wherever the member lives. */
+export const SAHEL_GOVERNORATE = 'Matrouh';
+
 export type Country = { code: string; name: string };
 export type Region = { name: string };
 
