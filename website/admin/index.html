@@ -502,7 +502,7 @@
       '<select id="ncKind">' + Object.keys(KIND).map(function (k) { return '<option value="' + k + '">' + esc(KIND[k]) + '</option>'; }).join('') + '</select>' +
       '<input type="text" id="ncGov" placeholder="Governorate" list="govList" style="min-width:0;flex:1 1 140px"><datalist id="govList"></datalist>' +
       '<input type="text" id="ncArea" placeholder="Area (optional)" style="min-width:0;flex:1 1 140px"><button class="btn strong" id="ncGo">Create</button></div>' +
-      '<div class="err" id="ncErr" hidden></div><p class="muted" style="margin:8px 0 0">Creates an approved community right away. Check the list below first to avoid a duplicate.</p></div>' : '') +
+      '<div id="ncDup"></div><div class="err" id="ncErr" hidden></div><p class="muted" style="margin:8px 0 0">Creates an approved community right away. Type the name and any similar community shows here first, to avoid a duplicate.</p></div>' : '') +
       '<h2>Community requests</h2><div id="creqs"></div>' +
       '<div class="row" style="margin-top:24px"><h2 class="grow" id="dirTitle">Existing communities</h2><input type="text" id="dirq" placeholder="Search existing communities" autocomplete="off"></div>' +
       '<div class="card"><div class="tablewrap" id="dirlist"></div></div>';
@@ -538,12 +538,25 @@
       });
     }
     $('dirq').oninput = function () { filter = this.value.trim(); drawDir(); };
+    function ncSimilar() {
+      var n = $('ncName').value.trim();
+      return n.length < 2 ? [] : lookAlikes(n, dir.map(function (c) { return { name: c.name, kind: c.kind, governorate: c.governorate, members: c.members, note: c.hidden_at ? 'hidden' : 'already exists' }; })
+        .concat(reqs.map(function (c) { return { name: c.name, kind: c.kind, governorate: c.governorate, members: 0, note: 'request waiting' }; })));
+    }
+    function ncShow() {
+      var la = ncSimilar();
+      $('ncDup').innerHTML = la.length ? '<div style="margin-top:10px;padding:10px 12px;background:#fff8e0;border-radius:12px"><b>⚠ Possible duplicate. Similar communities:</b>' + la.slice(0, 6).map(function (m) {
+        return '<div dir="auto" style="margin-top:6px"><b>' + esc(m.name) + '</b> <span class="muted">· ' + esc(m.note) + (m.members ? ', ' + m.members + ' member' + (m.members === 1 ? '' : 's') : '') + ' · ' + esc(KIND[m.kind] || m.kind) + ' · ' + esc(m.governorate) + '</span></div>'; }).join('') + '</div>' : '';
+    }
+    if ($('ncName')) $('ncName').oninput = ncShow;
     if ($('ncGo')) $('ncGo').onclick = function () {
       var btn = this;
       showErr($('ncErr'), '');
+      var la = ncSimilar();
+      if (la.length && !window.confirm('A similar community already exists: ' + la.slice(0, 3).map(function (m) { return m.name; }).join(', ') + '.\n\nCreate “' + $('ncName').value.trim() + '” anyway?')) return;
       btn.disabled = true;
       rpc('admin_create_community', { p_name: $('ncName').value.trim(), p_kind: $('ncKind').value, p_governorate: $('ncGov').value.trim(), p_area: $('ncArea').value.trim() || null })
-        .then(function () { $('ncName').value = ''; $('ncArea').value = ''; return load(); })
+        .then(function () { $('ncName').value = ''; $('ncArea').value = ''; $('ncDup').innerHTML = ''; return load(); })
         .catch(function (e) { showErr($('ncErr'), msg(e)); })
         .then(function () { btn.disabled = false; });
     };
@@ -730,9 +743,38 @@
     return load();
   }
 
+
+  // ---------- search while choosing (long lists) and look-alike names ----------
+  // A search box above a list: typing narrows the options (any part of the name, in English or Arabic, all words must match).
+  function normText(t) { return String(t || '').toLowerCase().replace(/[ً-ٰٟ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه'); }
+  function searchSelect(id, placeholder, items) {
+    return '<div style="flex:1 1 220px;min-width:0"><input type="text" data-flt="' + id + '" placeholder="Search…" autocomplete="off" style="width:100%;box-sizing:border-box;margin-bottom:6px">' +
+      '<select id="' + id + '" style="width:100%;min-width:0"><option value="">' + esc(placeholder) + '</option>' +
+      items.map(function (o) { return '<option value="' + esc(o.value) + '">' + esc(o.text) + '</option>'; }).join('') + '</select></div>';
+  }
+  function filterSelect(inputEl, items, placeholder) {
+    var sel = $(inputEl.getAttribute('data-flt')), words = normText(inputEl.value).split(/\s+/).filter(Boolean);
+    var rows = items.filter(function (o) { var h = normText(o.text); return words.every(function (w) { return h.indexOf(w) >= 0; }); });
+    sel.innerHTML = (words.length ? '' : '<option value="">' + esc(placeholder) + '</option>') +
+      rows.map(function (o) { return '<option value="' + esc(o.value) + '">' + esc(o.text) + '</option>'; }).join('');
+    if (words.length) { sel.size = Math.max(2, Math.min(rows.length, 6)); if (rows.length) sel.selectedIndex = 0; if (!rows.length) sel.innerHTML = '<option value="">No match</option>'; }
+    else { sel.size = 1; }
+  }
+  // Names that probably mean the same place: they share a distinctive word once words like club or school are ignored.
+  var GENERIC = { club: 1, clubs: 1, sporting: 1, sports: 1, sport: 1, school: 1, schools: 1, compound: 1, resort: 1, the: 1, of: 1, and: 1, international: 1, society: 1, village: 1, community: 1,
+    'نادي': 1, 'النادي': 1, 'مدرسه': 1, 'المدرسه': 1, 'كومباوند': 1, 'قريه': 1, 'رياضي': 1, 'الرياضي': 1 };
+  function nameWords(t) { return normText(t).replace(/[^a-z؀-ۿ0-9\s]/g, ' ').split(/\s+/).filter(function (w) { return w.length > 1 && !GENERIC[w]; }); }
+  function lookAlikes(name, list) {
+    var mine = nameWords(name); if (!mine.length) return [];
+    return list.filter(function (c) {
+      var theirs = nameWords(c.name);
+      return mine.some(function (a) { return theirs.some(function (b) { return a === b || (a.length >= 4 && b.length >= 4 && (a.indexOf(b) === 0 || b.indexOf(a) === 0)); }); });
+    });
+  }
+
   // ---------- one member: warnings, notes, ban, delete ----------
   function manageMember(m, refresh) {
-    var dlg = $('member'), name = who(m.username, m.display_name), hist = { notes: [], warnings: [] }, places = [], dir = [];
+    var dlg = $('member'), name = who(m.username, m.display_name), hist = { notes: [], warnings: [] }, places = [], dir = [], areaItems = [], addItems = [];
     function draw() {
       $('mmTitle').textContent = name;
       $('mmSub').textContent = [m.email, m.phone, [m.area, m.governorate].filter(Boolean).join(', '), 'joined ' + when(m.created_at)].filter(Boolean).join(' · ') + (m.banned_at ? ' · BANNED: ' + (m.suspended_reason || '') : m.suspended_at ? ' · SUSPENDED: ' + (m.suspended_reason || '') : '');
@@ -741,14 +783,14 @@
         (canAct() && !mine && !staff ? (m.banned_at ? '<button class="btn" data-a="unban">Lift ban</button>' : '<button class="btn danger" data-a="ban">Ban…</button>') : '') +
         (role === 'owner' && !mine && !staff ? '<button class="btn danger" data-a="delete">Delete account…</button>' : '') +
         (staff ? '<span class="muted">Staff accounts can only be changed in the Staff tab.</span>' : '');
-      var areaOpts = dir.filter(function (c) { return c.kind === 'area'; }).map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.governorate + ' · ' + c.name) + '</option>'; }).join('');
+      areaItems = dir.filter(function (c) { return c.kind === 'area'; }).map(function (c) { return { value: c.id, text: c.governorate + ' · ' + c.name }; });
       var mine = {}; places.forEach(function (x) { mine[x.community_id] = 1; });
-      var addOpts = dir.filter(function (c) { return c.kind !== 'area' && !mine[c.id]; }).map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name + ' (' + c.kind + ')') + '</option>'; }).join('');
+      addItems = dir.filter(function (c) { return c.kind !== 'area' && !mine[c.id]; }).map(function (c) { return { value: c.id, text: c.name + ' (' + c.kind + ')' }; });
       $('mmPlaces').innerHTML = (places.length ? places.map(function (x) {
         return '<div class="row" style="gap:8px;margin:4px 0"><span class="grow" dir="auto">' + esc(x.name) + ' <span class="muted">' + esc(x.is_area ? 'area · ' + (x.governorate || '') : x.kind) + '</span></span>' +
           (canAct() && !x.is_area ? '<button class="btn" data-rm="' + esc(x.community_id) + '">Remove…</button>' : '') + '</div>'; }).join('') : '<p class="muted">Not in any community.</p>') +
-        (canAct() ? '<div class="row" style="gap:8px;margin-top:8px"><select id="mmArea" style="flex:1 1 220px;min-width:0"><option value="">Move to area…</option>' + areaOpts + '</select><button class="btn strong" id="mmMove" type="button">Move</button></div>' +
-          '<div class="row" style="gap:8px;margin-top:8px"><select id="mmJoin" style="flex:1 1 220px;min-width:0"><option value="">Add to community…</option>' + addOpts + '</select><button class="btn strong" id="mmAddC" type="button">Add</button></div>' : '');
+        (canAct() ? '<div class="row" style="gap:8px;margin-top:8px;align-items:flex-end">' + searchSelect('mmArea', 'Move to area…', areaItems) + '<button class="btn strong" id="mmMove" type="button">Move</button></div>' +
+          '<div class="row" style="gap:8px;margin-top:8px;align-items:flex-end">' + searchSelect('mmJoin', 'Add to community…', addItems) + '<button class="btn strong" id="mmAddC" type="button">Add</button></div>' : '');
       $('mmWarn').innerHTML = hist.warnings.length ? hist.warnings.map(function (w) {
         return '<div class="card" style="margin:6px 0"><div dir="auto">' + esc(w.message) + '</div><div class="muted">' + esc(when(w.created_at)) + (w.issued_by ? ' · by @' + esc(w.issued_by) : '') + '</div></div>'; }).join('') : '<p class="muted">None.</p>';
       $('mmNotes').innerHTML = hist.notes.length ? hist.notes.map(function (n) {
@@ -757,12 +799,16 @@
     function load() { return Promise.all([rpc('admin_member_history', { p_id: m.id }), rpc('admin_member_communities', { p_id: m.id }), rpc('admin_communities')]).then(function (r) { hist = r[0]; places = r[1] || []; dir = r[2] || []; draw(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
     function run(fn) { showErr($('mmErr'), ''); return fn().then(function () { return refresh && refresh(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
     function reload() { return rpc('admin_find_members', { p_query: m.username || m.email }).then(function (r) { var f = r.filter(function (x) { return x.id === m.id; })[0]; if (f) m = f; }); }
-    function done() { $('mmPlaces').onclick = null; $('mmAdd').onclick = null; $('mmClose').onclick = null; $('mmActions').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); }
+    function done() { $('mmPlaces').onclick = null; $('mmPlaces').oninput = null; $('mmAdd').onclick = null; $('mmClose').onclick = null; $('mmActions').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); }
     $('mmClose').onclick = done; dlg.onclose = done;
     $('mmNote').value = ''; showErr($('mmErr'), '');
     $('mmAdd').onclick = function () {
       var t = $('mmNote').value.trim(); if (!t) return;
       run(function () { return rpc('admin_add_member_note', { p_id: m.id, p_body: t }); }).then(function () { $('mmNote').value = ''; return reload().then(load); });
+    };
+    $('mmPlaces').oninput = function (e) {
+      var f = e.target.getAttribute && e.target.getAttribute('data-flt'); if (!f) return;
+      filterSelect(e.target, f === 'mmArea' ? areaItems : addItems, f === 'mmArea' ? 'Move to area…' : 'Add to community…');
     };
     $('mmPlaces').onclick = function (e) {
       var rm = e.target.closest('[data-rm]');
