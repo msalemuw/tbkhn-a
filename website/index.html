@@ -1156,11 +1156,13 @@
     // A name that already exists is never a dead end (founder, 2026-10-11): one in the list is simply used,
     // and one someone else is waiting on is kept as typed, to be joined once it is approved.
     function requestCommunity(kind, typedName, areaName, gov) {
+      // Sahel communities (North Coast compounds and resorts) are always in Matrouh, same as the app.
+      if (kind === 'sahel') { gov = 'Matrouh'; areaName = null; }
       var key = nameKey(typedName), match = state.communities.filter(function (c) {
         return c.kind === kind && c.governorate.toLowerCase() === gov.toLowerCase() && nameKey(c.name) === key;
       })[0];
       if (match) { logFunnel('community_request_matched', { kind: kind, status: match.status }); return Promise.resolve(match); }
-      return sb.insertOne('communities', { name: typedName, kind: kind, governorate: gov, area: areaName || typedName, requested_by: uid, status: 'pending', country_code: state.country },
+      return sb.insertOne('communities', { name: typedName, kind: kind, governorate: gov, area: kind === 'sahel' ? null : (areaName || typedName), requested_by: uid, status: 'pending', country_code: state.country },
         'id,name,kind,governorate,status').then(function (res) {
           if (res.error && res.error.code === '23505') {
             logFunnel('community_request_duplicate', { kind: kind });

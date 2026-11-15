@@ -17,7 +17,7 @@ import { HEARD, OTHER_DETAIL } from '@/lib/heard';
 import { cleanPhoneInput, DIALS, dialFor, formatPhone, isValidPhone, splitE164, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
 import { nameToUsername } from '@/lib/username';
-import { type Country, fetchCountries, fetchRegions, pinAreasFirst, type Region, topFirst } from '@/lib/regions';
+import { type Country, fetchCountries, fetchRegions, pinAreasFirst, type Region, SAHEL_GOVERNORATE, topFirst } from '@/lib/regions';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
@@ -230,18 +230,22 @@ export default function ProfileStep() {
   }
 
   function openRequest(kind: string, noun: string, name?: string) {
-    if (!gov?.trim()) return setError(`Choose your ${typedRegion ? 'region' : 'governorate'} first, then request your ${noun}.`);
+    // A Sahel community is always in Matrouh, so it never needs the member's own governorate first.
+    if (kind !== 'sahel' && !gov?.trim()) return setError(`Choose your ${typedRegion ? 'region' : 'governorate'} first, then request your ${noun}.`);
     setError(null);
     setRequestError(null);
     setRequest({ kind, noun, name });
   }
 
   async function sendRequest(communityName: string) {
-    if (!session || !request || !gov) return;
+    if (!session || !request || (request.kind !== 'sahel' && !gov)) return;
     setRequestBusy(true);
     setRequestError(null);
-    const area = request.kind === 'area' ? communityName : (byId(areaId)?.name ?? null);
-    const row: Record<string, unknown> = { name: communityName, kind: request.kind, governorate: gov.trim(), area, requested_by: session.user.id, status: 'pending' };
+    // Sahel communities (compounds) are always in Matrouh, wherever the member lives (founder, 2026-11-15).
+    const sahel = request.kind === 'sahel';
+    const reqGov = sahel ? SAHEL_GOVERNORATE : (gov ?? '').trim();
+    const area = request.kind === 'area' ? communityName : sahel ? null : (byId(areaId)?.name ?? null);
+    const row: Record<string, unknown> = { name: communityName, kind: request.kind, governorate: reqGov, area, requested_by: session.user.id, status: 'pending' };
     if (countries.length) row.country_code = country;
     const { data, error: reqError } = await supabase.from('communities').insert(row).select('id, name, kind, governorate').single();
     setRequestBusy(false);
@@ -251,7 +255,7 @@ export default function ProfileStep() {
     if (duplicate) logFunnel('community_request_duplicate', { kind: request.kind }, { userRef: session.user.id });
     else if (reqError || !data) return setRequestError('We couldn’t send your request. Check your connection and try again.');
     const made: Community = duplicate
-      ? { id: `waiting:${request.kind}:${communityName}`, name: communityName, kind: request.kind, governorate: gov.trim(), country_code: country, pending: true }
+      ? { id: `waiting:${request.kind}:${communityName}`, name: communityName, kind: request.kind, governorate: reqGov, country_code: country, pending: true }
       : { ...(data as Community), country_code: country, pending: true };
     setRequested((r) => [...r, made]);
     if (request.kind === 'area') setAreaId(made.id);
@@ -704,7 +708,7 @@ export default function ProfileStep() {
         key={request ? 'open' : 'closed'}
         visible={request !== null}
         initialName={request?.name}
-        existing={request ? all.filter((c) => c.kind === request.kind && c.governorate.toLowerCase() === (gov ?? '').trim().toLowerCase() && inCountry(c)) : []}
+        existing={request ? all.filter((c) => c.kind === request.kind && c.governorate.toLowerCase() === (request.kind === 'sahel' ? SAHEL_GOVERNORATE : (gov ?? '')).trim().toLowerCase() && inCountry(c)) : []}
         onUseExisting={(id) => {
           if (request?.kind === 'area') setAreaId(id);
           else if (request) setOptional((o) => ({ ...o, [request.kind as Optional]: id }));
