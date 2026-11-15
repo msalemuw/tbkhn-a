@@ -120,6 +120,7 @@
   <p class="muted" id="mmSub" dir="auto" style="margin-top:4px"></p>
   <div class="row" id="mmActions" style="gap:8px;margin:10px 0"></div>
   <div class="err" id="mmErr" hidden></div>
+  <h4 style="margin:14px 0 6px">Area and communities</h4><div id="mmPlaces"></div>
   <h4 style="margin:14px 0 6px">Warnings</h4><div id="mmWarn"></div>
   <h4 style="margin:14px 0 6px">Staff notes <span class="muted" style="font-weight:400">(private, the member never sees them)</span></h4>
   <div class="row" style="gap:8px"><input type="text" id="mmNote" maxlength="1000" placeholder="Add a note" style="min-width:0;flex:1 1 220px"><button class="btn strong" id="mmAdd" type="button">Add note</button></div>
@@ -731,7 +732,7 @@
 
   // ---------- one member: warnings, notes, ban, delete ----------
   function manageMember(m, refresh) {
-    var dlg = $('member'), name = who(m.username, m.display_name), hist = { notes: [], warnings: [] };
+    var dlg = $('member'), name = who(m.username, m.display_name), hist = { notes: [], warnings: [] }, places = [], dir = [];
     function draw() {
       $('mmTitle').textContent = name;
       $('mmSub').textContent = [m.email, m.phone, [m.area, m.governorate].filter(Boolean).join(', '), 'joined ' + when(m.created_at)].filter(Boolean).join(' · ') + (m.banned_at ? ' · BANNED: ' + (m.suspended_reason || '') : m.suspended_at ? ' · SUSPENDED: ' + (m.suspended_reason || '') : '');
@@ -740,20 +741,48 @@
         (canAct() && !mine && !staff ? (m.banned_at ? '<button class="btn" data-a="unban">Lift ban</button>' : '<button class="btn danger" data-a="ban">Ban…</button>') : '') +
         (role === 'owner' && !mine && !staff ? '<button class="btn danger" data-a="delete">Delete account…</button>' : '') +
         (staff ? '<span class="muted">Staff accounts can only be changed in the Staff tab.</span>' : '');
+      var areaOpts = dir.filter(function (c) { return c.kind === 'area'; }).map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.governorate + ' · ' + c.name) + '</option>'; }).join('');
+      var mine = {}; places.forEach(function (x) { mine[x.community_id] = 1; });
+      var addOpts = dir.filter(function (c) { return c.kind !== 'area' && !mine[c.id]; }).map(function (c) { return '<option value="' + esc(c.id) + '">' + esc(c.name + ' (' + c.kind + ')') + '</option>'; }).join('');
+      $('mmPlaces').innerHTML = (places.length ? places.map(function (x) {
+        return '<div class="row" style="gap:8px;margin:4px 0"><span class="grow" dir="auto">' + esc(x.name) + ' <span class="muted">' + esc(x.is_area ? 'area · ' + (x.governorate || '') : x.kind) + '</span></span>' +
+          (canAct() && !x.is_area ? '<button class="btn" data-rm="' + esc(x.community_id) + '">Remove…</button>' : '') + '</div>'; }).join('') : '<p class="muted">Not in any community.</p>') +
+        (canAct() ? '<div class="row" style="gap:8px;margin-top:8px"><select id="mmArea" style="flex:1 1 220px;min-width:0"><option value="">Move to area…</option>' + areaOpts + '</select><button class="btn strong" id="mmMove" type="button">Move</button></div>' +
+          '<div class="row" style="gap:8px;margin-top:8px"><select id="mmJoin" style="flex:1 1 220px;min-width:0"><option value="">Add to community…</option>' + addOpts + '</select><button class="btn strong" id="mmAddC" type="button">Add</button></div>' : '');
       $('mmWarn').innerHTML = hist.warnings.length ? hist.warnings.map(function (w) {
         return '<div class="card" style="margin:6px 0"><div dir="auto">' + esc(w.message) + '</div><div class="muted">' + esc(when(w.created_at)) + (w.issued_by ? ' · by @' + esc(w.issued_by) : '') + '</div></div>'; }).join('') : '<p class="muted">None.</p>';
       $('mmNotes').innerHTML = hist.notes.length ? hist.notes.map(function (n) {
         return '<div class="card" style="margin:6px 0"><div dir="auto">' + esc(n.body) + '</div><div class="muted">' + esc(when(n.created_at)) + (n.author ? ' · by @' + esc(n.author) : '') + '</div></div>'; }).join('') : '<p class="muted">No notes yet.</p>';
     }
-    function load() { return rpc('admin_member_history', { p_id: m.id }).then(function (h) { hist = h; draw(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
+    function load() { return Promise.all([rpc('admin_member_history', { p_id: m.id }), rpc('admin_member_communities', { p_id: m.id }), rpc('admin_communities')]).then(function (r) { hist = r[0]; places = r[1] || []; dir = r[2] || []; draw(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
     function run(fn) { showErr($('mmErr'), ''); return fn().then(function () { return refresh && refresh(); }).catch(function (e) { showErr($('mmErr'), msg(e)); }); }
     function reload() { return rpc('admin_find_members', { p_query: m.username || m.email }).then(function (r) { var f = r.filter(function (x) { return x.id === m.id; })[0]; if (f) m = f; }); }
-    function done() { $('mmAdd').onclick = null; $('mmClose').onclick = null; $('mmActions').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); }
+    function done() { $('mmPlaces').onclick = null; $('mmAdd').onclick = null; $('mmClose').onclick = null; $('mmActions').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); }
     $('mmClose').onclick = done; dlg.onclose = done;
     $('mmNote').value = ''; showErr($('mmErr'), '');
     $('mmAdd').onclick = function () {
       var t = $('mmNote').value.trim(); if (!t) return;
       run(function () { return rpc('admin_add_member_note', { p_id: m.id, p_body: t }); }).then(function () { $('mmNote').value = ''; return reload().then(load); });
+    };
+    $('mmPlaces').onclick = function (e) {
+      var rm = e.target.closest('[data-rm]');
+      if (rm) {
+        var cid = rm.getAttribute('data-rm'), cn = places.filter(function (x) { return x.community_id === cid; })[0];
+        return ask('Remove ' + name + ' from ' + (cn ? cn.name : 'this community') + '?', { action: 'Remove' }).then(function (why) {
+          if (why) return run(function () { return rpc('admin_set_member_community', { p_id: m.id, p_community_id: cid, p_member: false, p_reason: why }); }).then(function () { return reload().then(load); }); });
+      }
+      if (e.target.id === 'mmMove') {
+        var aid = $('mmArea').value; if (!aid) return;
+        var an = $('mmArea').options[$('mmArea').selectedIndex].text;
+        return ask('Move ' + name + ' to ' + an + '? Their profile area changes and they leave their old area community.', { action: 'Move' }).then(function (why) {
+          if (why) return run(function () { return rpc('admin_set_member_place', { p_id: m.id, p_area_id: aid, p_reason: why }); }).then(function () { return reload().then(function () { name = who(m.username, m.display_name); return load(); }); }); });
+      }
+      if (e.target.id === 'mmAddC') {
+        var jid = $('mmJoin').value; if (!jid) return;
+        var jn = $('mmJoin').options[$('mmJoin').selectedIndex].text;
+        return ask('Add ' + name + ' to ' + jn + '?', { action: 'Add' }).then(function (why) {
+          if (why) return run(function () { return rpc('admin_set_member_community', { p_id: m.id, p_community_id: jid, p_member: true, p_reason: why }); }).then(function () { return reload().then(load); }); });
+      }
     };
     $('mmActions').onclick = function (e) {
       var b = e.target.closest('[data-a]'); if (!b) return; var a = b.getAttribute('data-a');
