@@ -37,5 +37,6 @@ jobs:
             echo "EXPO_ASC_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
             echo "EXPO_ASC_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"
             echo "EXPO_ASC_ISSUER_ID=0f3d6df9-773e-49f9-93ba-57dc94dcc7ba" >> "$GITHUB_ENV"
+            echo "EXPO_APPLE_TEAM_ID=9RU29593H4" >> "$GITHUB_ENV"
           fi
       - run: eas build --platform ios --profile ${{ inputs.profile }} --non-interactive --no-wait
