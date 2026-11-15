@@ -264,7 +264,7 @@
   var rpc = sb.rpc;
 
   // ---------- charts (plain SVG, no library) ----------
-  var COLORS = { signups: '#00C2A8', orders: '#28303A', posts: '#FFC107', picked_up: '#00C2A8', cancelled: '#b3261e' };
+  var COLORS = { signups: '#00C2A8', orders: '#28303A', posts: '#FFC107', menu_posts: '#28303A', picked_up: '#00C2A8', cancelled: '#b3261e' };
   function lineChart(rows, series) {
     var W = 720, H = 240, L = 36, R = 10, T = 12, B = 28;
     var max = 1;
@@ -467,8 +467,8 @@
       $('rangeBtns').innerHTML = [7, 30, 90].map(function (d) { return '<button class="chip" data-days="' + d + '" aria-pressed="' + (d === days) + '">' + d + ' days</button>'; }).join('');
       return rpc('admin_daily_stats', { p_days: days }).then(function (rows) {
         var tot = function (k) { return rows.reduce(function (n, r) { return n + r[k]; }, 0); };
-        $('daily').innerHTML = '<p class="muted">Last ' + days + ' days: ' + tot('signups') + ' sign-ups, ' + tot('orders') + ' orders, ' + tot('posts') + ' posts.</p>' +
-          lineChart(rows, [{ key: 'signups', label: 'Sign-ups', color: COLORS.signups }, { key: 'posts', label: 'Posts', color: COLORS.posts }]);
+        $('daily').innerHTML = '<p class="muted">Last ' + days + ' days: ' + tot('signups') + ' sign-ups, ' + tot('orders') + ' orders, ' + tot('feed_posts') + ' feed posts, ' + tot('menu_posts') + ' menu posts, ' + tot('stories') + ' stories.</p>' +
+          lineChart(rows, [{ key: 'signups', label: 'Sign-ups', color: COLORS.signups }, { key: 'feed_posts', label: 'Feed posts', color: COLORS.posts }, { key: 'menu_posts', label: 'Menu posts', color: COLORS.menu_posts }]);
         $('orderChart').innerHTML = '<p class="muted">' + tot('orders') + ' placed, ' + tot('picked_up') + ' picked up, ' + tot('cancelled') + ' cancelled or declined.</p>' +
           lineChart(rows, [{ key: 'orders', label: 'Orders placed', color: COLORS.orders }, { key: 'picked_up', label: 'Picked up', color: COLORS.picked_up }, { key: 'cancelled', label: 'Cancelled or declined', color: COLORS.cancelled }]);
       });
