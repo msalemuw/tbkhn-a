@@ -46,3 +46,6 @@ The **Sign-up funnel** tab of the web admin (`website/admin`, migration `0031_ad
 
 ## Printed handouts (2026-10-30)
 The New Giza flyer's QR code opens `tabkheen-a.com/ng`, which `website/_redirects` sends to the sign-up page with `utm_source=handout`, `utm_medium=print`, `utm_campaign=newgiza_handout`, `utm_term=New Giza`, `utm_content=flyer_v1`. Those tags ride on every web event and are saved in `profiles.signup_source`, so the admin shows these sign-ups as source "handout" and the funnel tab can split them by campaign. A new handout gets its own short link (for example `/ng2`) and its own `utm_content`.
+
+## QR codes for Instagram and the website (2026-11-17)
+`tabkheen-a.com/ig` (QR for the Instagram page) and `tabkheen-a.com/web` (QR for the website early sign-up) are short links in `website/_redirects`. They open the sign-up page with `utm_source=instagram` or `utm_source=website`, `utm_medium=profile_qr` or `qr`, and `utm_campaign=early_signup`, so the admin shows these sign-ups as source "instagram" or "website". The PNGs are in `/mnt/project-files/marketing/qr/`. The QR only holds the short link, so the destination can change here without reprinting.
