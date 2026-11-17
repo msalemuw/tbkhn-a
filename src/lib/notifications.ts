@@ -71,7 +71,7 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
     case 'order_cancelled':
       return { title: `${who} cancelled their order`, sub: dish, icon: 'cancel' };
     case 'order_expired':
-      return { title: 'An order timed out', sub: `${dish} · no answer in 24 hours, the plates went back`, icon: 'cancel' };
+      return { title: 'An order timed out', sub: `${dish} · no answer from the cook in time, the plates went back`, icon: 'cancel' };
     case 'order_not_picked_up':
       return { title: 'An order was closed', sub: `${dish} · not picked up`, icon: 'cancel' };
     case 'test_alert':
