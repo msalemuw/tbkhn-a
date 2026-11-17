@@ -2,6 +2,10 @@
 # New Giza handout, first print. Change the destination here without reprinting the QR code.
 /ng  /?utm_source=handout&utm_medium=print&utm_campaign=newgiza_handout&utm_term=New%20Giza&utm_content=flyer_v1  302
 
+# QR codes for the Instagram page and the website early sign-up. Same destination, different source tag so the admin shows where each account came from.
+/ig   /?utm_source=instagram&utm_medium=profile_qr&utm_campaign=early_signup  302
+/web  /?utm_source=website&utm_medium=qr&utm_campaign=early_signup  302
+
 # Shared links from the app: a short page that opens the same screen in the app.
 /post/*       /open.html  200
 /cook/*       /open.html  200

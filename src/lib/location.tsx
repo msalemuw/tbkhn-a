@@ -10,8 +10,16 @@ import { supabase } from '@/lib/supabase';
 /**
  * Where the member is looking from: GPS, or a spot they picked on the map. Every distance is computed from it.
  * `manual` is set when they placed the pin somewhere other than where they are; without it the place follows the GPS.
+ * A hand-picked spot is temporary: it lasts for the rest of the visit (up to PIN_HOURS) and never survives closing the app,
+ * so the app always starts from the live location.
  */
-export type Place = LatLng & { label: string; manual?: boolean };
+export type Place = LatLng & { label: string; manual?: boolean; manualAt?: number };
+
+const PIN_HOURS = 3;
+/** True while a hand-picked spot is still being honoured. */
+function pinned(p: Place | null | undefined): boolean {
+  return !!p?.manual && Date.now() - (p.manualAt ?? 0) < PIN_HOURS * 3_600_000;
+}
 
 const KEY = 'tabkheen.place';
 
@@ -151,22 +159,24 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const asked = useRef(false);
 
   const apply = useCallback((p: Place) => {
+    if (p.manual && !p.manualAt) p = { ...p, manualAt: Date.now() };
     placeRef.current = p;
     setPlaceState(p);
     AsyncStorage.setItem(KEY, JSON.stringify(p)).catch(() => {});
   }, []);
 
-  /** Moves the place to where the phone is now, unless the member pinned a spot by hand. */
+  /** Moves the place to where the phone is now, unless the member pinned a spot by hand a short while ago. */
   const followGps = useCallback(async () => {
-    if (placeRef.current?.manual) return;
+    if (pinned(placeRef.current)) return;
     const prompt = mayAsk.current && !asked.current;
     if (prompt) asked.current = true;
     const gps = await getMyLocation({ prompt });
     const cur = placeRef.current;
-    if (!gps || cur?.manual) return;
-    if (cur && distanceMeters(cur, gps) < FOLLOW_METERS) return;
-    const label = (await placeName(gps)) ?? cur?.label ?? '';
-    if (!placeRef.current?.manual) apply({ ...gps, label });
+    if (!gps || pinned(cur)) return;
+    // An expired pin always gives way to the GPS, however near it is.
+    if (cur && !cur.manual && distanceMeters(cur, gps) < FOLLOW_METERS) return;
+    const label = (await placeName(gps)) ?? (cur?.manual ? '' : cur?.label) ?? '';
+    if (!pinned(placeRef.current)) apply({ ...gps, label });
   }, [apply]);
 
   // Start from the saved place; with none saved, from the phone's GPS. Then keep following the phone.
@@ -175,9 +185,11 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const saved = await AsyncStorage.getItem(KEY);
-        if (saved && live) {
-          placeRef.current = JSON.parse(saved) as Place;
-          setPlaceState(placeRef.current);
+        const last = saved ? (JSON.parse(saved) as Place) : null;
+        // The last live place is shown until the GPS answers; a hand-picked spot from an earlier visit is dropped.
+        if (last && !last.manual && live) {
+          placeRef.current = last;
+          setPlaceState(last);
         }
       } catch {}
       if (live) setReady(true);

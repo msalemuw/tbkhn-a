@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabase';
 // InstaPay and confirmed by staff; older orders are paid person to person. Every change goes through the database functions,
 // which enforce who may do what and when.
 
+/** An order nobody collects closes this many hours after its pickup time; a paid no-show is not refunded (database: close_stale_orders). */
+export const NO_SHOW_HOURS = 5;
+
 export type OrderStatus = 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled' | 'not_picked_up';
 export type PaymentStatus = 'none' | 'sent' | 'received';
 
@@ -21,6 +24,8 @@ export type Order = {
   pay_through_app: boolean;
   /** The eater must pay before this time or the order cancels itself (20 minutes after the cook accepts). */
   pay_by: string | null;
+  /** The cook must accept or decline before this time or the request cancels itself (45 minutes after it was sent). */
+  answer_by: string | null;
   payment_reference: string | null;
   picked_up_at: string | null;
   pickup_at: string | null;
@@ -78,6 +83,23 @@ export async function fetchOrders(role: 'buyer' | 'cook', userId: string): Promi
   return (data ?? []) as unknown as Order[];
 }
 
+/** How many requests are waiting for this cook to accept or decline. */
+export async function fetchWaitingCount(cookId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('reservations')
+    .select('id', { count: 'exact', head: true })
+    .eq('cook_id', cookId)
+    .eq('status', 'pending');
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** The cook asks for one test alert on their own phone, with the long ring. */
+export async function sendTestAlert() {
+  const { error } = await supabase.rpc('send_test_alert');
+  if (error) throw new Error(friendly(error.message));
+}
+
 export async function setOrderStatus(id: string, status: OrderStatus, reason?: string) {
   const { error } = await supabase.rpc('set_reservation_status', { p_id: id, p_status: status, p_reason: reason ?? null });
   if (error) throw new Error(friendly(error.message));
@@ -91,7 +113,7 @@ export async function setPayment(id: string, status: 'sent' | 'received') {
 }
 
 /** Where the eater pays and, once payment is confirmed, the pickup code. Only the eater of a pay-through-app order gets it. */
-export type PaymentInfo = { instapay: string | null; pay_by: string | null; pickup_code: string | null };
+export type PaymentInfo = { instapay: string | null; /** A tappable InstaPay link (opens the InstaPay app with the address filled in); null when the owner has not added one. */ instapay_link: string | null; pay_by: string | null; pickup_code: string | null };
 
 export async function fetchPaymentInfo(orderId: string): Promise<PaymentInfo | null> {
   const { data } = await supabase.rpc('order_payment_info', { p_id: orderId });
@@ -150,6 +172,7 @@ function friendly(message: string): string {
   if (message.includes('not waiting for payment') || message.includes('already sent')) return 'This order has already moved on. Pull down to refresh.';
   if (message.includes('within 12 hours')) return 'Problems can be reported within 12 hours of pickup.';
   if (message.includes('tell us what went wrong')) return 'Tell us what went wrong.';
+  if (message.includes('wait a moment')) return 'Wait a few seconds before testing again.';
   if (message.includes('pickup code')) return 'Enter the pickup code the eater sees in their app.';
   return 'Something went wrong. Check your connection and try again.';
 }
