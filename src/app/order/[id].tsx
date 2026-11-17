@@ -121,8 +121,8 @@ export default function OrderScreen() {
     ]);
   }
 
-  // Shown before and after paying: the clock time is computed from the pickup time (DYNAMIC-DATA).
-  const noShowRule = o.pickup_at ? `If you haven’t collected it by ${fmtClock(Date.parse(o.pickup_at) + NO_SHOW_HOURS * 3600_000)}, the order closes and the payment is not refunded.` : null;
+  // Shown once, before paying: the clock time is computed from the pickup time (DYNAMIC-DATA).
+  const noShowRule = o.pickup_at ? `Collect it by ${fmtClock(Date.parse(o.pickup_at) + NO_SHOW_HOURS * 3600_000)} or the order closes with no refund.` : null;
   const minsLeft = o.pay_by ? Math.max(0, Math.ceil((Date.parse(o.pay_by) - now) / 60000)) : 20;
   const head = (o.pay_through_app && paidHeadline(o, isCook, { cook: cookFirst, buyer }, minsLeft)) || headline(o.status, isCook, { cook: cookFirst, buyer, by: o.answer_by ? fmtClock(Date.parse(o.answer_by)) : '', paid: o.pay_through_app && o.payment_status === 'received' }, o.cancel_reason);
 
@@ -215,7 +215,6 @@ export default function OrderScreen() {
             ) : (
               <>
                 <Text style={styles.body}>Payment confirmed. Thank you!</Text>
-                {noShowRule && o.status !== 'picked_up' ? <Text style={styles.muted}>{noShowRule}</Text> : null}
                 {payInfo?.pickup_code && o.status !== 'picked_up' ? (
                   <View style={styles.codeBox}>
                     <Text style={styles.label}>YOUR PICKUP CODE</Text>

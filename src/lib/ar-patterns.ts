@@ -131,7 +131,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^(.+) may already be cooking\. Cancel only if you can’t collect it\.$/, '$1 ممكن يكون بدأ يطبخ. الغي بس لو مش هتقدر تستلمه.'],
   [/^(.+) didn’t collect it within 5 hours of the pickup time, so the order was closed\. You keep the payment\.$/, '$1 ما استلمهوش خلال 5 ساعات من ميعاد الاستلام، فالطلب اتقفل. فلوس الطلب من حقك.'],
   [/^(.+) didn’t collect it within 5 hours of the pickup time, so the order was closed\.$/, '$1 ما استلمهوش خلال 5 ساعات من ميعاد الاستلام، فالطلب اتقفل.'],
-  [/^If you haven’t collected it by (.+), the order closes and the payment is not refunded\.$/, 'لو ما استلمتهوش لحد $1، الطلب بيتقفل والفلوس مش بتترد.'],
+  [/^Collect it by (.+) or the order closes with no refund\.$/, 'استلمه لحد $1 وإلا الطلب بيتقفل من غير استرجاع.'],
   [/^(.+) didn’t answer in time$/, '$1 ما ردّش في الوقت'],
   [/^(.+) is still waiting$/, '$1 لسه مستني'],
   [/^(.+) · accept or decline it now$/, '$1 · اقبله أو ارفضه دلوقتي'],
