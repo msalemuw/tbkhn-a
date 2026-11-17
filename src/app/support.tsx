@@ -1,6 +1,7 @@
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView } from '@/components/keyboard-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
