@@ -1,7 +1,7 @@
 # TBKHN A — shared context (single source of truth)
 
 > Paste or attach THIS file at the start of any chat (strategy, finance, design, Claude Code). It replaces re-describing the app. Update it here first; everything else follows.
-> Last updated: 2026-10-02 · Owner: founder · Status: clickable prototype, pre-launch, no live data yet.
+> Last updated: 2026-11-17 · Owner: founder · Status: clickable prototype, pre-launch, no live data yet.
 > Items marked **[TBD]** are not decided — fill them in; do not let a chat invent them.
 
 ## 1. One-liner
@@ -70,6 +70,7 @@ Add dated one-liners here as decisions are made, so every tool inherits them.
 - 2026-10-02 — Competition ("the Masters"): will run inside this app. Likely winner = signature-dish post with the most likes. Rules, prize, schedule, eligibility, per-community vs national: [TBD, define in strategy session]. Any older Masters description in other files is outdated.
 - 2026-10-04 — Sign-up code: WhatsApp only, sent directly through Meta's WhatsApp Cloud API (~$0.013 per code). No Twilio, no SMS fallback (SMS ~$0.40 per code). Members without WhatsApp use "Contact us".
 - 2026-10-04 — Phone verification is ON HOLD (founder). Launch sign-in = Google + Apple; "Continue with phone" (WhatsApp code) stays built but hidden until a real WhatsApp number is set up. Masters anti-cheat (many fake numbers boosting one friend) is solved later: only likes from accounts with real activity or a verified phone count toward rankings. Supersedes "phone verification mandatory" in section 5.
+- 2026-11-17 — Payments move through tabkheen A (replaces the 2026-10-02 person-to-person InstaPay once the switch "Pay through tabkheen A" is turned on in the admin). The eater pays the founder's InstaPay within 20 minutes of the cook accepting; the owner confirms each payment in the admin Finance tab; the cook can mark ready only after that; pickup needs the eater's 4-digit code; the eater has 12 hours after pickup to report a problem (opens a case, holds the cook's payout); the cook is paid after that window. Year 1 stays commission-free. The founder pays InstaPay transfer fees as the app (recorded as a cost; cooks and eaters get the full amount). Every payment, refund and payout is a permanent ledger row (migrations 0059, 0060).
 
 ---
 ### How to keep all tools in sync

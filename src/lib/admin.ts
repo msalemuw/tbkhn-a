@@ -148,11 +148,11 @@ export const ORDER_EVENT_LABEL: Record<string, string> = {
   ready: 'Ready for pickup',
   picked_up: 'Picked up',
   cancelled: 'Cancelled by buyer',
-  expired: 'Cancelled: cook did not answer in 24 hours',
+  expired: 'Cancelled automatically (no answer from the cook, or no payment in time)',
   not_picked_up: 'Closed: not picked up',
   reminded: 'Reminder sent to the cook',
-  payment_sent: 'Buyer marked InstaPay sent',
-  payment_received: 'Cook marked InstaPay received',
+  payment_sent: 'Buyer sent the InstaPay payment',
+  payment_received: 'InstaPay payment confirmed',
 };
 
 /** Plain words for the action log. */

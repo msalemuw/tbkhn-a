@@ -16,6 +16,7 @@ import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
 import { removeDish } from '@/lib/feed';
+import { usePayThroughApp } from '@/lib/app-status';
 import { placeOrder } from '@/lib/orders';
 import { areaLatLng, type Dish, fetchDish, fetchMyPickupPoints, mediaUrl, personName, type PickupPoint, pickupAreaText } from '@/lib/posts';
 import { useSession } from '@/lib/session';
@@ -27,6 +28,7 @@ import { fetchBadges, type Badge } from '@/lib/rankings';
 // Flows 3 and 4, screen s57: Your order. Pick plates and pickup time, then send it to the cook.
 // Payment is InstaPay, person to person, after the cook accepts (section 13); no delivery.
 export default function DishScreen() {
+  const payThrough = usePayThroughApp();
   const { id, posted } = useLocalSearchParams<{ id: string; posted?: string }>();
   const { session } = useSession();
   const here = useMyLocation();
@@ -233,7 +235,7 @@ export default function DishScreen() {
               <>
                 <View style={styles.line}>
                   <MaterialIcons name="payments" size={19} color={colors.teal} />
-                  <Text style={styles.lineText}>Pay {first} by InstaPay after {first} accepts. Nothing is charged in the app.</Text>
+                  <Text style={styles.lineText}>{payThrough ? `Pay tabkheen A by InstaPay after ${first} accepts. You have 20 minutes to pay.` : `Pay ${first} by InstaPay after ${first} accepts. Nothing is charged in the app.`}</Text>
                 </View>
                 <View style={styles.line}>
                   <MaterialIcons name="directions-walk" size={19} color={colors.teal} />

@@ -234,7 +234,17 @@ function OrderCard({ order, me, name, paying, onPay }: { order: Order; me: strin
   const isCook = order.cook_id === me;
   const total = Number(order.post?.price_egp ?? 0) * order.plates;
   const canPay = ['accepted', 'ready', 'picked_up'].includes(order.status);
-  const payLine = !canPay
+  const payLine = order.pay_through_app
+    ? !canPay
+      ? 'Pay tabkheen A by InstaPay once the order is accepted'
+      : order.payment_status === 'received'
+        ? 'Payment confirmed by tabkheen A'
+        : order.payment_status === 'sent'
+          ? 'tabkheen A is checking the payment'
+          : isCook
+            ? 'Waiting for the payment'
+            : 'Pay tabkheen A to start the order'
+    : !canPay
     ? 'Pay by InstaPay once the order is accepted'
     : order.payment_status === 'received'
       ? 'Payment received'
@@ -259,10 +269,10 @@ function OrderCard({ order, me, name, paying, onPay }: { order: Order; me: strin
         </View>
         <FlipIcon name="chevron-right" size={22} color={colors.muted} />
       </Pressable>
-      {canPay && !isCook && order.payment_status === 'none' ? (
+      {canPay && !order.pay_through_app && !isCook && order.payment_status === 'none' ? (
         <PrimaryButton label="Payment sent" busy={paying} onPress={() => onPay('sent')} style={styles.orderBtn} />
       ) : null}
-      {canPay && isCook && order.payment_status === 'sent' ? (
+      {canPay && !order.pay_through_app && isCook && order.payment_status === 'sent' ? (
         <PrimaryButton label="Payment received" busy={paying} onPress={() => onPay('received')} style={styles.orderBtn} />
       ) : null}
     </View>

@@ -2,8 +2,9 @@ import { dataChanged } from '@/lib/live';
 import type { Person } from '@/lib/posts';
 import { supabase } from '@/lib/supabase';
 
-// Reservations: pickup only, paid peer to peer by InstaPay (section 13). Every change goes through
-// the database functions, which enforce who may do what and when.
+// Reservations: pickup only. Orders placed while "Pay through tabkheen A" is on (pay_through_app) are paid to tabkheen A's
+// InstaPay and confirmed by staff; older orders are paid person to person. Every change goes through the database functions,
+// which enforce who may do what and when.
 
 export type OrderStatus = 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled' | 'not_picked_up';
 export type PaymentStatus = 'none' | 'sent' | 'received';
@@ -16,6 +17,12 @@ export type Order = {
   plates: number;
   status: OrderStatus;
   payment_status: PaymentStatus;
+  /** True when the eater pays tabkheen A (not the cook) and the order uses a pickup code. */
+  pay_through_app: boolean;
+  /** The eater must pay before this time or the order cancels itself (20 minutes after the cook accepts). */
+  pay_by: string | null;
+  payment_reference: string | null;
+  picked_up_at: string | null;
   pickup_at: string | null;
   note: string | null;
   cancel_reason: string | null;
@@ -83,7 +90,37 @@ export async function setPayment(id: string, status: 'sent' | 'received') {
   dataChanged();
 }
 
-/** The cook's InstaPay handle, visible only to the two people on the order. */
+/** Where the eater pays and, once payment is confirmed, the pickup code. Only the eater of a pay-through-app order gets it. */
+export type PaymentInfo = { instapay: string | null; pay_by: string | null; pickup_code: string | null };
+
+export async function fetchPaymentInfo(orderId: string): Promise<PaymentInfo | null> {
+  const { data } = await supabase.rpc('order_payment_info', { p_id: orderId });
+  return (data as PaymentInfo | null) ?? null;
+}
+
+/** The eater says they paid tabkheen A, with the InstaPay transfer reference. */
+export async function submitPayment(id: string, reference: string) {
+  const { error } = await supabase.rpc('submit_payment', { p_id: id, p_reference: reference });
+  if (error) throw new Error(friendly(error.message));
+  dataChanged();
+}
+
+/** The cook types the eater's code at pickup. 'locked' after five wrong tries (staff then help). */
+export async function confirmPickup(id: string, code: string): Promise<'ok' | 'wrong' | 'locked'> {
+  const { data, error } = await supabase.rpc('confirm_pickup', { p_id: id, p_code: code });
+  if (error) throw new Error(friendly(error.message));
+  dataChanged();
+  return data as 'ok' | 'wrong' | 'locked';
+}
+
+/** The eater reports a problem within 12 hours of pickup; the cook's payout for the order is held while staff look. */
+export async function reportProblem(id: string, reason: string) {
+  const { error } = await supabase.rpc('report_order_problem', { p_id: id, p_reason: reason });
+  if (error) throw new Error(friendly(error.message));
+  dataChanged();
+}
+
+/** The cook's InstaPay handle, visible only to the two people on the order (orders paid person to person). */
 export async function fetchCookInstapay(orderId: string): Promise<string | null> {
   const { data } = await supabase.rpc('reservation_instapay', { p_id: orderId });
   return (data as string | null) ?? null;
@@ -108,5 +145,11 @@ function friendly(message: string): string {
   if (message.includes('between the ready time')) return 'Pick a time between the ready time and the end of the day.';
   if (message.includes('cannot reserve your own')) return 'You can’t order your own dish.';
   if (message.includes('cannot change from')) return 'This order has already moved on. Pull down to refresh.';
+  if (message.includes('payment not confirmed')) return 'The payment isn’t confirmed yet. You can mark it ready once tabkheen A confirms it.';
+  if (message.includes('enter the InstaPay reference')) return 'Enter the InstaPay reference number of your transfer.';
+  if (message.includes('not waiting for payment') || message.includes('already sent')) return 'This order has already moved on. Pull down to refresh.';
+  if (message.includes('within 12 hours')) return 'Problems can be reported within 12 hours of pickup.';
+  if (message.includes('tell us what went wrong')) return 'Tell us what went wrong.';
+  if (message.includes('pickup code')) return 'Enter the pickup code the eater sees in their app.';
   return 'Something went wrong. Check your connection and try again.';
 }

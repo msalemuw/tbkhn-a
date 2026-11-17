@@ -623,6 +623,10 @@
         (mod ? '<button class="btn ' + (on('menu_enabled') ? 'danger' : 'strong') + '" data-menu="1">' + (on('menu_enabled') ? 'Turn off' : 'Turn on') + '</button>' : '') + '</div>' +
         '<div style="margin-top:10px"><textarea id="ctlMenuMsg" maxlength="300" style="width:100%;box-sizing:border-box" ' + (mod ? '' : 'disabled') + ' dir="auto"></textarea>' +
         (mod ? '<div class="row" style="margin-top:8px"><button class="btn" id="ctlMenuMsgSave">Save message</button></div>' : '') + '</div></div>' +
+        '<div class="card"><div class="row"><div class="grow"><b>Pay through tabkheen A</b> <span class="tag">' + (ctl.pay_through_app === true ? 'ON' : 'OFF') + '</span>' +
+        '<div class="muted">When on, new orders are paid to the InstaPay address below (not to the cook). The eater has 20 minutes after the cook accepts, you confirm each payment in Finance, and the cook marks the order ready only after that. Pickup needs the eater’s 4-digit code. Orders already open keep the old way. Turn it on only when you are ready to confirm payments.</div></div>' +
+        (owner ? '<button class="btn ' + (ctl.pay_through_app === true ? 'danger' : 'strong') + '" data-pay="1">' + (ctl.pay_through_app === true ? 'Turn off' : 'Turn on') + '</button>' : '') + '</div>' +
+        '<div class="row" style="margin-top:10px"><input type="text" id="ctlPayAddr" maxlength="60" placeholder="tabkheen A’s InstaPay address" style="flex:1 1 240px" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn" id="ctlPayAddrSave">Save address</button>' : '') + '</div></div>' +
         pauseRow('ordering_enabled', 'Ordering', 'When paused, nobody can place a new order. Existing orders continue.', mod) +
         pauseRow('posting_enabled', 'Posting', 'When paused, nobody can add a new post, story or “today’s menu”.', mod) +
         '<div class="card"><div class="row"><div class="grow"><b>Maintenance mode</b> <span class="tag">' + (ctl.maintenance === true ? 'ON' : 'OFF') + '</span><div class="muted">When on, the app shows the message below instead of opening. Use for a short fix or migration.</div></div>' +
@@ -632,7 +636,7 @@
         '<div class="card"><b>Minimum app version</b><div class="muted">Anyone on an older version sees “please update” instead of the app. Leave empty to allow every version. The version is the one in Profile > Settings, such as 1.0.2.</div>' +
         '<div class="row" style="margin-top:8px"><input type="text" id="ctlVer" placeholder="e.g. 1.0.2" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn strong" id="ctlVerSave">Save</button>' : '') + '</div></div>' +
         '<div class="err" id="ctlErr" hidden></div>';
-      $('ctlMenuMsg').value = ctl.menu_message || ''; $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || '';
+      $('ctlMenuMsg').value = ctl.menu_message || ''; $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || ''; $('ctlPayAddr').value = ctl.app_instapay || '';
     }
     function load() { return rpc('admin_get_controls').then(function (rows) { ctl = {}; rows.forEach(function (r) { ctl[r.key] = r.value; }); draw(); }); }
     function set(k, val) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
@@ -640,6 +644,11 @@
       var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]'), mn = e.target.closest('[data-menu]');
       if (mn) { if (on('menu_enabled') && !confirm('Turn the Menu tab off for everyone? Members will see the coming-soon message, cooks cannot post “Today’s menu” dishes, dishes that are open now end, and nobody can place new orders. Orders already placed continue. Posts, stories and rankings keep working.')) return; set('menu_enabled', !on('menu_enabled')); }
       if (e.target.id === 'ctlMenuMsgSave') set('menu_message', $('ctlMenuMsg').value.trim());
+      if (e.target.id === 'ctlPayAddrSave') set('app_instapay', $('ctlPayAddr').value.trim());
+      if (e.target.closest('[data-pay]')) {
+        if (ctl.pay_through_app === true) { if (confirm('Turn off payments through tabkheen A? New orders go back to person-to-person InstaPay. Orders already placed this way continue.')) set('pay_through_app', false); }
+        else if (confirm('Turn on payments through tabkheen A? New orders are paid to your InstaPay and you confirm each one in Finance. Make sure the address above is exactly right.')) set('pay_through_app', true);
+      }
       if (p) { var k = p.getAttribute('data-pause'); if (on(k) && !confirm('Pause this for everyone?')) return; set(k, !on(k)); }
       if (m) { if (ctl.maintenance === true) set('maintenance', false); else if (confirm('Turn maintenance mode on? Nobody can use the app until you turn it off.')) set('maintenance', true); }
       if (e.target.id === 'ctlMsgSave') set('maintenance_message', $('ctlMsg').value.trim());
@@ -1061,6 +1070,8 @@
     v.innerHTML = '<div class="row"><h2 class="grow">Finance</h2><span id="fdays"></span><button class="btn" id="fexport">Download ledger (CSV)</button></div>' +
       '<p class="muted">Every payment, refund and payout is a permanent row. Rows are never edited: a mistake is fixed with a reversal. Money held for cooks is what you owe them; the rest of the cash is yours.</p>' +
       '<div class="tiles" id="ftiles"></div>' +
+      '<div class="card"><h3 style="margin-top:0">Payments to confirm</h3><p class="muted">Check each one against your InstaPay. Confirm only when the money is there with this reference. The cook can start only after you confirm.</p><div id="fwait"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">Refunds due</h3><p class="muted">Orders that ended cancelled or not picked up with money still in the ledger. Send the money back by InstaPay, then record the refund (Find order, Refund).</p><div id="frefunds"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Record a payment or refund</h3><div class="row"><input type="text" id="fq" placeholder="Order code, buyer, cook or dish" autocomplete="off" style="flex:1 1 220px"><button class="btn strong" id="fgo">Find order</button></div><div id="ffound"></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Cooks</h3><div id="fcooks"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Open cases</h3><div id="fcases"><p class="muted">Loading…</p></div></div>' +
@@ -1079,6 +1090,27 @@
           ['Held (not payable yet)', egp(s.held_for_cooks)], ['Your own money', egp(s.own_money)], ['Money in, ' + days + ' days', egp(s.money_in)],
           ['Money out, ' + days + ' days', egp(s.money_out)], ['InstaPay fees you paid, ' + days + ' days', egp(s.fees_paid)], ['Open cases', s.open_cases || 0]]
           .map(function (t) { return '<div class="tile"><b style="font-size:20px">' + esc(t[1]) + '</b><span>' + esc(t[0]) + '</span></div>'; }).join('');
+      });
+    }
+    var waiting = [];
+    function loadWaiting() {
+      return rpc('admin_payments_waiting').then(function (r) {
+        waiting = r;
+        $('fwait').innerHTML = r.length ? r.map(function (w, i) {
+          var mins = Math.max(0, Math.round((Date.now() - Date.parse(w.payment_sent_at)) / 60000));
+          return '<div style="padding:10px 0;border-top:1px solid var(--line)"><div class="row"><b class="grow" dir="auto">' + esc(w.dish_name || 'Dish') + ' × ' + w.plates + ' · ' + esc(egp(w.total_egp)) + '</b><span class="tag"' + (mins >= 120 ? ' style="background:var(--yellow)"' : '') + '>' + (mins >= 120 ? 'WAITING ' + Math.floor(mins / 60) + 'h' : mins + ' min') + '</span></div>' +
+            '<div dir="auto">' + esc(who(w.buyer_username, w.buyer_name)) + ' → ' + esc(who(w.cook_username, w.cook_name)) + ' · order ' + esc(w.order_code) + '</div>' +
+            '<div>InstaPay reference: <b dir="ltr">' + esc(w.payment_reference) + '</b></div>' +
+            '<div class="row" style="margin-top:8px"><button class="btn strong" data-confirm="' + i + '">Money arrived, confirm</button><button class="btn danger" data-reject="' + i + '">Not found…</button></div></div>';
+        }).join('') : '<p class="muted">Nothing waiting.</p>';
+      });
+    }
+    function loadRefunds() {
+      return rpc('admin_refunds_due').then(function (r) {
+        $('frefunds').innerHTML = r.length ? r.map(function (w) {
+          return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row"><b class="grow" dir="auto">Order ' + esc(w.order_code) + ' · ' + esc(w.dish_name || 'Dish') + '</b><span>' + esc(egp(w.amount_egp)) + '</span></div>' +
+            '<div class="muted" dir="auto">' + esc(ORDER_STATUS[w.status] || w.status) + ' · ' + esc(who(w.buyer_username, w.buyer_name)) + ' paid ' + esc(who(w.cook_username, w.cook_name)) + (w.cancel_reason ? ' · “' + esc(w.cancel_reason) + '”' : '') + '</div></div>';
+        }).join('') : '<p class="muted">No refunds due.</p>';
       });
     }
     function loadCooks() {
@@ -1131,7 +1163,20 @@
         }).join('') : '<p class="muted">Nothing here yet.</p>';
       });
     }
-    function refreshAll() { return Promise.all([loadTiles(), loadCooks(), loadCases(), loadLedger()]).catch(fail); }
+    function refreshAll() { return Promise.all([loadTiles(), loadWaiting(), loadRefunds(), loadCooks(), loadCases(), loadLedger()]).catch(fail); }
+    $('fwait').onclick = function (e) {
+      var c = e.target.closest('[data-confirm]'), r = e.target.closest('[data-reject]');
+      if (c) {
+        var w = waiting[Number(c.getAttribute('data-confirm'))]; c.disabled = true;
+        rpc('admin_confirm_payment', { p_id: w.id, p_amount: null, p_note: null }).then(refreshAll).catch(function (err) { c.disabled = false; fail(err); });
+      }
+      if (r) {
+        var w2 = waiting[Number(r.getAttribute('data-reject'))];
+        ask('No money found for reference ' + w2.payment_reference + '? The eater is told and gets 20 more minutes to pay.', { action: 'Tell the eater', placeholder: 'What the eater should know (required)' }).then(function (why) {
+          if (why) return rpc('admin_reject_payment', { p_id: w2.id, p_reason: why }).then(refreshAll);
+        }).catch(fail);
+      }
+    };
 
     function drawFound() {
       $('ffound').innerHTML = found.length ? found.map(function (o, i) {
@@ -1392,7 +1437,7 @@
 
   // Orders: find, open the timeline, download
   var ORDER_STATUS = { pending: 'WAITING FOR COOK', accepted: 'ACCEPTED', ready: 'READY', picked_up: 'PICKED UP', declined: 'DECLINED', cancelled: 'CANCELLED', not_picked_up: 'NOT PICKED UP' };
-  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer marked InstaPay sent', payment_received: 'Cook marked InstaPay received', staff_note: 'Staff note', expired: 'Cancelled: cook did not answer in 24 hours', not_picked_up: 'Closed: not picked up', reminded: 'Reminder sent to the cook' };
+  var EVENT_LABEL = { requested: 'Ordered', accepted: 'Accepted by cook', declined: 'Declined by cook', ready: 'Ready for pickup', picked_up: 'Picked up', cancelled: 'Cancelled by buyer', payment_sent: 'Buyer sent the InstaPay payment', payment_received: 'InstaPay payment confirmed', staff_note: 'Staff note', expired: 'Cancelled automatically (no answer from the cook, or no payment in time)', not_picked_up: 'Closed: not picked up', reminded: 'Reminder sent to the cook' };
   function viewOrders(v) {
     var state = null, items = [];
     v.innerHTML = '<div class="row"><h2 class="grow">Orders</h2>' + (role === 'owner' ? '<button class="btn" id="exportOrders">Download all orders (CSV)</button>' : '') + '</div>' +

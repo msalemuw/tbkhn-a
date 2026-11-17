@@ -13,6 +13,8 @@ export type AppStatus = {
   /** Menu tab on/off; while off the tab shows `menu_message` instead of the dishes. */
   menu_enabled?: boolean;
   menu_message?: string | null;
+  /** True when eaters pay tabkheen A (not the cook) and orders use a pickup code. */
+  pay_through_app?: boolean;
 };
 
 /** True when `version` is older than `min` (1.0.9 < 1.0.10). An empty minimum allows every version. */
@@ -70,4 +72,15 @@ export function useMenuOff(): boolean {
     return () => { live = false; };
   }, []);
   return off;
+}
+
+/** True when new orders are paid to tabkheen A. A failed check shows the older person-to-person wording. */
+export function usePayThroughApp(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    recentStatus().then((s) => live && setOn(!!s && s.pay_through_app === true));
+    return () => { live = false; };
+  }, []);
+  return on;
 }
