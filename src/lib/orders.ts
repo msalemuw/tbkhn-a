@@ -113,7 +113,7 @@ export async function setPayment(id: string, status: 'sent' | 'received') {
 }
 
 /** Where the eater pays and, once payment is confirmed, the pickup code. Only the eater of a pay-through-app order gets it. */
-export type PaymentInfo = { instapay: string | null; pay_by: string | null; pickup_code: string | null };
+export type PaymentInfo = { instapay: string | null; /** A tappable InstaPay link (opens the InstaPay app with the address filled in); null when the owner has not added one. */ instapay_link: string | null; pay_by: string | null; pickup_code: string | null };
 
 export async function fetchPaymentInfo(orderId: string): Promise<PaymentInfo | null> {
   const { data } = await supabase.rpc('order_payment_info', { p_id: orderId });
