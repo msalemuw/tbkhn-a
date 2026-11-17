@@ -4,6 +4,7 @@ import * as Device from 'expo-device';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 
+import { canRing } from '@/lib/ring';
 import { supabase } from '@/lib/supabase';
 
 // Phone alerts (push notifications). The native module only exists in builds made after it was added,
@@ -57,7 +58,12 @@ export async function registerForPush(): Promise<void> {
       wired = true;
       // While the app is open the in-app banner (LiveAlerts) shows the alert, so the system only adds the sound.
       N.setNotificationHandler({
-        handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: false, shouldPlaySound: true, shouldSetBadge: false }),
+        handleNotification: async (n) => {
+          // New requests ring through the app itself (src/lib/ring.ts) when this build can, so the phone's own sound is not doubled.
+          const kind = (n.request.content.data as { kind?: string } | null)?.kind;
+          const appRings = canRing() && (kind === 'order_new' || kind === 'order_reminder');
+          return { shouldShowBanner: false, shouldShowList: false, shouldPlaySound: !appRings, shouldSetBadge: false };
+        },
       });
       N.addNotificationResponseReceivedListener((r) => {
         try {

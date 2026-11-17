@@ -105,6 +105,9 @@
     "ios": {
       "bundleIdentifier": "com.tabkheen.a",
       "associatedDomains": ["applinks:tabkheen-a.com"],
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleLocalizations": [

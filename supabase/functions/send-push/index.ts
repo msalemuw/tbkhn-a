@@ -56,7 +56,7 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
   }
 }
 
-async function send(userId: string, msg: { title: string; body?: string; url: string; sound?: string; badge?: number }) {
+async function send(userId: string, msg: { title: string; body?: string; url: string; sound?: string; badge?: number; kind?: string; urgent?: boolean }) {
   const { data: tokens, error } = await admin.from('push_tokens').select('token').eq('user_id', userId);
   if (error) console.log('could not read push_tokens:', JSON.stringify(error));
   if (!tokens?.length) {
@@ -66,7 +66,7 @@ async function send(userId: string, msg: { title: string; body?: string; url: st
   const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: msg.sound ?? 'default', ...(msg.badge === undefined ? {} : { badge: msg.badge }), data: { url: msg.url } }))),
+    body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: msg.sound ?? 'default', ...(msg.badge === undefined ? {} : { badge: msg.badge }), ...(msg.urgent ? { interruptionLevel: 'time-sensitive' } : {}), data: { url: msg.url, kind: msg.kind } }))),
   });
   const json = await res.json().catch(() => null);
   // Visible in Edge Functions > send-push > Logs: what Expo answered, and later what Apple answered.
@@ -117,6 +117,9 @@ Deno.serve(async (req) => {
         ...wording(record, await nameOf(record.payload?.from)),
         sound: ring ? 'new-order.wav' : undefined,
         badge,
+        kind: record.kind,
+        // Time Sensitive: breaks through Focus / Do Not Disturb. Only builds with the Time Sensitive capability (1.0.2 and later) honour it.
+        urgent: ring,
       });
     } else if (table === 'messages') {
       await send(record.recipient_id, {
