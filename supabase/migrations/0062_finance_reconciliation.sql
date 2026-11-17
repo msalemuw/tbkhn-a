@@ -84,7 +84,7 @@ begin
      where e.reservation_id is not null and e.entry_type in ('payment_received', 'refund', 'reversal')
      group by e.reservation_id having sum(e.cash_egp) > 0) n
     join public.reservations r on r.id = n.rid
-   where r.status in ('cancelled', 'declined', 'not_picked_up') and r.updated_at < now() - interval '24 hours';
+   where r.status in ('cancelled', 'declined') and r.updated_at < now() - interval '24 hours';
   select count(*) into v_cases_old from public.payment_cases c where c.status = 'open' and c.opened_at < now() - interval '3 days';
   select * into v_last from public.ledger_checks order by checked_at desc, id desc limit 1;
   return jsonb_build_object(
