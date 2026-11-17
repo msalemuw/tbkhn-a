@@ -307,12 +307,12 @@
     return new Promise(function (resolve) {
       var dlg = $('ask'), text = $('askText'), go = $('askGo');
       $('askTitle').textContent = title;
-      text.value = opts.initial || ''; text.placeholder = opts.optional ? 'Note (optional)' : 'Reason (required, kept in the log)';
+      text.value = opts.initial || ''; text.placeholder = opts.placeholder || (opts.optional ? 'Note (optional)' : 'Reason (required, kept in the log)');
       showErr($('askErr'), '');
       function done(v) { go.onclick = null; $('askCancel').onclick = null; dlg.onclose = null; if (dlg.open) dlg.close(); resolve(v); }
       go.textContent = opts.action || 'Confirm';
       go.onclick = function () {
-        if (!opts.optional && !text.value.trim()) { showErr($('askErr'), 'Please write a reason.'); return; }
+        if (!opts.optional && !text.value.trim()) { showErr($('askErr'), opts.errMsg || 'Please write a reason.'); return; }
         done(text.value.trim());
       };
       $('askCancel').onclick = function () { done(null); };
@@ -432,6 +432,7 @@
     controls: { label: 'Controls', render: viewControls },
     legal: { label: 'Legal pages', render: viewLegal },
     staff: { label: 'Staff', render: viewStaff, only: 'owner' },
+    finance: { label: 'Finance', render: viewFinance, only: 'owner' },
     data: { label: 'Data', render: viewData, only: 'owner' },
     log: { label: 'Action log', render: viewLog },
     history: { label: 'History', render: viewHistory }
@@ -1049,6 +1050,178 @@
       if (li) { var m2 = list[li.getAttribute('data-lift')]; rpc('admin_set_suspended', { p_user_id: m2.id, p_suspended: false, p_reason: null }).then(search).catch(fail); }
       if (su) { var m3 = list[su.getAttribute('data-susp')]; ask('Suspend ' + who(m3.username, m3.display_name) + '?', { action: 'Suspend' }).then(function (why) { if (why) return rpc('admin_set_suspended', { p_user_id: m3.id, p_suspended: true, p_reason: why }).then(search); }).catch(fail); }
     };
+  }
+
+  // Finance (owner only): the money ledger, recording payments and refunds, cook payouts and cases.
+  var LEDGER_TYPE = { payment_received: 'Payment received', refund: 'Refund', cook_payout: 'Cook payout', transfer_fee: 'InstaPay transfer fee', platform_fee: 'Platform fee', packaging_sale: 'Packaging sale', packaging_cost: 'Packaging cost', adjustment: 'Adjustment', reversal: 'Reversal' };
+  function egp(n) { var x = Number(n || 0); return (x < 0 ? '−' : '') + Math.abs(x).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EGP'; }
+  function moneyIn(s) { var n = Number(String(s || '').replace(',', '.').trim()); return isFinite(n) ? n : NaN; }
+  function viewFinance(v) {
+    var days = 30, type = null, cookFilter = null, found = [], balances = [], form = null, payForm = null;
+    v.innerHTML = '<div class="row"><h2 class="grow">Finance</h2><span id="fdays"></span><button class="btn" id="fexport">Download ledger (CSV)</button></div>' +
+      '<p class="muted">Every payment, refund and payout is a permanent row. Rows are never edited: a mistake is fixed with a reversal. Money held for cooks is what you owe them; the rest of the cash is yours.</p>' +
+      '<div class="tiles" id="ftiles"></div>' +
+      '<div class="card"><h3 style="margin-top:0">Record a payment or refund</h3><div class="row"><input type="text" id="fq" placeholder="Order code, buyer, cook or dish" autocomplete="off" style="flex:1 1 220px"><button class="btn strong" id="fgo">Find order</button></div><div id="ffound"></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">Cooks</h3><div id="fcooks"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">Open cases</h3><div id="fcases"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">Ledger</h3><div id="ftypes"></div><div id="fledger"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">Other entry (bank fee, correction)</h3><p class="muted">Use only when nothing above fits. A reason is required and kept in the log.</p>' +
+      '<div class="row"><input type="text" id="adCash" inputmode="decimal" placeholder="Cash change (EGP, minus if money left)" style="flex:1 1 200px"><input type="text" id="adCook" inputmode="decimal" placeholder="Owed to cook change (EGP)" style="flex:1 1 200px"></div>' +
+      '<div class="row" style="margin-top:8px"><select id="adWho" style="flex:1 1 200px"></select><input type="text" id="adWhy" placeholder="Reason" style="flex:2 1 260px" maxlength="500"><button class="btn" id="adGo">Add entry</button></div></div>';
+
+    function chipsDays() {
+      $('fdays').innerHTML = [7, 30, 90].map(function (d) { return '<button class="chip" data-d="' + d + '" aria-pressed="' + (d === days) + '">' + d + ' days</button>'; }).join('');
+    }
+    function loadTiles() {
+      return rpc('admin_finance_summary', { p_days: days }).then(function (r) {
+        var s = (r && r[0]) || {};
+        $('ftiles').innerHTML = [['Cash in your account', egp(s.cash_balance)], ['Owed to cooks', egp(s.owed_to_cooks)], ['Payable now', egp(s.payable_now)],
+          ['Held (not payable yet)', egp(s.held_for_cooks)], ['Your own money', egp(s.own_money)], ['Money in, ' + days + ' days', egp(s.money_in)],
+          ['Money out, ' + days + ' days', egp(s.money_out)], ['InstaPay fees you paid, ' + days + ' days', egp(s.fees_paid)], ['Open cases', s.open_cases || 0]]
+          .map(function (t) { return '<div class="tile"><b style="font-size:20px">' + esc(t[1]) + '</b><span>' + esc(t[0]) + '</span></div>'; }).join('');
+      });
+    }
+    function loadCooks() {
+      return rpc('admin_cook_balances').then(function (r) {
+        balances = r;
+        $('adWho').innerHTML = '<option value="">No cook (cash only)</option>' + r.map(function (c, i) { return '<option value="' + esc(c.cook_id) + '">' + esc(who(c.username, c.display_name)) + '</option>'; }).join('');
+        drawCooks();
+      });
+    }
+    function drawCooks() {
+      $('fcooks').innerHTML = balances.length ? balances.map(function (c, i) {
+        var openForm = payForm === i;
+        return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row"><div class="grow" dir="auto"><b>' + esc(who(c.username, c.display_name)) + '</b>' +
+          '<div class="muted">Balance ' + esc(egp(c.balance)) + ' · payable now ' + esc(egp(c.payable_now)) + ' · held ' + esc(egp(c.held)) + (c.open_cases ? ' · ' + c.open_cases + ' open case' + (c.open_cases === 1 ? '' : 's') : '') + '</div></div>' +
+          '<button class="btn" data-entries="' + i + '">Entries</button>' +
+          (Number(c.payable_now) > 0 ? '<button class="btn strong" data-payout="' + i + '">Record payout…</button>' : '') + '</div>' +
+          (openForm ? '<p class="muted" style="margin:8px 0 0">Do the InstaPay transfer first, then record it here. The cook gets the full amount; the InstaPay fee is your cost, from your bank statement.</p>' +
+            '<div class="row" style="margin-top:6px"><input type="text" id="pA" inputmode="decimal" value="' + esc(Number(c.payable_now).toFixed(2)) + '" aria-label="Amount paid to the cook" style="flex:1 1 130px">' +
+            '<input type="text" id="pR" placeholder="InstaPay reference (required)" maxlength="80" style="flex:2 1 200px"><input type="text" id="pF" inputmode="decimal" placeholder="InstaPay fee (EGP)" style="flex:1 1 130px">' +
+            '<button class="btn strong" id="pSave">Save payout</button></div>' : '') + '</div>';
+      }).join('') : '<p class="muted">No cook has money in the ledger yet.</p>';
+    }
+    function loadCases() {
+      return rpc('admin_cases_list', { p_status: 'open' }).then(function (r) {
+        $('fcases').innerHTML = r.length ? r.map(function (c, i) {
+          return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row"><b class="grow" dir="auto">Order ' + esc(c.order_code) + ' · ' + esc(c.dish_name || 'Dish') + (c.amount_egp !== null ? ' · ' + esc(egp(c.amount_egp)) : '') + '</b>' +
+            '<button class="btn" data-resolve="' + esc(c.id) + '">Resolve…</button></div>' +
+            '<div dir="auto">' + esc(who(c.buyer_username, c.buyer_name)) + ' and ' + esc(who(c.cook_username, c.cook_name)) + '</div>' +
+            '<div class="muted" dir="auto">Opened ' + esc(when(c.opened_at)) + ': “' + esc(c.reason) + '”. The cook\'s money for this order is held.</div></div>';
+        }).join('') : '<p class="muted">No open cases.</p>';
+      });
+    }
+    function chipsTypes() {
+      var opts = [['All', null], ['Payments', 'payment_received'], ['Refunds', 'refund'], ['Payouts', 'cook_payout'], ['Fees', 'transfer_fee'], ['Adjustments', 'adjustment'], ['Reversals', 'reversal']];
+      $('ftypes').innerHTML = opts.map(function (o) { return '<button class="chip" data-type="' + (o[1] || '') + '" aria-pressed="' + (type === o[1]) + '">' + o[0] + '</button>'; }).join('') +
+        (cookFilter ? '<button class="chip" data-clear="1" aria-pressed="true">One cook only ✕</button>' : '');
+    }
+    var ledgerRows = [];
+    function loadLedger() {
+      chipsTypes();
+      return rpc('admin_ledger_list', { p_limit: 100, p_type: type, p_cook: cookFilter }).then(function (r) {
+        ledgerRows = r;
+        $('fledger').innerHTML = r.length ? r.map(function (e, i) {
+          var tag = e.reversed ? ' <span class="tag">REVERSED</span>' : '';
+          return '<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row"><b class="grow">' + esc(LEDGER_TYPE[e.entry_type] || e.entry_type) + tag + '</b><span>' + esc(when(e.created_at)) + '</span></div>' +
+            '<div>Cash ' + esc(egp(e.cash_egp)) + ' · cook ' + esc(egp(e.cook_egp)) + '</div>' +
+            '<div class="muted" dir="auto">' + (e.order_code ? 'Order ' + esc(e.order_code) + ' · ' : '') + (e.cook_username || e.cook_name ? 'cook ' + esc(who(e.cook_username, e.cook_name)) + ' · ' : '') +
+            (e.reference ? 'ref ' + esc(e.reference) + ' · ' : '') + 'by ' + esc(e.recorded_by_name || 'owner') + (e.note ? ' · “' + esc(e.note) + '”' : '') + '</div>' +
+            (!e.reversed && e.entry_type !== 'reversal' ? '<div style="margin-top:6px"><button class="btn" data-reverse="' + i + '">Reverse…</button></div>' : '') + '</div>';
+        }).join('') : '<p class="muted">Nothing here yet.</p>';
+      });
+    }
+    function refreshAll() { return Promise.all([loadTiles(), loadCooks(), loadCases(), loadLedger()]).catch(fail); }
+
+    function drawFound() {
+      $('ffound').innerHTML = found.length ? found.map(function (o, i) {
+        var total = o.price_egp !== null ? Number(o.price_egp) * o.plates : null;
+        var open = form && form.i === i;
+        return '<div style="padding:10px 0;border-top:1px solid var(--line)"><div class="row"><b class="grow" dir="auto">' + esc(o.dish_name || 'Dish') + ' × ' + o.plates + (total !== null ? ' · ' + esc(egp(total)) : '') + '</b><span class="tag">' + esc(ORDER_STATUS[o.status] || o.status) + '</span></div>' +
+          '<div dir="auto">' + esc(who(o.buyer_username, o.buyer_name)) + ' → ' + esc(who(o.cook_username, o.cook_name)) + '</div>' +
+          '<div class="muted">Order ' + esc(o.id.slice(0, 8).toUpperCase()) + ' · ' + esc(when(o.created_at)) + '</div>' +
+          '<div class="row" style="margin-top:8px"><button class="btn strong" data-fpay="' + i + '">Record payment…</button><button class="btn" data-frefund="' + i + '">Refund…</button><button class="btn danger" data-fcase="' + i + '">Open case…</button></div>' +
+          (open ? '<div class="row" style="margin-top:8px"><input type="text" id="fA" inputmode="decimal" placeholder="' + (form.mode === 'pay' ? (total !== null ? 'Amount (default ' + total + ')' : 'Amount received') : 'Amount to refund') + '" style="flex:1 1 140px">' +
+            (form.mode === 'pay' ? '<input type="text" id="fR" placeholder="InstaPay reference (required)" style="flex:2 1 200px" maxlength="80">' : '<input type="text" id="fR" placeholder="InstaPay reference of the refund (optional)" style="flex:2 1 200px" maxlength="80">') +
+            '<input type="text" id="fN" placeholder="' + (form.mode === 'pay' ? 'Note (needed only if the amount differs)' : 'Reason (required)') + '" style="flex:2 1 220px" maxlength="500">' +
+            (form.mode === 'refund' ? '<input type="text" id="fF" inputmode="decimal" placeholder="InstaPay fee (EGP)" style="flex:1 1 130px">' : '') +
+            '<button class="btn strong" id="fSave">' + (form.mode === 'pay' ? 'Save payment' : 'Save refund') + '</button></div>' : '') + '</div>';
+      }).join('') : '<p class="muted">No order found.</p>';
+    }
+    function find() {
+      var q = $('fq').value.trim(); if (!q) return;
+      form = null;
+      return rpc('admin_find_orders', { p_query: q, p_state: null }).then(function (r) { found = r; drawFound(); }).catch(fail);
+    }
+    $('fgo').onclick = find;
+    $('fq').onkeydown = function (e) { if (e.key === 'Enter') find(); };
+    $('fdays').onclick = function (e) { var c = e.target.closest('[data-d]'); if (!c) return; days = Number(c.getAttribute('data-d')); chipsDays(); loadTiles().catch(fail); };
+    $('ftypes').onclick = function (e) {
+      var c = e.target.closest('[data-type],[data-clear]'); if (!c) return;
+      if (c.hasAttribute('data-clear')) cookFilter = null; else type = c.getAttribute('data-type') || null;
+      loadLedger().catch(fail);
+    };
+    $('ffound').onclick = function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var i;
+      if (b.hasAttribute('data-fpay')) { form = { i: Number(b.getAttribute('data-fpay')), mode: 'pay' }; drawFound(); return; }
+      if (b.hasAttribute('data-frefund')) { form = { i: Number(b.getAttribute('data-frefund')), mode: 'refund' }; drawFound(); return; }
+      if (b.hasAttribute('data-fcase')) {
+        i = Number(b.getAttribute('data-fcase'));
+        ask('Open a case on order ' + found[i].id.slice(0, 8).toUpperCase() + '? The cook\'s money for it is held until you resolve it.', { action: 'Open case' }).then(function (why) {
+          if (why) return rpc('admin_case_open', { p_reservation_id: found[i].id, p_reason: why }).then(refreshAll);
+        }).catch(fail);
+        return;
+      }
+      if (b.id === 'fSave' && form) {
+        var o = found[form.i], amt = $('fA').value.trim() === '' ? null : moneyIn($('fA').value), ref = $('fR').value.trim(), note = $('fN').value.trim();
+        if (amt !== null && isNaN(amt)) { fail(new Error('Enter the amount as a number.')); return; }
+        b.disabled = true;
+        var call = form.mode === 'pay'
+          ? rpc('admin_ledger_record_payment', { p_reservation_id: o.id, p_reference: ref, p_amount: amt, p_note: note || null })
+          : rpc('admin_ledger_record_refund', { p_reservation_id: o.id, p_amount: amt, p_reason: note, p_reference: ref || null, p_fee: $('fF') && $('fF').value.trim() !== '' ? moneyIn($('fF').value) : 0 });
+        call.then(function () { form = null; showErr($('globalErr'), ''); drawFound(); return refreshAll(); }).catch(function (err) { b.disabled = false; fail(err); });
+      }
+    };
+    $('fcooks').onclick = function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-entries')) { cookFilter = balances[Number(b.getAttribute('data-entries'))].cook_id; type = null; loadLedger().catch(fail); return; }
+      if (b.hasAttribute('data-payout')) { payForm = Number(b.getAttribute('data-payout')); drawCooks(); return; }
+      if (b.id === 'pSave' && payForm !== null) {
+        var c = balances[payForm], amt = moneyIn($('pA').value), fee = $('pF').value.trim() === '' ? 0 : moneyIn($('pF').value), ref = $('pR').value.trim();
+        if (isNaN(amt) || isNaN(fee)) { fail(new Error('Enter the amount and the fee as numbers.')); return; }
+        b.disabled = true;
+        rpc('admin_ledger_record_payout', { p_cook_id: c.cook_id, p_amount: amt, p_reference: ref, p_note: null, p_fee: fee })
+          .then(function () { payForm = null; showErr($('globalErr'), ''); return refreshAll(); }).catch(function (err) { b.disabled = false; fail(err); });
+      }
+    };
+    $('fcases').onclick = function (e) {
+      var b = e.target.closest('[data-resolve]'); if (!b) return;
+      ask('How was this case settled?', { action: 'Resolve case', placeholder: 'What was decided (required)' }).then(function (why) {
+        if (why) return rpc('admin_case_resolve', { p_case_id: b.getAttribute('data-resolve'), p_resolution: why }).then(refreshAll);
+      }).catch(fail);
+    };
+    $('fledger').onclick = function (e) {
+      var b = e.target.closest('[data-reverse]'); if (!b) return;
+      var row = ledgerRows[Number(b.getAttribute('data-reverse'))];
+      ask('Reverse this ' + (LEDGER_TYPE[row.entry_type] || 'entry').toLowerCase() + ' of ' + egp(row.cash_egp) + '? A new row cancels it; the original stays.', { action: 'Reverse' }).then(function (why) {
+        if (why) return rpc('admin_ledger_reverse', { p_entry_id: row.id, p_reason: why }).then(refreshAll);
+      }).catch(fail);
+    };
+    $('adGo').onclick = function () {
+      var cash = $('adCash').value.trim() === '' ? 0 : moneyIn($('adCash').value), cook = $('adCook').value.trim() === '' ? 0 : moneyIn($('adCook').value);
+      if (isNaN(cash) || isNaN(cook)) { fail(new Error('Enter the amounts as numbers.')); return; }
+      var btn = $('adGo'); btn.disabled = true;
+      rpc('admin_ledger_adjust', { p_cash: cash, p_cook: cook, p_cook_id: $('adWho').value || null, p_reason: $('adWhy').value.trim() }).then(function () {
+        $('adCash').value = ''; $('adCook').value = ''; $('adWhy').value = ''; showErr($('globalErr'), ''); return refreshAll();
+      }).catch(fail).then(function () { btn.disabled = false; });
+    };
+    $('fexport').onclick = function () {
+      var b = $('fexport'); b.disabled = true;
+      rpc('admin_export_ledger').then(function (rows) { downloadCsv('tabkheen-ledger', rows); }).catch(fail).then(function () { b.disabled = false; });
+    };
+    chipsDays();
+    return refreshAll();
   }
 
   // Data browser (owner only, read only): look at the rows of the app's tables
