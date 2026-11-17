@@ -476,6 +476,7 @@ export const ar: Record<string, string> = {
   Save: 'حفظ',
   'Tell neighbors about your cooking': 'احكي لجيرانك عن طبخك',
   'We couldn’t save your changes. Please try again.': 'معرفناش نحفظ التغييرات. جرّب تاني.',
+  'Pay in InstaPay': 'ادفع من إنستاباي',
   'example: nour@instapay': 'مثلًا: nour@instapay',
   'unknown error': 'خطأ غير معروف',
   'ABOUT YOU': 'عنك',

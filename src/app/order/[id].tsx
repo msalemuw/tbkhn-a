@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { type ComponentProps, useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
@@ -192,6 +192,9 @@ export default function OrderScreen() {
             ) : o.payment_status === 'none' && o.status === 'accepted' ? (
               <>
                 <Text style={styles.body}>{`Send EGP ${total} to tabkheen A’s InstaPay:`}</Text>
+                {payInfo?.instapay_link ? (
+                  <PrimaryButton label="Pay in InstaPay" onPress={() => { Linking.openURL(payInfo.instapay_link!).catch(() => {}); }} style={{ marginTop: 8 }} />
+                ) : null}
                 <Text selectable verbatim style={[styles.handle, { fontSize: 17, marginTop: 4 }]}>{payInfo?.instapay ?? '…'}</Text>
                 {payInfo?.instapay && canCopy() ? (
                   <Pressable

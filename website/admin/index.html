@@ -626,7 +626,9 @@
         '<div class="card"><div class="row"><div class="grow"><b>Pay through tabkheen A</b> <span class="tag">' + (ctl.pay_through_app === true ? 'ON' : 'OFF') + '</span>' +
         '<div class="muted">When on, new orders are paid to the InstaPay address below (not to the cook). The eater has 20 minutes after the cook accepts, you confirm each payment in Finance, and the cook marks the order ready only after that. Pickup needs the eater’s 4-digit code. Orders already open keep the old way. Turn it on only when you are ready to confirm payments.</div></div>' +
         (owner ? '<button class="btn ' + (ctl.pay_through_app === true ? 'danger' : 'strong') + '" data-pay="1">' + (ctl.pay_through_app === true ? 'Turn off' : 'Turn on') + '</button>' : '') + '</div>' +
-        '<div class="row" style="margin-top:10px"><input type="text" id="ctlPayAddr" maxlength="60" placeholder="tabkheen A’s InstaPay address" style="flex:1 1 240px" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn" id="ctlPayAddrSave">Save address</button>' : '') + '</div></div>' +
+        '<div class="row" style="margin-top:10px"><input type="text" id="ctlPayAddr" maxlength="60" placeholder="tabkheen A’s InstaPay address" style="flex:1 1 240px" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn" id="ctlPayAddrSave">Save address</button>' : '') + '</div>' +
+        '<div class="row" style="margin-top:10px"><input type="text" id="ctlPayLink" maxlength="200" placeholder="InstaPay payment link (https://ipn.eg/…), optional" style="flex:1 1 240px" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn" id="ctlPayLinkSave">Save link</button>' : '') + '</div>' +
+        '<div class="muted" style="margin-top:6px">With a link saved, the pay screen shows a “Pay in InstaPay” button that opens the InstaPay app with your address filled in. Get it in your InstaPay app (share your QR or payment link). Leave it empty to hide the button.</div></div>' +
         pauseRow('ordering_enabled', 'Ordering', 'When paused, nobody can place a new order. Existing orders continue.', mod) +
         pauseRow('posting_enabled', 'Posting', 'When paused, nobody can add a new post, story or “today’s menu”.', mod) +
         '<div class="card"><div class="row"><div class="grow"><b>Maintenance mode</b> <span class="tag">' + (ctl.maintenance === true ? 'ON' : 'OFF') + '</span><div class="muted">When on, the app shows the message below instead of opening. Use for a short fix or migration.</div></div>' +
@@ -636,7 +638,7 @@
         '<div class="card"><b>Minimum app version</b><div class="muted">Anyone on an older version sees “please update” instead of the app. Leave empty to allow every version. The version is the one in Profile > Settings, such as 1.0.2.</div>' +
         '<div class="row" style="margin-top:8px"><input type="text" id="ctlVer" placeholder="e.g. 1.0.2" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn strong" id="ctlVerSave">Save</button>' : '') + '</div></div>' +
         '<div class="err" id="ctlErr" hidden></div><div class="ok" id="ctlOk" hidden></div>';
-      $('ctlMenuMsg').value = ctl.menu_message || ''; $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || ''; $('ctlPayAddr').value = ctl.app_instapay || '';
+      $('ctlMenuMsg').value = ctl.menu_message || ''; $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || ''; $('ctlPayAddr').value = ctl.app_instapay || ''; $('ctlPayLink').value = ctl.app_instapay_link || '';
     }
     function load() { return rpc('admin_get_controls').then(function (rows) { ctl = {}; rows.forEach(function (r) { ctl[r.key] = r.value; }); draw(); }); }
     function set(k, val, okText) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).then(function () { if (okText) { var o = $('ctlOk'); o.textContent = okText; o.hidden = false; setTimeout(function () { o.hidden = true; }, 4000); } }).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
@@ -644,6 +646,7 @@
       var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]'), mn = e.target.closest('[data-menu]');
       if (mn) { if (on('menu_enabled') && !confirm('Turn the Menu tab off for everyone? Members will see the coming-soon message, cooks cannot post “Today’s menu” dishes, dishes that are open now end, and nobody can place new orders. Orders already placed continue. Posts, stories and rankings keep working.')) return; set('menu_enabled', !on('menu_enabled')); }
       if (e.target.id === 'ctlMenuMsgSave') set('menu_message', $('ctlMenuMsg').value.trim(), 'Saved.');
+      if (e.target.id === 'ctlPayLinkSave') set('app_instapay_link', $('ctlPayLink').value.trim(), 'Saved. The pay screen ' + ($('ctlPayLink').value.trim() ? 'now has a “Pay in InstaPay” button.' : 'no longer has the “Pay in InstaPay” button.'));
       if (e.target.id === 'ctlPayAddrSave') set('app_instapay', $('ctlPayAddr').value.trim(), 'Saved. tabkheen A’s InstaPay address is now ' + ($('ctlPayAddr').value.trim() || '(empty)') + '.');
       if (e.target.closest('[data-pay]')) {
         if (ctl.pay_through_app === true) { if (confirm('Turn off payments through tabkheen A? New orders go back to person-to-person InstaPay. Orders already placed this way continue.')) set('pay_through_app', false); }
