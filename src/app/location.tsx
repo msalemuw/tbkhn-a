@@ -40,7 +40,7 @@ export default function LocationPicker() {
   const [sheetH, setSheetH] = useState(190);
   const [text, setText] = useState('');
   // Pickup mode: the cook names the spot buyers will see. Re-picking a saved spot starts from its current name.
-  const [spotName, setSpotName] = useState(pickup && !at ? (place?.label ?? '') : '');
+  const [spotName, setSpotName] = useState(pickup && !at && !place?.manual ? (place?.label ?? '') : '');
   const [found, setFound] = useState<{ q: string; list: PlaceHit[] } | null>(null);
   const startRef = useRef(start);
   // Where the phone was when the member last tapped "use my current location".
@@ -69,6 +69,23 @@ export default function LocationPicker() {
       clearTimeout(t);
     };
   }, [center]);
+
+  // A new pickup spot starts from where the phone is now, not from a hand-picked place used earlier for browsing.
+  useEffect(() => {
+    if (!pickup || at) return;
+    let live = true;
+    getMyLocation({ prompt: false }).then((gps) => {
+      if (!live || !gps) return;
+      const region = { latitude: gps.lat, longitude: gps.lng };
+      setCenter(region);
+      centerRef.current = region;
+      map.current?.animateToRegion({ ...region, latitudeDelta: DELTA, longitudeDelta: DELTA }, 0);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickup]);
 
   // Pickup mode: if the map starts on a saved spot, show its name so the cook can fix it.
   useEffect(() => {
