@@ -37,7 +37,10 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
     case 'payment_confirmed_cook': return { title: `${who}’s payment is confirmed`, body: `${dish} · you can start cooking`, url };
     case 'payment_rejected': return { title: 'We couldn’t find your payment', body: `${dish} · ${p.reason ?? 'check the reference and try again'}`, url };
     case 'order_unpaid': return { title: 'An order was cancelled', body: `${dish} · no payment within 20 minutes`, url };
-    case 'order_reminder': return { title: `${who} is still waiting`, body: `${dish} · answer or update the order`, url };
+    case 'order_reminder':
+      // Repeats of an unanswered request (status 'pending') ask for an answer; the 12-hour reminder keeps its wording.
+      return { title: `${who} is still waiting`, body: p.status === 'pending' ? `${dish} · accept or decline it now` : `${dish} · answer or update the order`, url };
+    case 'test_alert': return { title: 'Test alert from tabkheen A', body: 'If you hear the long ring, new requests will reach you', url: '/settings' };
     case 'review_request': return { title: `How was your order from ${who}?`, body: 'Tap to leave a review', url };
     case 'payment_sent': return { title: `${who} sent the InstaPay payment`, body: `${dish} · confirm it arrived`, url };
     case 'payment_received': return { title: `${who} confirmed your payment`, body: dish, url };
@@ -53,7 +56,7 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
   }
 }
 
-async function send(userId: string, msg: { title: string; body?: string; url: string; sound?: string }) {
+async function send(userId: string, msg: { title: string; body?: string; url: string; sound?: string; badge?: number }) {
   const { data: tokens, error } = await admin.from('push_tokens').select('token').eq('user_id', userId);
   if (error) console.log('could not read push_tokens:', JSON.stringify(error));
   if (!tokens?.length) {
@@ -63,7 +66,7 @@ async function send(userId: string, msg: { title: string; body?: string; url: st
   const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: msg.sound ?? 'default', data: { url: msg.url } }))),
+    body: JSON.stringify(tokens.map((t) => ({ to: t.token, title: msg.title, body: msg.body, sound: msg.sound ?? 'default', ...(msg.badge === undefined ? {} : { badge: msg.badge }), data: { url: msg.url } }))),
   });
   const json = await res.json().catch(() => null);
   // Visible in Edge Functions > send-push > Logs: what Expo answered, and later what Apple answered.
@@ -101,10 +104,19 @@ Deno.serve(async (req) => {
         .from('notifications').update({ pushed_at: new Date().toISOString() })
         .eq('id', record.id).is('pushed_at', null).select('id').maybeSingle();
       if (!claimed) return new Response('already sent');
-      // New orders ring with their own loud sound (bundled in app builds made after it was added; older builds fall back to the default).
+      // New requests, their repeats and the cook's test alert ring with their own loud sound (bundled in app builds made after it was added;
+      // older builds fall back to the default).
+      const ring = record.kind === 'order_new' || record.kind === 'test_alert' || (record.kind === 'order_reminder' && record.payload?.status === 'pending');
+      // The number on the app icon: how many requests wait for this cook. The app resets it when it opens and whenever the number changes.
+      let badge: number | undefined;
+      if (record.kind === 'order_new' || (record.kind === 'order_reminder' && record.payload?.status === 'pending')) {
+        const { count } = await admin.from('reservations').select('id', { count: 'exact', head: true }).eq('cook_id', record.user_id).eq('status', 'pending');
+        badge = count ?? undefined;
+      }
       await send(record.user_id, {
         ...wording(record, await nameOf(record.payload?.from)),
-        sound: record.kind === 'order_new' ? 'new-order.wav' : undefined,
+        sound: ring ? 'new-order.wav' : undefined,
+        badge,
       });
     } else if (table === 'messages') {
       await send(record.recipient_id, {

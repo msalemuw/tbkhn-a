@@ -131,6 +131,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^(.+) didn’t collect it within 24 hours, so the order was closed\.$/, '$1 ما استلمهوش خلال 24 ساعة، فالطلب اتقفل.'],
   [/^(.+) didn’t answer in time$/, '$1 ما ردّش في الوقت'],
   [/^(.+) is still waiting$/, '$1 لسه مستني'],
+  [/^(.+) · accept or decline it now$/, '$1 · اقبله أو ارفضه دلوقتي'],
   [/^(.+) · no answer in 24 hours, the plates went back$/, '$1 · مفيش رد في 24 ساعة، والأطباق رجعت'],
   [/^(.+) · no answer in 24 hours$/, '$1 · مفيش رد في 24 ساعة'],
   [/^(.+) · not picked up$/, '$1 · ما اتستلمش'],

@@ -11,7 +11,10 @@ import { FlipIcon } from '@/components/flip-icon';
 import { useFetchedStaffRole } from '@/components/admin-ui';
 import { PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
+import { AlertHealthNotice } from '@/components/request-alerts';
 import { deleteMyAccount } from '@/lib/account';
+import { sendTestAlert } from '@/lib/orders';
+import { checkAlerts } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 
@@ -43,6 +46,21 @@ export default function Settings() {
       ],
     );
   }
+  // A cook checks, in one tap, that a new request will reach this phone with the long ring.
+  async function testAlerts() {
+    if ((await checkAlerts()) === 'off') {
+      return Alert.alert(t('Alerts are off'), t('Turn on notifications for tabkheen A in your phone settings, then test again.'));
+    }
+    try {
+      await sendTestAlert();
+      Alert.alert(
+        t('Test alert sent'),
+        t('You should hear the long ring in a few seconds. If you do not: switch the phone off silent, turn off Do Not Disturb, and allow tabkheen A in your Focus settings.'),
+      );
+    } catch (e) {
+      Alert.alert(t('We couldn’t send the test'), e instanceof Error ? e.message : t('Try again.'));
+    }
+  }
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.head}>
@@ -51,12 +69,14 @@ export default function Settings() {
         </Pressable>
         <Text style={styles.title}>{t('Settings')}</Text>
       </View>
+      <AlertHealthNotice />
       <View style={styles.body}>
         <Row icon="receipt-long" label={t('My orders')} onPress={() => router.push('/orders')} />
         <Row icon="edit" label={t('Edit profile')} onPress={() => router.push('/edit-profile')} />
         <Row icon="translate" label={lang === 'ar' ? 'English' : 'العربية'} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />
         <Row icon="place" label={t('My pickup spots')} onPress={() => router.push('/pickup-spots')} />
         <Row icon="block" label={t('Blocked accounts')} onPress={() => router.push('/blocked')} />
+        <Row icon="notifications-active" label={t('Test my alerts')} onPress={testAlerts} />
         <Row icon="help-outline" label={t('Help & support')} onPress={() => router.push('/support')} />
         <Row icon="privacy-tip" label={t('Privacy policy')} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'privacy' } })} />
         <Row icon="description" label={t('Terms of use')} onPress={() => router.push({ pathname: '/legal/[slug]', params: { slug: 'terms' } })} />

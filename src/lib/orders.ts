@@ -78,6 +78,23 @@ export async function fetchOrders(role: 'buyer' | 'cook', userId: string): Promi
   return (data ?? []) as unknown as Order[];
 }
 
+/** How many requests are waiting for this cook to accept or decline. */
+export async function fetchWaitingCount(cookId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('reservations')
+    .select('id', { count: 'exact', head: true })
+    .eq('cook_id', cookId)
+    .eq('status', 'pending');
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** The cook asks for one test alert on their own phone, with the long ring. */
+export async function sendTestAlert() {
+  const { error } = await supabase.rpc('send_test_alert');
+  if (error) throw new Error(friendly(error.message));
+}
+
 export async function setOrderStatus(id: string, status: OrderStatus, reason?: string) {
   const { error } = await supabase.rpc('set_reservation_status', { p_id: id, p_status: status, p_reason: reason ?? null });
   if (error) throw new Error(friendly(error.message));
@@ -150,6 +167,7 @@ function friendly(message: string): string {
   if (message.includes('not waiting for payment') || message.includes('already sent')) return 'This order has already moved on. Pull down to refresh.';
   if (message.includes('within 12 hours')) return 'Problems can be reported within 12 hours of pickup.';
   if (message.includes('tell us what went wrong')) return 'Tell us what went wrong.';
+  if (message.includes('wait a moment')) return 'Wait a few seconds before testing again.';
   if (message.includes('pickup code')) return 'Enter the pickup code the eater sees in their app.';
   return 'Something went wrong. Check your connection and try again.';
 }
