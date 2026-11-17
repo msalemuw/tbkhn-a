@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 export type Notification = {
   id: string;
   kind: string;
-  payload: { reservation_id?: string; post_id?: string; ref?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string; ticket_id?: string; subject?: string; preview?: string };
+  payload: { reservation_id?: string; post_id?: string; ref?: string; profile_id?: string; from?: string; dish?: string; plates?: number; text?: string; community_id?: string; redirect_id?: string; added?: string[]; name?: string; note?: string; reason?: string; message?: string; status?: string; role?: string; paid?: boolean; ticket_id?: string; subject?: string; preview?: string };
   created_at: string;
   read_at: string | null;
 };
@@ -73,6 +73,10 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
     case 'order_expired':
       return { title: 'An order timed out', sub: `${dish} · no answer from the cook in time, the plates went back`, icon: 'cancel' };
     case 'order_not_picked_up':
+      // A paid no-show: the cook keeps the money, the eater is not refunded.
+      if (n.payload.paid) return n.payload.role === 'cook'
+        ? { title: 'An order was closed', sub: `${dish} · not collected, you keep the payment`, icon: 'cancel' }
+        : { title: 'Your order was closed', sub: `${dish} · not collected, the payment is not refunded`, icon: 'cancel' };
       return { title: 'An order was closed', sub: `${dish} · not picked up`, icon: 'cancel' };
     case 'test_alert':
       return { title: 'Test alert from tabkheen A', sub: 'If you hear the long ring, new requests will reach you', icon: 'notifications-active' };
