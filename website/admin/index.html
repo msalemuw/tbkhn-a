@@ -1073,10 +1073,14 @@
     v.innerHTML = '<div class="row"><h2 class="grow">Finance</h2><span id="fdays"></span><button class="btn" id="fexport">Download ledger (CSV)</button></div>' +
       '<p class="muted">Every payment, refund and payout is a permanent row. Rows are never edited: a mistake is fixed with a reversal. Money held for cooks is what you owe them; the rest of the cash is yours.</p>' +
       '<div class="tiles" id="ftiles"></div>' +
+      '<div class="card"><h3 style="margin-top:0">Needs attention</h3><div id="falerts"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Payments to confirm</h3><p class="muted">Check each one against your InstaPay. Confirm only when the money is there with this reference. The cook can start only after you confirm.</p><div id="fwait"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Refunds due</h3><p class="muted">Orders that ended cancelled or declined with money still in the ledger. A paid no-show is not listed: the cook keeps that money (refund one by hand from Find order if you decide to). Send the money back by InstaPay, then record the refund (Find order, Refund).</p><div id="frefunds"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Record a payment or refund</h3><div class="row"><input type="text" id="fq" placeholder="Order code, buyer, cook or dish" autocomplete="off" style="flex:1 1 220px"><button class="btn strong" id="fgo">Find order</button></div><div id="ffound"></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Cooks</h3><div id="fcooks"><p class="muted">Loading…</p></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">Balance check</h3><p class="muted">Open your InstaPay app and type the balance it shows. The ledger says what it should be. A gap means a payment, payout, refund or fee is missing or wrong here. Do this at least once a week.</p>' +
+      '<div class="row"><input type="text" id="bcBal" inputmode="decimal" placeholder="Balance in InstaPay now (EGP)" style="flex:1 1 200px"><input type="text" id="bcNote" maxlength="500" placeholder="Note (optional)" style="flex:2 1 220px"><button class="btn strong" id="bcGo">Compare</button></div>' +
+      '<div id="bcRes"></div><div id="bcList"></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Open cases</h3><div id="fcases"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Ledger</h3><div id="ftypes"></div><div id="fledger"><p class="muted">Loading…</p></div></div>' +
       '<div class="card"><h3 style="margin-top:0">Other entry (bank fee, correction)</h3><p class="muted">Use only when nothing above fits. A reason is required and kept in the log.</p>' +
@@ -1095,7 +1099,56 @@
           .map(function (t) { return '<div class="tile"><b style="font-size:20px">' + esc(t[1]) + '</b><span>' + esc(t[0]) + '</span></div>'; }).join('');
       });
     }
-    var waiting = [];
+    var waiting = [], alerts = {}, dupOf = {}, checks = [];
+    function loadAlerts() {
+      return rpc('admin_finance_alerts').then(function (r) {
+        alerts = (Array.isArray(r) ? r[0] : r) || {}; dupOf = {};
+        (alerts.duplicate_refs || []).forEach(function (d) {
+          d.orders.forEach(function (o) { dupOf[o.id] = d.orders.filter(function (x) { return x.id !== o.id; }).map(function (x) { return x.order_code; }).join(', '); });
+        });
+      });
+    }
+    function drawAlerts() {
+      var items = [], a = alerts;
+      function mins(t) { return Math.max(0, Math.round((Date.now() - Date.parse(t)) / 60000)); }
+      if (a.waiting_old > 0) { var m = mins(a.waiting_oldest_at); items.push(a.waiting_old + ' payment' + (a.waiting_old === 1 ? ' has' : 's have') + ' been waiting more than 30 minutes (the oldest ' + (m >= 120 ? Math.floor(m / 60) + ' hours' : m + ' minutes') + '). Confirm it or tell the eater it was not found.'); }
+      (a.duplicate_refs || []).forEach(function (d) { items.push('Reference ' + d.reference + ' is on ' + d.orders.length + ' orders (' + d.orders.map(function (o) { return o.order_code; }).join(', ') + '). Make sure InstaPay shows a separate transfer for each.'); });
+      if (a.refunds_old > 0) items.push(a.refunds_old + ' refund' + (a.refunds_old === 1 ? ' has' : 's have') + ' been due for more than a day. Send the money back and record it.');
+      if (a.cases_old > 0) items.push(a.cases_old + ' case' + (a.cases_old === 1 ? ' has' : 's have') + ' been open for more than 3 days. Resolve ' + (a.cases_old === 1 ? 'it' : 'them') + ' so the cook can be paid.');
+      var payable = balances.filter(function (c) { return Number(c.payable_now) > 0; });
+      if (payable.length) items.push(payable.length + ' cook' + (payable.length === 1 ? ' is' : 's are') + ' ready to be paid, ' + egp(payable.reduce(function (t, c) { return t + Number(c.payable_now); }, 0)) + ' in total. See Cooks below.');
+      if (a.last_check_at === null || a.last_check_at === undefined) items.push('You have not compared your InstaPay balance with the ledger yet. Use Balance check below.');
+      else {
+        var days = Math.floor((Date.now() - Date.parse(a.last_check_at)) / 86400000);
+        if (Number(a.last_difference) !== 0) items.push('Your last balance check was off by ' + egp(a.last_difference) + '. Find the missing entry, then check again.');
+        else if (days >= 7) items.push('Your last balance check was ' + days + ' days ago. Check again.');
+      }
+      $('falerts').innerHTML = items.length ? items.map(function (t) { return '<div style="padding:8px 0;border-top:1px solid var(--line)" dir="auto">' + esc(t) + '</div>'; }).join('') : '<p class="muted">Nothing needs attention.</p>';
+    }
+    function loadChecks() {
+      return rpc('admin_balance_checks', { p_limit: 8 }).then(function (r) {
+        checks = r;
+        $('bcList').innerHTML = r.length ? '<p class="muted" style="margin:12px 0 4px">Recent checks</p>' + r.map(function (c) {
+          var d = Number(c.difference);
+          return '<div style="padding:6px 0;border-top:1px solid var(--line)"><div class="row"><span class="grow">' + esc(when(c.checked_at)) + ' · InstaPay ' + esc(egp(c.bank_balance)) + ' · ledger ' + esc(egp(c.ledger_cash)) + '</span><span class="tag"' + (d !== 0 ? ' style="background:var(--yellow)"' : '') + '>' + (d === 0 ? 'MATCHED' : 'OFF ' + esc(egp(d))) + '</span></div>' +
+            (c.note ? '<div class="muted" dir="auto">“' + esc(c.note) + '” · ' + esc(c.recorded_by_name || 'owner') + '</div>' : '') + '</div>';
+        }).join('') : '';
+      });
+    }
+    $('bcGo').onclick = function () {
+      var bal = moneyIn($('bcBal').value);
+      if ($('bcBal').value.trim() === '' || isNaN(bal)) { fail(new Error('Type the balance shown in InstaPay as a number.')); return; }
+      var btn = $('bcGo'); btn.disabled = true;
+      rpc('admin_record_balance_check', { p_bank_balance: bal, p_note: $('bcNote').value.trim() || null }).then(function (r) {
+        r = Array.isArray(r) ? r[0] : r; var d = Number(r.difference);
+        $('bcRes').innerHTML = d === 0 ? '<div class="ok">Matched. InstaPay shows ' + esc(egp(r.bank_balance)) + ', the same as the ledger.</div>'
+          : '<div class="err">Off by ' + esc(egp(d)) + '. InstaPay shows ' + esc(egp(r.bank_balance)) + ', the ledger says ' + esc(egp(r.ledger_cash)) + '. ' +
+            (d < 0 ? 'InstaPay has less than the ledger: a payout, refund or fee was sent but not recorded, or a payment was recorded that never arrived.' : 'InstaPay has more than the ledger: a payment arrived that is not recorded, or a payout or refund was recorded but not sent.') +
+            ' Look in the ledger below, add the missing entry or reverse the wrong one, then check again.</div>';
+        $('bcBal').value = ''; $('bcNote').value = ''; showErr($('globalErr'), '');
+        return Promise.all([loadAlerts(), loadChecks()]).then(drawAlerts);
+      }).catch(fail).then(function () { btn.disabled = false; });
+    };
     function loadWaiting() {
       return rpc('admin_payments_waiting').then(function (r) {
         waiting = r;
@@ -1103,7 +1156,7 @@
           var mins = Math.max(0, Math.round((Date.now() - Date.parse(w.payment_sent_at)) / 60000));
           return '<div style="padding:10px 0;border-top:1px solid var(--line)"><div class="row"><b class="grow" dir="auto">' + esc(w.dish_name || 'Dish') + ' × ' + w.plates + ' · ' + esc(egp(w.total_egp)) + '</b><span class="tag"' + (mins >= 120 ? ' style="background:var(--yellow)"' : '') + '>' + (mins >= 120 ? 'WAITING ' + Math.floor(mins / 60) + 'h' : mins + ' min') + '</span></div>' +
             '<div dir="auto">' + esc(who(w.buyer_username, w.buyer_name)) + ' → ' + esc(who(w.cook_username, w.cook_name)) + ' · order ' + esc(w.order_code) + '</div>' +
-            '<div>InstaPay reference: <b dir="ltr">' + esc(w.payment_reference) + '</b></div>' +
+            '<div>InstaPay reference: <b dir="ltr">' + esc(w.payment_reference) + '</b>' + (dupOf[w.id] ? ' <span class="tag" style="background:var(--yellow)">USED BEFORE</span></div><div class="muted">The same reference is on order ' + esc(dupOf[w.id]) + '. Check InstaPay shows two separate transfers before you confirm.</div>' : '</div>') +
             '<div class="row" style="margin-top:8px"><button class="btn strong" data-confirm="' + i + '">Money arrived, confirm</button><button class="btn danger" data-reject="' + i + '">Not found…</button></div></div>';
         }).join('') : '<p class="muted">Nothing waiting.</p>';
       });
@@ -1166,7 +1219,7 @@
         }).join('') : '<p class="muted">Nothing here yet.</p>';
       });
     }
-    function refreshAll() { return Promise.all([loadTiles(), loadWaiting(), loadRefunds(), loadCooks(), loadCases(), loadLedger()]).catch(fail); }
+    function refreshAll() { return Promise.all([loadAlerts(), loadTiles(), loadRefunds(), loadCooks(), loadCases(), loadLedger(), loadChecks()]).then(function () { return loadWaiting(); }).then(drawAlerts).catch(fail); }
     $('fwait').onclick = function (e) {
       var c = e.target.closest('[data-confirm]'), r = e.target.closest('[data-reject]');
       if (c) {
