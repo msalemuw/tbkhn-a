@@ -33,6 +33,10 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
     case 'order_cancelled': return { title: `${who} cancelled their order`, body: dish, url };
     case 'order_expired': return { title: 'An order timed out', body: `${dish} · no answer in 24 hours`, url };
     case 'order_not_picked_up': return { title: 'An order was closed', body: `${dish} · not picked up`, url };
+    case 'payment_confirmed': return { title: 'tabkheen A confirmed your payment', body: `${dish} · your pickup code is in the order`, url };
+    case 'payment_confirmed_cook': return { title: `${who}’s payment is confirmed`, body: `${dish} · you can start cooking`, url };
+    case 'payment_rejected': return { title: 'We couldn’t find your payment', body: `${dish} · ${p.reason ?? 'check the reference and try again'}`, url };
+    case 'order_unpaid': return { title: 'An order was cancelled', body: `${dish} · no payment within 20 minutes`, url };
     case 'order_reminder': return { title: `${who} is still waiting`, body: `${dish} · answer or update the order`, url };
     case 'review_request': return { title: `How was your order from ${who}?`, body: 'Tap to leave a review', url };
     case 'payment_sent': return { title: `${who} sent the InstaPay payment`, body: `${dish} · confirm it arrived`, url };

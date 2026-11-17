@@ -68,6 +68,14 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: `${who} sent the InstaPay payment`, sub: `${dish} · confirm it arrived`, icon: 'payments' };
     case 'payment_received':
       return { title: `${who} confirmed your payment`, sub: dish, icon: 'payments' };
+    case 'payment_confirmed':
+      return { title: 'tabkheen A confirmed your payment', sub: `${dish} · your pickup code is in the order`, icon: 'payments' };
+    case 'payment_confirmed_cook':
+      return { title: `${who}’s payment is confirmed`, sub: `${dish} · you can start cooking`, icon: 'payments' };
+    case 'payment_rejected':
+      return { title: 'We couldn’t find your payment', sub: `${dish} · ${n.payload.reason ?? 'check the reference and try again'}`, icon: 'payments' };
+    case 'order_unpaid':
+      return { title: 'An order was cancelled', sub: `${dish} · no payment within 20 minutes, the plates went back`, icon: 'cancel' };
     case 'cooking_today':
       return { title: `${who} added to today’s menu`, sub: dish, icon: 'soup-kitchen' };
     case 'post_liked':

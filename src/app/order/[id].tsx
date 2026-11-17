@@ -11,7 +11,7 @@ import { colors, fonts } from '@/constants/theme';
 import { OrderProgress } from '@/components/order-progress';
 import { canCopy, copyText } from '@/lib/copy-text';
 import { fmtClock, fmtIn } from '@/lib/format';
-import { fetchCookInstapay, fetchOrder, type Order, type OrderStatus, setOrderStatus, setPayment, submitReview } from '@/lib/orders';
+import { confirmPickup, fetchCookInstapay, fetchOrder, fetchPaymentInfo, type Order, type OrderStatus, type PaymentInfo, reportProblem, setOrderStatus, setPayment, submitPayment, submitReview } from '@/lib/orders';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
@@ -29,6 +29,10 @@ export default function OrderScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [payInfo, setPayInfo] = useState<PaymentInfo | null>(null);
+  const [reference, setReference] = useState('');
+  const [code, setCode] = useState('');
+  const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     try {
@@ -48,9 +52,22 @@ export default function OrderScreen() {
   );
 
   const status = order?.status;
+  const throughApp = order?.pay_through_app === true;
+  const payment = order?.payment_status;
+  const iAmBuyer = !!order && session?.user.id === order.buyer_id;
   useEffect(() => {
-    if (status === 'accepted' || status === 'ready' || status === 'picked_up') fetchCookInstapay(id).then(setInstapay);
-  }, [id, status]);
+    if (!throughApp && (status === 'accepted' || status === 'ready' || status === 'picked_up')) fetchCookInstapay(id).then(setInstapay);
+  }, [id, status, throughApp]);
+  // Orders paid to tabkheen A: where to pay and, once paid, the pickup code (only the eater can read it).
+  useEffect(() => {
+    if (throughApp && iAmBuyer && (status === 'accepted' || status === 'ready' || status === 'picked_up')) fetchPaymentInfo(id).then(setPayInfo);
+  }, [id, status, payment, throughApp, iAmBuyer]);
+  // Keeps the "pay within" countdown moving.
+  useEffect(() => {
+    if (!throughApp || status !== 'accepted' || payment !== 'none') return;
+    const t = setInterval(() => setNow(Date.now()), 20_000);
+    return () => clearInterval(t);
+  }, [throughApp, status, payment]);
 
   if (order === undefined) {
     return (
@@ -97,13 +114,15 @@ export default function OrderScreen() {
   const move = (s: OrderStatus) => run(s, () => setOrderStatus(o.id, s));
 
   function confirmCancel() {
-    Alert.alert('Cancel this order?', o.status === 'accepted' ? `${cookFirst} may already be cooking. Cancel only if you can’t collect it.` : `${cookFirst} hasn’t confirmed, so nothing is owed.`, [
+    const paid = o.pay_through_app && o.payment_status === 'received';
+    Alert.alert('Cancel this order?', paid ? 'You already paid. tabkheen A will refund you.' : o.status === 'accepted' ? `${cookFirst} may already be cooking. Cancel only if you can’t collect it.` : `${cookFirst} hasn’t confirmed, so nothing is owed.`, [
       { text: 'Keep order', style: 'cancel' },
       { text: 'Cancel order', style: 'destructive', onPress: () => move('cancelled') },
     ]);
   }
 
-  const head = headline(o.status, isCook, { cook: cookFirst, buyer }, o.cancel_reason);
+  const minsLeft = o.pay_by ? Math.max(0, Math.ceil((Date.parse(o.pay_by) - now) / 60000)) : 20;
+  const head = (o.pay_through_app && paidHeadline(o, isCook, { cook: cookFirst, buyer }, minsLeft)) || headline(o.status, isCook, { cook: cookFirst, buyer }, o.cancel_reason);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -160,8 +179,53 @@ export default function OrderScreen() {
           </View>
         ) : null}
 
-        {/* InstaPay, person to person, once the cook has accepted (section 13). */}
-        {['accepted', 'ready', 'picked_up'].includes(o.status) ? (
+        {/* Orders paid to tabkheen A: pay, wait for confirmation, then the pickup code. */}
+        {o.pay_through_app && ['accepted', 'ready', 'picked_up'].includes(o.status) ? (
+          <View style={styles.card}>
+            <Text style={styles.label}>PAYMENT · INSTAPAY</Text>
+            {isCook ? (
+              <Text style={styles.body}>
+                {o.payment_status === 'received' ? 'tabkheen A confirmed the payment. You can cook this order.' : o.payment_status === 'sent' ? `${buyer} paid. tabkheen A is checking it. You’ll be told when you can start.` : `Waiting for ${buyer} to pay. Start cooking once the payment is confirmed.`}
+              </Text>
+            ) : o.payment_status === 'none' && o.status === 'accepted' ? (
+              <>
+                <Text style={styles.body}>{`Send EGP ${total} to tabkheen A’s InstaPay:`}</Text>
+                <Text selectable verbatim style={[styles.handle, { fontSize: 17, marginTop: 4 }]}>{payInfo?.instapay ?? '…'}</Text>
+                {payInfo?.instapay && canCopy() ? (
+                  <Pressable
+                    style={styles.copy}
+                    onPress={() => copyText(payInfo.instapay!).then((ok) => { if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); } })}
+                    accessibilityRole="button"
+                    accessibilityLabel="Copy the InstaPay address">
+                    <MaterialIcons name={copied ? 'check' : 'content-copy'} size={16} color={colors.navy} />
+                    <Text style={styles.copyText}>{copied ? 'Copied' : 'Copy InstaPay address'}</Text>
+                  </Pressable>
+                ) : null}
+                <Text style={[styles.muted, { marginTop: 8 }]}>
+                  {minsLeft > 0 ? `Pay within ${minsLeft} minute${minsLeft === 1 ? '' : 's'} or the order is cancelled. Then enter the reference number InstaPay gives you.` : 'Time is up. If you already paid, enter the reference now and tabkheen A will check it.'}
+                </Text>
+                <TextInput value={reference} onChangeText={setReference} maxLength={80} placeholder="InstaPay reference number" placeholderTextColor={colors.faint} autoCapitalize="characters" style={styles.refInput} />
+                <PrimaryButton label="I have paid" busy={busy === 'paid'} disabled={reference.trim().length < 3} onPress={() => run('paid', () => submitPayment(o.id, reference.trim()))} style={{ marginTop: 12 }} />
+              </>
+            ) : o.payment_status === 'sent' ? (
+              <Text style={styles.body}>{`tabkheen A is checking your payment${o.payment_reference ? ` (reference ${o.payment_reference})` : ''}. This usually takes a few minutes. You’ll be told when it’s confirmed.`}</Text>
+            ) : (
+              <>
+                <Text style={styles.body}>Payment confirmed. Thank you!</Text>
+                {payInfo?.pickup_code && o.status !== 'picked_up' ? (
+                  <View style={styles.codeBox}>
+                    <Text style={styles.label}>YOUR PICKUP CODE</Text>
+                    <Text style={styles.codeBig} accessibilityLabel={`Pickup code ${payInfo.pickup_code.split('').join(' ')}`}>{payInfo.pickup_code}</Text>
+                    <Text style={styles.muted}>{`Tell ${cookFirst} this code when you collect your order.`}</Text>
+                  </View>
+                ) : null}
+              </>
+            )}
+          </View>
+        ) : null}
+
+        {/* InstaPay, person to person, once the cook has accepted (section 13), for orders placed before payments moved to tabkheen A. */}
+        {!o.pay_through_app && ['accepted', 'ready', 'picked_up'].includes(o.status) ? (
           <View style={styles.card}>
             <Text style={styles.label}>PAYMENT · INSTAPAY</Text>
             {isCook ? (
@@ -213,8 +277,29 @@ export default function OrderScreen() {
               <SecondaryButton label="Decline" busy={busy === 'declined'} onPress={() => move('declined')} />
             </>
           ) : null}
-          {isCook && o.status === 'accepted' ? <PrimaryButton label="Mark as ready" busy={busy === 'ready'} onPress={() => move('ready')} /> : null}
-          {isCook && o.status === 'ready' ? <PrimaryButton label="Picked up" busy={busy === 'picked_up'} onPress={() => move('picked_up')} /> : null}
+          {isCook && o.status === 'accepted' ? <PrimaryButton label="Mark as ready" busy={busy === 'ready'} disabled={o.pay_through_app && o.payment_status !== 'received'} onPress={() => move('ready')} /> : null}
+          {isCook && o.status === 'ready' && !o.pay_through_app ? <PrimaryButton label="Picked up" busy={busy === 'picked_up'} onPress={() => move('picked_up')} /> : null}
+          {isCook && o.status === 'ready' && o.pay_through_app ? (
+            <View style={styles.card}>
+              <Text style={styles.label}>PICKUP CODE</Text>
+              <Text style={styles.body}>{`Ask ${buyer} for the 4-digit code in their app, then enter it here.`}</Text>
+              <TextInput value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" maxLength={4} placeholder="0000" placeholderTextColor={colors.faint} style={[styles.refInput, styles.codeInput]} />
+              <PrimaryButton
+                label="Confirm pickup"
+                busy={busy === 'picked_up'}
+                disabled={code.length !== 4}
+                style={{ marginTop: 12 }}
+                onPress={() =>
+                  run('picked_up', async () => {
+                    const r = await confirmPickup(o.id, code);
+                    if (r === 'wrong') throw new Error(`That code isn’t right. Check it with ${buyer}.`);
+                    if (r === 'locked') throw new Error('Too many wrong codes. Contact tabkheen A support and we’ll sort it out.');
+                    setCode('');
+                  })
+                }
+              />
+            </View>
+          ) : null}
           {!isCook && (o.status === 'pending' || o.status === 'accepted') ? <SecondaryButton label="Cancel order" busy={busy === 'cancelled'} onPress={confirmCancel} /> : null}
           {!isCook && (o.status === 'declined' || o.status === 'cancelled' || o.status === 'not_picked_up') ? <PrimaryButton label="See today’s menu" onPress={() => router.replace('/menu')} /> : null}
           <SecondaryButton
@@ -223,9 +308,80 @@ export default function OrderScreen() {
           />
         </View>
 
+        {!isCook && o.status === 'picked_up' && o.pay_through_app ? <ProblemBox order={o} now={now} onDone={load} /> : null}
+
         {!isCook && o.status === 'picked_up' ? (o.review.length ? <Text style={[styles.muted, styles.thanks]}>Thanks for your review!</Text> : <ReviewBox order={o} cook={cookFirst} onDone={load} />) : null}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** Headlines for orders paid to tabkheen A, where the payment step comes first. Null leaves the usual wording. */
+function paidHeadline(o: Order, isCook: boolean, n: { cook: string; buyer: string }, minsLeft: number): { title: string; sub?: string; icon: IconName; bg: string; fg: string } | null {
+  const wait = { icon: 'hourglass-top' as IconName, bg: colors.yellow, fg: colors.navy };
+  const good = { icon: 'check' as IconName, bg: colors.teal, fg: colors.navy };
+  const off = { icon: 'close' as IconName, bg: colors.navy, fg: colors.white };
+  if (o.status === 'accepted') {
+    if (o.payment_status === 'none') {
+      return isCook
+        ? { ...wait, title: `Waiting for ${n.buyer} to pay`, sub: `${n.buyer} has 20 minutes to pay. Start cooking once the payment is confirmed.` }
+        : { ...wait, title: 'Pay to confirm your order', sub: `${n.cook} accepted. Pay within ${minsLeft} minute${minsLeft === 1 ? '' : 's'} or the order is cancelled.` };
+    }
+    if (o.payment_status === 'sent') {
+      return isCook
+        ? { ...wait, title: 'Payment is being checked', sub: 'tabkheen A is checking the payment. You’ll be told when you can start.' }
+        : { ...wait, title: 'Checking your payment', sub: 'tabkheen A is confirming it. This usually takes a few minutes.' };
+    }
+    return isCook
+      ? { ...good, title: 'Payment confirmed', sub: `You can cook this order. Tap Mark as ready when it’s done, and ${n.buyer} is told right away.` }
+      : { ...good, title: 'Payment confirmed', sub: `${n.cook} is preparing your order. You’ll be told when it’s ready.` };
+  }
+  if (o.status === 'cancelled' && o.cancel_reason?.startsWith('No payment')) {
+    return isCook
+      ? { ...off, title: 'Cancelled: not paid', sub: `${n.buyer} didn’t pay in time. The plates went back on your menu.` }
+      : { ...off, title: 'Payment time ran out', sub: 'The order was cancelled and nothing was charged. Try another dish.' };
+  }
+  return null;
+}
+
+/** After pickup the eater has 12 hours to report a problem; the cook's payout for the order is held while staff look. */
+function ProblemBox({ order, now, onDone }: { order: Order; now: number; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pickedAt = Date.parse(order.picked_up_at ?? order.updated_at);
+  if (now - pickedAt > 12 * 3600_000) return null;
+  if (sent) return <Text style={[styles.muted, styles.thanks]}>Thanks. We’ll look into it and get back to you.</Text>;
+  async function send() {
+    setBusy(true);
+    setError(null);
+    try {
+      await reportProblem(order.id, text.trim());
+      setSent(true);
+      onDone();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setBusy(false);
+  }
+  return (
+    <View style={styles.card}>
+      {open ? (
+        <>
+          <Text style={styles.label}>WHAT WENT WRONG?</Text>
+          <TextInput value={text} onChangeText={setText} maxLength={500} multiline placeholder="Tell us what happened" placeholderTextColor={colors.faint} style={styles.reviewInput} />
+          {error ? <Text style={formStyles.error}>{error}</Text> : null}
+          <PrimaryButton label="Send report" busy={busy} disabled={text.trim().length < 3} onPress={send} style={{ marginTop: 12 }} />
+        </>
+      ) : (
+        <Pressable onPress={() => setOpen(true)} accessibilityRole="button" style={styles.spotRow}>
+          <MaterialIcons name="report-problem" size={20} color={colors.muted} />
+          <Text style={[styles.body, { flex: 1 }]}>Something wrong with your order? Report a problem (within 12 hours of pickup).</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -323,6 +479,10 @@ const styles = StyleSheet.create({
   copyText: { fontFamily: fonts.extraBold, fontSize: 13, color: colors.navy },
   handle: { fontFamily: fonts.extraBold, color: colors.ink },
   spotRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  refInput: { fontFamily: fonts.semiBold, fontSize: 15, color: colors.ink, borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, marginTop: 12 },
+  codeInput: { fontFamily: fonts.extraBold, fontSize: 28, letterSpacing: 8, textAlign: 'center' },
+  codeBox: { alignItems: 'center', backgroundColor: colors.lightBlue, borderRadius: 14, padding: 14, marginTop: 12, gap: 4 },
+  codeBig: { fontFamily: fonts.serif, fontSize: 44, lineHeight: 50, letterSpacing: 10, color: colors.ink },
   spotLink: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.teal },
   muted: { flex: 1, fontFamily: fonts.semiBold, fontSize: 12.5, color: colors.muted, lineHeight: 18 },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
