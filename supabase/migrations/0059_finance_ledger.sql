@@ -4,13 +4,15 @@
 --   cash_egp = change in the money in the founder's InstaPay account
 --   cook_egp = change in what the founder owes the cook (positive = owed to the cook)
 -- Cook balance = sum of cook_egp. Money held for cooks can never exceed the cash, and the difference is the founder's own money.
+-- InstaPay charges a fee on each transfer. The founder pays it as the app, so a payout or refund is recorded at its full amount
+-- (the cook or eater gets all of it) and the fee is a separate transfer_fee row: cash goes down, the cook's balance does not.
 -- This migration changes nothing in the app: it only adds the ledger, cases and the owner-only Finance tab functions.
 
 create table public.ledger_entries (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
   entry_type text not null check (entry_type in
-    ('payment_received', 'refund', 'cook_payout', 'platform_fee', 'packaging_sale', 'packaging_cost', 'adjustment', 'reversal')),
+    ('payment_received', 'refund', 'cook_payout', 'transfer_fee', 'platform_fee', 'packaging_sale', 'packaging_cost', 'adjustment', 'reversal')),
   cash_egp numeric(12, 2) not null,
   cook_egp numeric(12, 2) not null default 0,
   reservation_id uuid references public.reservations (id) on delete restrict,
@@ -19,11 +21,13 @@ create table public.ledger_entries (
   reference text check (char_length(reference) <= 80),
   note text check (char_length(note) <= 500),
   reverses_id bigint references public.ledger_entries (id) on delete restrict,
+  related_id bigint references public.ledger_entries (id) on delete restrict,  -- a transfer fee points at its payout or refund
   recorded_by uuid not null,
   constraint ledger_shape check (case entry_type
     when 'payment_received' then cash_egp > 0 and cook_egp = cash_egp and reservation_id is not null and cook_id is not null
     when 'refund' then cash_egp < 0 and cook_egp = cash_egp and reservation_id is not null and cook_id is not null
     when 'cook_payout' then cash_egp < 0 and cook_egp = cash_egp and cook_id is not null and reservation_id is null
+    when 'transfer_fee' then cash_egp < 0 and cook_egp = 0
     when 'platform_fee' then cash_egp = 0 and cook_egp < 0 and cook_id is not null
     when 'packaging_sale' then cash_egp >= 0 and cook_egp <= 0 and cash_egp - cook_egp > 0 and cook_id is not null
     when 'packaging_cost' then cash_egp < 0 and cook_egp = 0
@@ -34,6 +38,7 @@ create table public.ledger_entries (
 create index ledger_entries_cook_idx on public.ledger_entries (cook_id, created_at desc);
 create index ledger_entries_reservation_idx on public.ledger_entries (reservation_id);
 create index ledger_entries_reverses_idx on public.ledger_entries (reverses_id) where reverses_id is not null;
+create index ledger_entries_related_idx on public.ledger_entries (related_id) where related_id is not null;
 create index ledger_entries_day_idx on public.ledger_entries (created_at desc);
 
 alter table public.ledger_entries enable row level security;
@@ -129,7 +134,7 @@ begin
 end;
 $$;
 
-create function public.admin_ledger_record_refund(p_reservation_id uuid, p_amount numeric, p_reason text, p_reference text default null)
+create function public.admin_ledger_record_refund(p_reservation_id uuid, p_amount numeric, p_reason text, p_reference text default null, p_fee numeric default 0)
 returns bigint
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -137,11 +142,13 @@ declare
   v_r public.reservations;
   v_net numeric;
   v_amount numeric := round(coalesce(p_amount, 0), 2);
+  v_fee numeric := round(coalesce(p_fee, 0), 2);
   v_id bigint;
 begin
   perform pg_advisory_xact_lock(hashtext('ledger'));
   if char_length(trim(coalesce(p_reason, ''))) < 3 then raise exception 'a reason is required'; end if;
   if v_amount <= 0 then raise exception 'enter the amount to refund'; end if;
+  if v_fee < 0 or v_fee > v_amount then raise exception 'the transfer fee must be between 0 and the amount'; end if;
   select * into v_r from public.reservations where id = p_reservation_id;
   if v_r.id is null then raise exception 'order not found'; end if;
   select coalesce(sum(e.cash_egp), 0) into v_net from public.ledger_entries e
@@ -151,18 +158,23 @@ begin
   insert into public.ledger_entries (entry_type, cash_egp, cook_egp, reservation_id, cook_id, buyer_id, reference, note, recorded_by)
     values ('refund', -v_amount, -v_amount, v_r.id, v_r.cook_id, v_r.buyer_id, nullif(trim(p_reference), ''), trim(p_reason), v_actor)
     returning id into v_id;
+  if v_fee > 0 then
+    insert into public.ledger_entries (entry_type, cash_egp, cook_egp, reservation_id, cook_id, buyer_id, reference, note, related_id, recorded_by)
+      values ('transfer_fee', -v_fee, 0, v_r.id, v_r.cook_id, v_r.buyer_id, nullif(trim(p_reference), ''), 'InstaPay transfer fee on the refund', v_id, v_actor);
+  end if;
   perform public.log_admin_action('ledger_refund_recorded', 'order', v_r.id::text, p_reason,
-    jsonb_build_object('ledger_id', v_id, 'amount_egp', v_amount));
+    jsonb_build_object('ledger_id', v_id, 'amount_egp', v_amount, 'fee_egp', v_fee));
   return v_id;
 end;
 $$;
 
-create function public.admin_ledger_record_payout(p_cook_id uuid, p_amount numeric, p_reference text, p_note text default null)
+create function public.admin_ledger_record_payout(p_cook_id uuid, p_amount numeric, p_reference text, p_note text default null, p_fee numeric default 0)
 returns bigint
 language plpgsql security definer set search_path = '' as $$
 declare
   v_actor uuid := public.require_staff(array['owner']);
   v_amount numeric := round(coalesce(p_amount, 0), 2);
+  v_fee numeric := round(coalesce(p_fee, 0), 2);
   v_ref text := trim(coalesce(p_reference, ''));
   v_payable numeric;
   v_id bigint;
@@ -170,6 +182,7 @@ begin
   perform pg_advisory_xact_lock(hashtext('ledger'));
   if char_length(v_ref) < 3 then raise exception 'the InstaPay reference of the transfer is required'; end if;
   if v_amount <= 0 then raise exception 'enter the amount paid'; end if;
+  if v_fee < 0 or v_fee > v_amount then raise exception 'the transfer fee must be between 0 and the amount'; end if;
   if not exists (select 1 from public.profiles where id = p_cook_id) then raise exception 'cook not found'; end if;
   v_payable := public.ledger_cook_payable(p_cook_id);
   if v_amount > v_payable then raise exception 'only % EGP is payable to this cook now', v_payable; end if;
@@ -182,8 +195,12 @@ begin
   insert into public.ledger_entries (entry_type, cash_egp, cook_egp, cook_id, reference, note, recorded_by)
     values ('cook_payout', -v_amount, -v_amount, p_cook_id, v_ref, nullif(trim(p_note), ''), v_actor)
     returning id into v_id;
+  if v_fee > 0 then
+    insert into public.ledger_entries (entry_type, cash_egp, cook_egp, cook_id, reference, note, related_id, recorded_by)
+      values ('transfer_fee', -v_fee, 0, p_cook_id, v_ref, 'InstaPay transfer fee on the payout', v_id, v_actor);
+  end if;
   perform public.log_admin_action('ledger_payout_recorded', 'profile', p_cook_id::text, p_note,
-    jsonb_build_object('ledger_id', v_id, 'amount_egp', v_amount, 'reference', v_ref));
+    jsonb_build_object('ledger_id', v_id, 'amount_egp', v_amount, 'fee_egp', v_fee, 'reference', v_ref));
   return v_id;
 end;
 $$;
@@ -227,6 +244,12 @@ begin
   insert into public.ledger_entries (entry_type, cash_egp, cook_egp, reservation_id, cook_id, buyer_id, reference, note, reverses_id, recorded_by)
     values ('reversal', -v_e.cash_egp, -v_e.cook_egp, v_e.reservation_id, v_e.cook_id, v_e.buyer_id, v_e.reference, trim(p_reason), v_e.id, v_actor)
     returning id into v_id;
+  -- a payout or refund takes its transfer fee with it
+  insert into public.ledger_entries (entry_type, cash_egp, cook_egp, reservation_id, cook_id, buyer_id, reference, note, reverses_id, recorded_by)
+    select 'reversal', -f.cash_egp, -f.cook_egp, f.reservation_id, f.cook_id, f.buyer_id, f.reference, trim(p_reason), f.id, v_actor
+      from public.ledger_entries f
+     where f.related_id = v_e.id and f.entry_type = 'transfer_fee'
+       and not exists (select 1 from public.ledger_entries x where x.reverses_id = f.id);
   perform public.log_admin_action('ledger_reversed', 'ledger', v_e.id::text, p_reason, jsonb_build_object('reversal_id', v_id));
   return v_id;
 end;
@@ -282,7 +305,7 @@ $$;
 -- One row: the position today, and money in and out over the last p_days days (Cairo time).
 create function public.admin_finance_summary(p_days int default 30)
 returns table (cash_balance numeric, owed_to_cooks numeric, payable_now numeric, held_for_cooks numeric, own_money numeric,
-               money_in numeric, money_out numeric, entries int, open_cases int)
+               money_in numeric, money_out numeric, fees_paid numeric, entries int, open_cases int)
 language plpgsql stable security definer set search_path = '' as $$
 declare
   v_days int := least(greatest(coalesce(p_days, 30), 1), 365);
@@ -301,6 +324,9 @@ begin
            (select coalesce(sum(e.cash_egp), 0) - coalesce(sum(e.cook_egp), 0) from public.ledger_entries e),
            (select coalesce(sum(e.cash_egp) filter (where e.cash_egp > 0), 0) from public.ledger_entries e where e.created_at >= v_from),
            (select coalesce(-sum(e.cash_egp) filter (where e.cash_egp < 0), 0) from public.ledger_entries e where e.created_at >= v_from),
+           (select coalesce(-sum(e.cash_egp), 0) from public.ledger_entries e
+              left join public.ledger_entries o on o.id = e.reverses_id
+             where e.created_at >= v_from and (e.entry_type = 'transfer_fee' or o.entry_type = 'transfer_fee')),
            (select count(*)::int from public.ledger_entries e where e.created_at >= v_from),
            (select count(*)::int from public.payment_cases c where c.status = 'open')
       from totals t;
@@ -415,15 +441,15 @@ end;
 $$;
 
 revoke execute on function
-  public.admin_ledger_record_payment(uuid, text, numeric, text), public.admin_ledger_record_refund(uuid, numeric, text, text),
-  public.admin_ledger_record_payout(uuid, numeric, text, text), public.admin_ledger_adjust(numeric, numeric, uuid, text),
+  public.admin_ledger_record_payment(uuid, text, numeric, text), public.admin_ledger_record_refund(uuid, numeric, text, text, numeric),
+  public.admin_ledger_record_payout(uuid, numeric, text, text, numeric), public.admin_ledger_adjust(numeric, numeric, uuid, text),
   public.admin_ledger_reverse(bigint, text), public.admin_ledger_list(int, text, uuid), public.admin_cook_balances(),
   public.admin_finance_summary(int), public.admin_finance_daily(int), public.admin_case_open(uuid, text),
   public.admin_case_resolve(uuid, text), public.admin_cases_list(text), public.admin_export_ledger()
   from public, anon;
 grant execute on function
-  public.admin_ledger_record_payment(uuid, text, numeric, text), public.admin_ledger_record_refund(uuid, numeric, text, text),
-  public.admin_ledger_record_payout(uuid, numeric, text, text), public.admin_ledger_adjust(numeric, numeric, uuid, text),
+  public.admin_ledger_record_payment(uuid, text, numeric, text), public.admin_ledger_record_refund(uuid, numeric, text, text, numeric),
+  public.admin_ledger_record_payout(uuid, numeric, text, text, numeric), public.admin_ledger_adjust(numeric, numeric, uuid, text),
   public.admin_ledger_reverse(bigint, text), public.admin_ledger_list(int, text, uuid), public.admin_cook_balances(),
   public.admin_finance_summary(int), public.admin_finance_daily(int), public.admin_case_open(uuid, text),
   public.admin_case_resolve(uuid, text), public.admin_cases_list(text), public.admin_export_ledger()
