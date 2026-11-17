@@ -11,7 +11,7 @@ import { colors, fonts } from '@/constants/theme';
 import { OrderProgress } from '@/components/order-progress';
 import { canCopy, copyText } from '@/lib/copy-text';
 import { fmtClock, fmtIn } from '@/lib/format';
-import { confirmPickup, fetchCookInstapay, fetchOrder, fetchPaymentInfo, type Order, type OrderStatus, type PaymentInfo, reportProblem, setOrderStatus, setPayment, submitPayment, submitReview } from '@/lib/orders';
+import { confirmPickup, fetchCookInstapay, fetchOrder, fetchPaymentInfo, NO_SHOW_HOURS, type Order, type OrderStatus, type PaymentInfo, reportProblem, setOrderStatus, setPayment, submitPayment, submitReview } from '@/lib/orders';
 import { personName } from '@/lib/posts';
 import { useSession } from '@/lib/session';
 
@@ -121,8 +121,10 @@ export default function OrderScreen() {
     ]);
   }
 
+  // Shown once, before paying: the clock time is computed from the pickup time (DYNAMIC-DATA).
+  const noShowRule = o.pickup_at ? `Collect it by ${fmtClock(Date.parse(o.pickup_at) + NO_SHOW_HOURS * 3600_000)} or the order closes with no refund.` : null;
   const minsLeft = o.pay_by ? Math.max(0, Math.ceil((Date.parse(o.pay_by) - now) / 60000)) : 20;
-  const head = (o.pay_through_app && paidHeadline(o, isCook, { cook: cookFirst, buyer }, minsLeft)) || headline(o.status, isCook, { cook: cookFirst, buyer, by: o.answer_by ? fmtClock(Date.parse(o.answer_by)) : '' }, o.cancel_reason);
+  const head = (o.pay_through_app && paidHeadline(o, isCook, { cook: cookFirst, buyer }, minsLeft)) || headline(o.status, isCook, { cook: cookFirst, buyer, by: o.answer_by ? fmtClock(Date.parse(o.answer_by)) : '', paid: o.pay_through_app && o.payment_status === 'received' }, o.cancel_reason);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -204,6 +206,7 @@ export default function OrderScreen() {
                 <Text style={[styles.muted, { marginTop: 8 }]}>
                   {minsLeft > 0 ? `Pay within ${minsLeft} minute${minsLeft === 1 ? '' : 's'} or the order is cancelled. Then enter the reference number InstaPay gives you.` : 'Time is up. If you already paid, enter the reference now and tabkheen A will check it.'}
                 </Text>
+                {noShowRule ? <Text style={[styles.muted, { marginTop: 8 }]}>{noShowRule}</Text> : null}
                 <TextInput value={reference} onChangeText={setReference} maxLength={80} placeholder="InstaPay reference number" placeholderTextColor={colors.faint} autoCapitalize="characters" style={styles.refInput} />
                 <PrimaryButton label="I have paid" busy={busy === 'paid'} disabled={reference.trim().length < 3} onPress={() => run('paid', () => submitPayment(o.id, reference.trim()))} style={{ marginTop: 12 }} />
               </>
@@ -385,7 +388,7 @@ function ProblemBox({ order, now, onDone }: { order: Order; now: number; onDone:
   );
 }
 
-function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string; by?: string }, reason: string | null = null): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
+function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string; by?: string; paid?: boolean }, reason: string | null = null): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
   const wait = { icon: 'hourglass-top' as IconName, bg: colors.yellow, fg: colors.navy };
   const good = { icon: 'check' as IconName, bg: colors.teal, fg: colors.navy };
   const ready = { icon: 'restaurant' as IconName, bg: colors.teal, fg: colors.navy };
@@ -397,7 +400,7 @@ function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer
       case 'ready': return { ...ready, title: 'Ready for pickup', sub: `Tap Picked up when ${n.buyer} collects it.` };
       case 'picked_up': return { ...good, title: 'Picked up', sub: 'Order complete.' };
       case 'declined': return { ...off, title: 'You declined this order', sub: 'The plates went back on your menu.' };
-      case 'not_picked_up': return { ...off, title: 'Not picked up', sub: `${n.buyer} didn’t collect it within 24 hours, so the order was closed.` };
+      case 'not_picked_up': return { ...off, title: 'Not picked up', sub: `${n.buyer} didn’t collect it within ${NO_SHOW_HOURS} hours of the pickup time, so the order was closed.${n.paid ? ' You keep the payment.' : ''}` };
       case 'cancelled': if (reason?.startsWith('No answer')) return { ...off, title: 'This order timed out', sub: 'You didn’t answer in time. The plates went back on your menu.' };
         return { ...off, title: `${n.buyer} cancelled`, sub: 'The plates went back on your menu.' };
     }
@@ -408,7 +411,7 @@ function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer
     case 'ready': return { ...ready, title: 'Your order is ready', sub: `${n.cook} just finished cooking. Hot and ready for your family’s table.` };
     case 'picked_up': return { ...good, title: 'Enjoy your meal' };
     case 'declined': return { ...off, title: `${n.cook} couldn’t take this order`, sub: 'Nothing is owed. Try another dish from today’s menu.' };
-    case 'not_picked_up': return { ...off, title: 'Order closed', sub: 'It wasn’t picked up within 24 hours of the pickup time.' };
+    case 'not_picked_up': return { ...off, title: 'Order closed', sub: `It wasn’t picked up within ${NO_SHOW_HOURS} hours of the pickup time.${n.paid ? ' The food was cooked for you, so the payment is not refunded.' : ''}` };
     case 'cancelled': if (reason?.startsWith('No answer')) return { ...off, title: `${n.cook} didn’t answer in time`, sub: 'The order was cancelled and nothing is owed. Try another dish.' };
       return { ...off, title: 'You cancelled this order', sub: 'Nothing is owed.' };
   }

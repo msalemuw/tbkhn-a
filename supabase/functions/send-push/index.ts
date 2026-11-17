@@ -32,7 +32,12 @@ function wording(n: Row, who: string): { title: string; body?: string; url: stri
     case 'order_ready': return { title: `Your order from ${who} is ready`, body: `${dish} · ready for pickup`, url };
     case 'order_cancelled': return { title: `${who} cancelled their order`, body: dish, url };
     case 'order_expired': return { title: 'An order timed out', body: `${dish} · no answer from the cook in time`, url };
-    case 'order_not_picked_up': return { title: 'An order was closed', body: `${dish} · not picked up`, url };
+    case 'order_not_picked_up':
+      // A paid no-show: the cook keeps the money, the eater is not refunded.
+      if (p.paid) return p.role === 'cook'
+        ? { title: 'An order was closed', body: `${dish} · not collected, you keep the payment`, url }
+        : { title: 'Your order was closed', body: `${dish} · not collected, the payment is not refunded`, url };
+      return { title: 'An order was closed', body: `${dish} · not picked up`, url };
     case 'payment_confirmed': return { title: 'tabkheen A confirmed your payment', body: `${dish} · your pickup code is in the order`, url };
     case 'payment_confirmed_cook': return { title: `${who}’s payment is confirmed`, body: `${dish} · you can start cooking`, url };
     case 'payment_rejected': return { title: 'We couldn’t find your payment', body: `${dish} · ${p.reason ?? 'check the reference and try again'}`, url };

@@ -10,6 +10,7 @@
 | Cook "Ready at 1:00 PM", pickup time, order summary | `readyAt` / `pickupAt` on the cooking-today post or order (cook sets it) | Local time, 12-hour, `h:mm AM/PM`; "Ready now" when `readyAt <= now` |
 | Phone status-bar clock (mock only) | device clock | `h:mm` |
 | Request "answer by 3:45 PM" | `answer_by` on the order (set by the database when the request is sent) | Local time, 12-hour; copy never states the number of minutes |
+| "Collect it by 10:30 AM or the order closes with no refund" | `pickup_at` + `NO_SHOW_HOURS` (src/lib/orders.ts, same 5 hours as the database check) | Local time, 12-hour; the clock time is computed per order |
 | Story expiry | plain story: `createdAt + 24 h` · "what's cooking today" story: end of the local day (midnight) | Never hard-code "midnight" or "24 hours" in copy where the type is known; derive from post type |
 
 Rules:

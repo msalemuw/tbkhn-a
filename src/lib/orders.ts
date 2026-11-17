@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabase';
 // InstaPay and confirmed by staff; older orders are paid person to person. Every change goes through the database functions,
 // which enforce who may do what and when.
 
+/** An order nobody collects closes this many hours after its pickup time; a paid no-show is not refunded (database: close_stale_orders). */
+export const NO_SHOW_HOURS = 5;
+
 export type OrderStatus = 'pending' | 'accepted' | 'declined' | 'ready' | 'picked_up' | 'cancelled' | 'not_picked_up';
 export type PaymentStatus = 'none' | 'sent' | 'received';
 
