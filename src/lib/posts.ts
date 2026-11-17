@@ -132,6 +132,20 @@ export async function fetchMyPickupPoints(userId: string): Promise<PickupPoint[]
   return data ?? [];
 }
 
+/** The pickup point of this cook's most recent Today's menu dish, so the next dish starts at the same spot. */
+export async function fetchLastMenuPickupPointId(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('pickup_point_id')
+    .eq('author_id', userId)
+    .eq('kind', 'cooking_today')
+    .not('pickup_point_id', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  return data?.[0]?.pickup_point_id ?? null;
+}
+
 export async function addPickupPoint(userId: string, label: string, lat: number, lng: number): Promise<PickupPoint> {
   const { data, error } = await supabase
     .from('pickup_points')

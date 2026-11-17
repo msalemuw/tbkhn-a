@@ -12,6 +12,7 @@ import { colors, fonts } from '@/constants/theme';
 import { fmtClock } from '@/lib/format';
 import {
   CUISINES,
+  fetchLastMenuPickupPointId,
   fetchMyCommunities,
   fetchMyPickupPoints,
   INGREDIENTS,
@@ -59,14 +60,16 @@ export default function ComposeToday() {
     });
   }, [uid]);
 
-  // Saved pickup points, by name. Nothing is preselected: the map opens at the member's Home location, and coming back selects the spot just saved.
+  // Saved pickup points, by name. The spot used on the cook's last menu dish is preselected (or their only saved spot), so a repeat dish needs no map;
+  // tapping it opens the map to change it. Coming back from the map selects the spot just saved.
   useFocusEffect(
     useCallback(() => {
       if (!uid) return;
-      fetchMyPickupPoints(uid).then((p) => {
+      Promise.all([fetchMyPickupPoints(uid), fetchLastMenuPickupPointId(uid).catch(() => null)]).then(([p, last]) => {
         setPoints(p);
         const fresh = takeNewPickupPoint();
-        setPointId((cur) => fresh ?? (cur && p.some((x) => x.id === cur) ? cur : null));
+        const usual = last && p.some((x) => x.id === last) ? last : p.length === 1 ? p[0].id : null;
+        setPointId((cur) => fresh ?? (cur && p.some((x) => x.id === cur) ? cur : usual));
       });
     }, [uid]),
   );
