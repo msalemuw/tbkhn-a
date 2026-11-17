@@ -635,24 +635,24 @@
         (owner ? '<div class="row" style="margin-top:8px"><button class="btn" id="ctlMsgSave">Save message</button></div>' : '') + '</div></div>' +
         '<div class="card"><b>Minimum app version</b><div class="muted">Anyone on an older version sees “please update” instead of the app. Leave empty to allow every version. The version is the one in Profile > Settings, such as 1.0.2.</div>' +
         '<div class="row" style="margin-top:8px"><input type="text" id="ctlVer" placeholder="e.g. 1.0.2" ' + (owner ? '' : 'disabled') + '>' + (owner ? '<button class="btn strong" id="ctlVerSave">Save</button>' : '') + '</div></div>' +
-        '<div class="err" id="ctlErr" hidden></div>';
+        '<div class="err" id="ctlErr" hidden></div><div class="ok" id="ctlOk" hidden></div>';
       $('ctlMenuMsg').value = ctl.menu_message || ''; $('ctlMsg').value = ctl.maintenance_message || ''; $('ctlVer').value = ctl.min_app_version || ''; $('ctlPayAddr').value = ctl.app_instapay || '';
     }
     function load() { return rpc('admin_get_controls').then(function (rows) { ctl = {}; rows.forEach(function (r) { ctl[r.key] = r.value; }); draw(); }); }
-    function set(k, val) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
+    function set(k, val, okText) { return rpc('admin_set_control', { p_key: k, p_value: val }).then(load).then(function () { if (okText) { var o = $('ctlOk'); o.textContent = okText; o.hidden = false; setTimeout(function () { o.hidden = true; }, 4000); } }).catch(function (e) { showErr($('ctlErr'), msg(e)); }); }
     v.onclick = function (e) {
       var p = e.target.closest('[data-pause]'), m = e.target.closest('[data-maint]'), mn = e.target.closest('[data-menu]');
       if (mn) { if (on('menu_enabled') && !confirm('Turn the Menu tab off for everyone? Members will see the coming-soon message, cooks cannot post “Today’s menu” dishes, dishes that are open now end, and nobody can place new orders. Orders already placed continue. Posts, stories and rankings keep working.')) return; set('menu_enabled', !on('menu_enabled')); }
-      if (e.target.id === 'ctlMenuMsgSave') set('menu_message', $('ctlMenuMsg').value.trim());
-      if (e.target.id === 'ctlPayAddrSave') set('app_instapay', $('ctlPayAddr').value.trim());
+      if (e.target.id === 'ctlMenuMsgSave') set('menu_message', $('ctlMenuMsg').value.trim(), 'Saved.');
+      if (e.target.id === 'ctlPayAddrSave') set('app_instapay', $('ctlPayAddr').value.trim(), 'Saved. tabkheen A’s InstaPay address is now ' + ($('ctlPayAddr').value.trim() || '(empty)') + '.');
       if (e.target.closest('[data-pay]')) {
         if (ctl.pay_through_app === true) { if (confirm('Turn off payments through tabkheen A? New orders go back to person-to-person InstaPay. Orders already placed this way continue.')) set('pay_through_app', false); }
         else if (confirm('Turn on payments through tabkheen A? New orders are paid to your InstaPay and you confirm each one in Finance. Make sure the address above is exactly right.')) set('pay_through_app', true);
       }
       if (p) { var k = p.getAttribute('data-pause'); if (on(k) && !confirm('Pause this for everyone?')) return; set(k, !on(k)); }
       if (m) { if (ctl.maintenance === true) set('maintenance', false); else if (confirm('Turn maintenance mode on? Nobody can use the app until you turn it off.')) set('maintenance', true); }
-      if (e.target.id === 'ctlMsgSave') set('maintenance_message', $('ctlMsg').value.trim());
-      if (e.target.id === 'ctlVerSave') set('min_app_version', $('ctlVer').value.trim());
+      if (e.target.id === 'ctlMsgSave') set('maintenance_message', $('ctlMsg').value.trim(), 'Saved.');
+      if (e.target.id === 'ctlVerSave') set('min_app_version', $('ctlVer').value.trim(), 'Saved.');
     };
     return load();
   }
