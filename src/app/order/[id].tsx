@@ -122,7 +122,7 @@ export default function OrderScreen() {
   }
 
   const minsLeft = o.pay_by ? Math.max(0, Math.ceil((Date.parse(o.pay_by) - now) / 60000)) : 20;
-  const head = (o.pay_through_app && paidHeadline(o, isCook, { cook: cookFirst, buyer }, minsLeft)) || headline(o.status, isCook, { cook: cookFirst, buyer }, o.cancel_reason);
+  const head = (o.pay_through_app && paidHeadline(o, isCook, { cook: cookFirst, buyer }, minsLeft)) || headline(o.status, isCook, { cook: cookFirst, buyer, by: o.answer_by ? fmtClock(Date.parse(o.answer_by)) : '' }, o.cancel_reason);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -385,25 +385,25 @@ function ProblemBox({ order, now, onDone }: { order: Order; now: number; onDone:
   );
 }
 
-function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string }, reason: string | null = null): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
+function headline(status: OrderStatus, isCook: boolean, n: { cook: string; buyer: string; by?: string }, reason: string | null = null): { title: string; sub?: string; icon: IconName; bg: string; fg: string } {
   const wait = { icon: 'hourglass-top' as IconName, bg: colors.yellow, fg: colors.navy };
   const good = { icon: 'check' as IconName, bg: colors.teal, fg: colors.navy };
   const ready = { icon: 'restaurant' as IconName, bg: colors.teal, fg: colors.navy };
   const off = { icon: 'close' as IconName, bg: colors.navy, fg: colors.white };
   if (isCook) {
     switch (status) {
-      case 'pending': return { ...wait, title: `New order from ${n.buyer}`, sub: 'Accept it if you can cook it in time. They can still cancel until you mark it ready. With no answer in 24 hours it cancels itself.' };
+      case 'pending': return { ...wait, title: `New order from ${n.buyer}`, sub: `Accept it if you can cook it in time. They can still cancel until you mark it ready. With no answer by ${n.by || 'the deadline'} it cancels itself.` };
       case 'accepted': return { ...good, title: 'You accepted this order', sub: `Tap Mark as ready when it’s done, and ${n.buyer} is told right away.` };
       case 'ready': return { ...ready, title: 'Ready for pickup', sub: `Tap Picked up when ${n.buyer} collects it.` };
       case 'picked_up': return { ...good, title: 'Picked up', sub: 'Order complete.' };
       case 'declined': return { ...off, title: 'You declined this order', sub: 'The plates went back on your menu.' };
       case 'not_picked_up': return { ...off, title: 'Not picked up', sub: `${n.buyer} didn’t collect it within 24 hours, so the order was closed.` };
-      case 'cancelled': if (reason?.startsWith('No answer')) return { ...off, title: 'This order timed out', sub: 'You didn’t answer within 24 hours. The plates went back on your menu.' };
+      case 'cancelled': if (reason?.startsWith('No answer')) return { ...off, title: 'This order timed out', sub: 'You didn’t answer in time. The plates went back on your menu.' };
         return { ...off, title: `${n.buyer} cancelled`, sub: 'The plates went back on your menu.' };
     }
   }
   switch (status) {
-    case 'pending': return { ...wait, title: `Waiting for ${n.cook} to confirm`, sub: `You can cancel for free until ${n.cook} confirms. If there’s no answer in 24 hours it cancels itself.` };
+    case 'pending': return { ...wait, title: `Waiting for ${n.cook} to confirm`, sub: `You can cancel for free until ${n.cook} confirms. If there’s no answer by ${n.by || 'the deadline'} it cancels itself.` };
     case 'accepted': return { ...good, title: `Order confirmed by ${n.cook}`, sub: 'Preparing. You’ll be told when it’s ready.' };
     case 'ready': return { ...ready, title: 'Your order is ready', sub: `${n.cook} just finished cooking. Hot and ready for your family’s table.` };
     case 'picked_up': return { ...good, title: 'Enjoy your meal' };

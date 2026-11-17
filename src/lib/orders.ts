@@ -21,6 +21,8 @@ export type Order = {
   pay_through_app: boolean;
   /** The eater must pay before this time or the order cancels itself (20 minutes after the cook accepts). */
   pay_by: string | null;
+  /** The cook must accept or decline before this time or the request cancels itself (45 minutes after it was sent). */
+  answer_by: string | null;
   payment_reference: string | null;
   picked_up_at: string | null;
   pickup_at: string | null;
