@@ -85,3 +85,30 @@ export async function registerForPush(): Promise<void> {
     // Alerts are a bonus; never block the app.
   }
 }
+
+export type AlertHealth = 'ok' | 'off' | 'silent' | 'unknown';
+
+/** Can this phone show and sound alerts from the app? 'off' = notifications refused, 'silent' = shown without sound. */
+export async function checkAlerts(): Promise<AlertHealth> {
+  const N = load();
+  if (!N || !Device.isDevice) return 'unknown';
+  try {
+    const p = await N.getPermissionsAsync();
+    if (p.status !== 'granted') return 'off';
+    if (Platform.OS === 'ios' && p.ios && p.ios.allowsSound === false) return 'silent';
+    return 'ok';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/** The number on the app icon (waiting requests). Ignored on phones whose build has no alerts. */
+export async function setIconBadge(n: number): Promise<void> {
+  const N = load();
+  if (!N) return;
+  try {
+    await N.setBadgeCountAsync(Math.max(0, n));
+  } catch {
+    // The badge is a bonus; never block the app.
+  }
+}

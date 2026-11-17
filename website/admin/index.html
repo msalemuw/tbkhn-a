@@ -1442,7 +1442,17 @@
     var state = null, items = [];
     v.innerHTML = '<div class="row"><h2 class="grow">Orders</h2>' + (role === 'owner' ? '<button class="btn" id="exportOrders">Download all orders (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="oq" placeholder="Buyer, cook, dish or order code" autocomplete="off"><button class="btn strong" id="ogo">Search</button></div>' +
-      '<div style="margin-top:10px" id="ostate"></div></div><div id="olist"></div>';
+      '<div style="margin-top:10px" id="ostate"></div></div><div id="owait"></div><div id="olist"></div>';
+    // Requests the cook has not answered for 5+ minutes: call the cook (they were alerted again at 2, 5 and 10 minutes).
+    function loadWaiting() {
+      return rpc('admin_waiting_requests').then(function (w) {
+        $('owait').innerHTML = w.length ? '<div class="card" style="border:2px solid var(--yellow)"><h3 style="margin-top:0">Waiting for a cook: ' + w.length + '</h3>' + w.map(function (r) {
+          return '<div class="row" style="padding:6px 0;border-top:1px solid var(--line)"><div class="grow" dir="auto"><b>' + esc(who(r.cook_username, r.cook_name)) + '</b> has not answered <b>' + esc(who(r.buyer_username, r.buyer_name)) + '</b> for ' + r.minutes + ' min' +
+            '<div class="muted">' + esc(r.dish_name || 'Dish') + ' × ' + r.plates + ' · alerted ' + r.nudges + ' of 3 times' + (r.cook_has_phone ? '' : ' · <b>no phone registered for alerts</b>') + '</div></div></div>';
+        }).join('') + '</div>' : '';
+      }).catch(function () { $('owait').innerHTML = ''; });
+    }
+    loadWaiting();
     function chips() {
       $('ostate').innerHTML = [['All', null], ['Open', 'open'], ['Stuck 24h+', 'stuck'], ['Picked up', 'done'], ['Cancelled', 'cancelled']].map(function (s) {
         return '<button class="chip" data-state="' + (s[1] || '') + '" aria-pressed="' + (state === s[1]) + '">' + s[0] + '</button>'; }).join('');

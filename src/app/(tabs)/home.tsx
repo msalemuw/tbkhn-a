@@ -6,6 +6,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AlertHealthNotice, WaitingRequestsBar } from '@/components/request-alerts';
+
 import { Text } from '@/components/text';
 import { Alert } from '@/lib/alert';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
@@ -222,6 +224,8 @@ export default function Home() {
           </View>
         </View>
       </SafeAreaView>
+      <WaitingRequestsBar />
+      <AlertHealthNotice />
       <FlatList
         ref={listRef}
         data={shown}

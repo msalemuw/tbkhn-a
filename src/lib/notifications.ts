@@ -19,7 +19,21 @@ type IconName = ComponentProps<typeof MaterialIcons>['name'];
 export async function fetchNotifications(): Promise<Notification[]> {
   const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(60);
   if (error) throw error;
-  return (data ?? []) as Notification[];
+  const rows = ((data ?? []) as Notification[]).filter((n) => n.kind !== 'test_alert');
+  // Repeat alerts of an unanswered request: one row per request, and none once it was answered.
+  const repeats = rows.filter((n) => n.kind === 'order_reminder' && n.payload.status === 'pending' && n.payload.reservation_id);
+  if (!repeats.length) return rows;
+  const ids = [...new Set(repeats.map((n) => n.payload.reservation_id as string))];
+  const { data: open } = await supabase.from('reservations').select('id').in('id', ids).eq('status', 'pending');
+  const stillWaiting = new Set((open ?? []).map((r: { id: string }) => r.id));
+  const seen = new Set<string>();
+  return rows.filter((n) => {
+    if (!repeats.includes(n)) return true;
+    const id = n.payload.reservation_id as string;
+    if (!stillWaiting.has(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
 export async function unreadNotificationCount(): Promise<number> {
@@ -60,7 +74,10 @@ export function describe(n: Notification, who: string): { title: string; sub?: s
       return { title: 'An order timed out', sub: `${dish} · no answer in 24 hours, the plates went back`, icon: 'cancel' };
     case 'order_not_picked_up':
       return { title: 'An order was closed', sub: `${dish} · not picked up`, icon: 'cancel' };
+    case 'test_alert':
+      return { title: 'Test alert from tabkheen A', sub: 'If you hear the long ring, new requests will reach you', icon: 'notifications-active' };
     case 'order_reminder':
+      if (n.payload.status === 'pending') return { title: `${who} is still waiting`, sub: `${dish} · accept or decline it now`, icon: 'schedule' };
       return { title: `${who} is still waiting`, sub: `${dish} · answer or update the order`, icon: 'schedule' };
     case 'review_request':
       return { title: `How was your order from ${who}?`, sub: 'Tap to leave a review', icon: 'star' };

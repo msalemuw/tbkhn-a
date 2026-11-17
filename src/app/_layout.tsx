@@ -12,6 +12,7 @@ import { AppGate } from '@/components/app-gate';
 import { LiveAlerts } from '@/components/live-alerts';
 import { PositionReporter } from '@/components/position-reporter';
 import { PushSetup } from '@/components/push-setup';
+import { WaitingBadgeSync } from '@/components/request-alerts';
 import { colors } from '@/constants/theme';
 import { applyUpdateNow } from '@/lib/auto-update';
 import { LocationProvider } from '@/lib/location';
@@ -108,6 +109,7 @@ export default function RootLayout() {
       </Stack>
       <LiveAlerts />
       <PushSetup />
+      <WaitingBadgeSync />
       <PositionReporter />
       </LocationProvider>
       </AppGate>
