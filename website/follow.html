@@ -32,8 +32,15 @@
     document.getElementById('go').href = target;
     var q = new URLSearchParams(location.search), tags = {};
     ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'placement'].forEach(function (k) { if (q.get(k)) tags[k] = q.get(k); });
-    var done = false;
-    function go() { if (!done) { done = true; location.replace(target); } }
+    var done = false, mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // On a phone, open the Instagram app straight on the profile. If the app did not take over (page still showing), open the website.
+    function go() {
+      if (done) return;
+      done = true;
+      if (!mobile) return location.replace(target);
+      location.href = 'instagram://user?username=tabkheen.a';
+      setTimeout(function () { if (document.visibilityState === 'visible') location.replace(target); }, 1600);
+    }
     setTimeout(go, 1200);
     if (!CFG.supabaseUrl) return go();
     try {
