@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -70,7 +70,7 @@ export default function Settings() {
         <Text style={styles.title}>{t('Settings')}</Text>
       </View>
       <AlertHealthNotice />
-      <View style={styles.body}>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Row icon="receipt-long" label={t('My orders')} onPress={() => router.push('/orders')} />
         <Row icon="edit" label={t('Edit profile')} onPress={() => router.push('/edit-profile')} />
         <Row icon="translate" label={lang === 'ar' ? 'English' : 'العربية'} onPress={() => setLanguage(lang === 'ar' ? 'en' : 'ar')} />
@@ -92,7 +92,7 @@ export default function Settings() {
         <Pressable onPress={confirmDelete} disabled={deleting} style={styles.delete} accessibilityRole="button" accessibilityLabel={t('Delete my account')}>
           <Text style={styles.deleteText}>{deleting ? t('Deleting…') : t('Delete my account')}</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -111,10 +111,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 22, paddingTop: 16 },
   title: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
-  body: { padding: 22 },
+  body: { padding: 22, paddingBottom: 48 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  delete: { alignItems: 'center', paddingVertical: 18, marginTop: 6 },
-  deleteText: { fontFamily: fonts.bold, fontSize: 14, color: colors.muted, textDecorationLine: 'underline' },
+  delete: { alignItems: 'center', paddingVertical: 14, marginTop: 14, borderWidth: 1.5, borderColor: colors.ink, borderRadius: 14 },
+  deleteText: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
   insta: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted, marginVertical: 18 },
 });
