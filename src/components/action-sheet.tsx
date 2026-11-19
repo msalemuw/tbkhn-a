@@ -8,15 +8,15 @@ import { isRTL } from '@/lib/i18n';
 
 export type SheetAction = { label: string; destructive?: boolean; onPress: () => void };
 
-/** A bottom sheet of actions (View profile, Report, Block…). Alert.alert can't be used: Android shows at most three buttons. */
-export function ActionSheet({ title, actions, onClose }: { title: string | null; actions: SheetAction[]; onClose: () => void }) {
+/** A bottom sheet of actions (View profile, Report, Block…). `title` opens the sheet (null = closed); it is shown only when `showTitle` is set (a question like "Why are you reporting this?"), not for a person's name, which is already on screen. Alert.alert can't be used: Android shows at most three buttons. */
+export function ActionSheet({ title, actions, onClose, showTitle }: { title: string | null; actions: SheetAction[]; onClose: () => void; showTitle?: boolean }) {
   return (
     <Modal visible={title !== null} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable style={[StyleSheet.absoluteFill, styles.scrim]} onPress={onClose} accessibilityLabel="Close" />
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
           <GrabHandle onClose={onClose} color={ui.border} />
-          {title ? <Text style={styles.title} numberOfLines={1}>{title}</Text> : null}
+          {showTitle && title ? <Text style={styles.title}>{title}</Text> : null}
           {actions.map((a) => (
             <Pressable
               key={a.label}
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(1,49,62,.5)' },
   sheet: { backgroundColor: ui.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingBottom: 8 },
-  // Every line starts on the same side: the right in Arabic, the left in English (a name typed in English no longer pulls its line left).
+  // Every line starts on the same side: the right in Arabic, the left in English.
   title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 6, textAlign: isRTL ? 'right' : 'left' },
   row: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: ui.border },
   rowText: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep, textAlign: isRTL ? 'right' : 'left' },
