@@ -2,6 +2,7 @@ import { I18nManager, Platform } from 'react-native';
 
 import { ar } from '@/lib/ar';
 import { arPatterns, localizeUnits } from '@/lib/ar-patterns';
+import { halfName } from '@/lib/names';
 
 // English and Arabic (Egyptian). The layout direction is the language: Arabic is right-to-left, English left-to-right.
 // Reading the direction at start-up gives the language synchronously, before the first screen is drawn, so any file can call t().
@@ -42,7 +43,7 @@ function lookup(body: string): string | undefined {
   if (body.includes(' · ')) {
     const parts = body.split(' · ');
     const done = parts.map((x) => lookup(x));
-    if (done.some((x) => x !== undefined)) return parts.map((x, i) => done[i] ?? x).join(' · ');
+    if (done.some((x) => x !== undefined)) return parts.map((x, i) => done[i] ?? halfName(x, true)).join(' · ');
   }
   return undefined;
 }
@@ -52,11 +53,13 @@ function lookup(body: string): string | undefined {
  * Leading and trailing spaces are kept, so pieces of a sentence can be translated one by one. Unknown text stays as written.
  */
 export function tr(text: string): string {
-  if (lang !== 'ar' || !text) return text;
+  if (!text) return text;
+  // Two-language names ("City Club نادي سيتي") show only the member's language.
+  if (lang !== 'ar') return halfName(text, false);
   const body = text.trim();
   if (!body) return text;
   const hit = lookup(body);
-  if (hit === undefined) return localizeUnits(text);
+  if (hit === undefined) return halfName(localizeUnits(text), true);
   const start = text.indexOf(body);
   return text.slice(0, start) + localizeUnits(hit) + text.slice(start + body.length);
 }
