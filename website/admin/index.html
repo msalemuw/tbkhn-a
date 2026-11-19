@@ -258,6 +258,13 @@
           if (!ok) return Promise.reject(new Error('Your sign-in expired. Please sign in again.'));
           return call('/rest/v1/rpc/' + fn, { method: 'POST', body: args || {} });
         }).then(function (res) { if (res.error) throw new Error(msg(res.error)); return res.data; });
+      },
+      // An Edge Function (for example the place lookup).
+      fn: function (name, body) {
+        return fresh().then(function (ok) {
+          if (!ok) return Promise.reject(new Error('Your sign-in expired. Please sign in again.'));
+          return call('/functions/v1/' + name, { method: 'POST', body: body || {} });
+        }).then(function (res) { if (res.error) throw new Error(msg(res.error)); return res.data; });
       }
     };
   })();
@@ -318,6 +325,26 @@
       $('askCancel').onclick = function () { done(null); };
       dlg.onclose = function () { done(null); };
       dlg.showModal(); text.focus();
+    });
+  }
+
+  // ---------- both names for a community ----------
+  // Every community carries the English name, a space, then the Arabic name ("City Club نادي سيتي"). A name typed in one language
+  // gets the other filled in from a place lookup; staff check it and can change it. Resolves the final name, or null if cancelled.
+  function bothNames(name) {
+    name = name.trim();
+    var hasAr = /[؀-ۿ]/.test(name), hasEn = /[A-Za-z]/.test(name);
+    if (hasAr && hasEn) return Promise.resolve(name);
+    return sb.fn('places', { action: 'names', q: name }).catch(function () { return null; }).then(function (r) {
+      var en = hasAr ? (r && r.en) : name, ar = hasAr ? name : (r && r.ar);
+      var guess = (en && ar) ? en + ' ' + ar : name;
+      var title = 'Both names needed: English first, then Arabic, like “City Club نادي سيتي”. ' +
+        (en && ar ? 'Suggested from the place lookup' + (r && r.line2 ? ' (' + r.line2 + ')' : '') + '. Check it before you confirm.' : 'The lookup found nothing, please type both.');
+      return ask(title, { action: 'Use this name', initial: guess, placeholder: 'English name, then Arabic name', errMsg: 'Please write the name.' }).then(function (v) {
+        if (v === null) return null;
+        if (!(/[؀-ۿ]/.test(v) && /[A-Za-z]/.test(v)) && !window.confirm('This name does not have both English and Arabic. Use it anyway?')) return null;
+        return v;
+      });
     });
   }
 
@@ -556,8 +583,12 @@
       var la = ncSimilar();
       if (la.length && !window.confirm('A similar community already exists: ' + la.slice(0, 3).map(function (m) { return m.name; }).join(', ') + '.\n\nCreate “' + $('ncName').value.trim() + '” anyway?')) return;
       btn.disabled = true;
-      rpc('admin_create_community', { p_name: $('ncName').value.trim(), p_kind: $('ncKind').value, p_governorate: $('ncGov').value.trim(), p_area: $('ncArea').value.trim() || null })
-        .then(function () { $('ncName').value = ''; $('ncArea').value = ''; $('ncDup').innerHTML = ''; return load(); })
+      bothNames($('ncName').value)
+        .then(function (nm) {
+          if (nm === null) return;
+          return rpc('admin_create_community', { p_name: nm, p_kind: $('ncKind').value, p_governorate: $('ncGov').value.trim(), p_area: $('ncArea').value.trim() || null })
+            .then(function () { $('ncName').value = ''; $('ncArea').value = ''; $('ncDup').innerHTML = ''; return load(); });
+        })
         .catch(function (e) { showErr($('ncErr'), msg(e)); })
         .then(function () { btn.disabled = false; });
     };
@@ -595,7 +626,16 @@
           if (pick) return rpc('admin_resolve_community_request', { p_id: rq.id, p_join: pick.join, p_create: pick.create }).then(load);
         }).catch(fail);
       }
-      if (ok) { var c = reqs[ok.getAttribute('data-ok')]; rpc('admin_review_community', { p_id: c.id, p_status: 'approved', p_note: null }).then(load).catch(fail); }
+      if (ok) {
+        var c = reqs[ok.getAttribute('data-ok')];
+        // Approve with both names: the name is completed first, then the approved community is renamed (both steps are in the action log).
+        bothNames(c.name).then(function (nm) {
+          if (nm === null) return;
+          return rpc('admin_review_community', { p_id: c.id, p_status: 'approved', p_note: null }).then(function () {
+            if (nm !== c.name) return rpc('admin_update_community', { p_id: c.id, p_name: nm, p_kind: c.kind, p_governorate: c.governorate, p_area: c.area || null });
+          }).then(load);
+        }).catch(fail);
+      }
       if (no) {
         var r = reqs[no.getAttribute('data-no')], top = (r.look_alikes || []).filter(function (m) { return m.status === 'approved'; })[0];
         // When it duplicates an existing community, start the reason with that, so the requester knows where to go.
