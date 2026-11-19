@@ -26,8 +26,8 @@ const DAYS_AR = ['الأحد', 'الاتنين', 'التلات', 'الأربع',
 
 export const arPatterns: [RegExp, To][] = [
   // Time and distance (format.ts)
-  [/^Show (\d+) posts?$/, 'اعرض $1 منشور'],
-  [/^Show (\d+) (?:dish|dishes)$/, 'اعرض $1 أكلة'],
+  [/^Show (\d+) posts?$/, 'شوف $1 منشور'],
+  [/^Show (\d+) (?:dish|dishes)$/, 'شوف $1 أكلة'],
   [/^Pickup near (.+)$/, (_, a) => `الاستلام قريب من ${nm(a)}`],
   [/^The exact pickup spot is shared once (.+) (?:accepts your order|accepts)\.$/, 'مكان الاستلام بالظبط هيظهر لك لما $1 يقبل الطلب.'],
   [/^in (\d+) min$/, 'بعد $1 دقيقة'],
@@ -96,7 +96,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Thanks! “(.+)” is waiting for approval\.$/, 'شكرًا! «$1» مستني الموافقة.'],
 
   // Dish and order
-  [/^Pickup spot: (.+)\. Show on map$/, 'مكان الاستلام: $1. اعرضه على الخريطة'],
+  [/^Pickup spot: (.+)\. Show on map$/, 'مكان الاستلام: $1. شوفه على الخريطة'],
   [/^Order a plate of (.+)$/, 'احجز طبق $1'],
   [/^Pickup (.+)$/, 'الاستلام $1'],
   [/^Ready now$/, 'جاهز دلوقتي'],
