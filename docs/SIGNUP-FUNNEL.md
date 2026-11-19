@@ -52,3 +52,6 @@ Two QR codes, two destinations. `tabkheen-a.com/web` (website early sign-up) ope
 
 ## Shooting Club cards (2026-11-19)
 2,100 cards were printed with two QR codes: the left one opens `tabkheen-a.com/web`, the right one opens instagram.com/tabkheen.a directly (checked by decoding a photo of a printed card). `/web` now sends people to the sign-up page with `utm_source=handout`, `utm_medium=print`, `utm_campaign=shootingclub_cards`, `utm_term=Shooting Club`, `utm_content=card_v1`, so the admin shows these sign-ups as source "handout" with campaign "shootingclub_cards". Before this change `/web` was tagged `utm_source=website`. The Instagram QR is not counted by our backend.
+
+### Shooting Club card wording (2026-11-19)
+Visits tagged `utm_campaign=shootingclub_cards` (the `/web` link on the printed cards) show the card's promise first: "Think you're the best cook in the club? Prove it", "Join Shooting Club Got Talent", sign up / post your signature dish / get likes to win (Arabic too). All other visits keep the normal wording. Wording only; the sign-up steps are identical.

@@ -536,6 +536,16 @@
   var inApp = /Instagram/.test(ua) ? 'instagram' : /FBAN|FBAV|FB_IAB|FB4A|FBIOS|MessengerForiOS/.test(ua) ? 'facebook' : '';
   var ref = (params.get('ref') || store('tabkheen.ref') || '').toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
   if (ref) { source.ref = ref; store('tabkheen.ref', ref); }
+  // The printed Shooting Club "Got Talent" cards promise a competition, so people arriving from them (/web) see that
+  // promise first. Same words as the card: sign up, post your signature dish, get likes to win. Nothing else changes.
+  if (source.utm_campaign === 'shootingclub_cards') {
+    T.en.headline = 'Think you’re the best cook in the club? <b>Prove it</b>';
+    T.en.startTitle = 'Join Shooting Club Got Talent';
+    T.en.startSub = 'Sign up, post your signature dish, and get likes to win. Make your account now and you’re in.';
+    T.ar.headline = 'فاكر نفسك أحسن طباخ في النادي؟ <b>ورّينا</b>';
+    T.ar.startTitle = 'اشترك في Shooting Club Got Talent';
+    T.ar.startSub = 'سجّل، وانشر طبقك المميز، وخد لايكات عشان تكسب. اعمل حسابك دلوقتي وتبقى معانا.';
+  }
 
   // A small Supabase client: the same auth (Google or Apple ID token) and database API the app uses, without a
   // library download, so the page keeps working if a script CDN is slow or blocked.
