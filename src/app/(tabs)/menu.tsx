@@ -110,7 +110,15 @@ export default function Menu() {
           barArt={(filterTop) => (
             <Image
               source={BLOBS}
-              style={{ position: 'absolute', width: ART_W * k, height: ART_H * k, left: width * BLOBS_X - 14, top: filterTop + 1 - TEAL_BOTTOM * ART_H * k }}
+              // Arabic flips the screen, so the filter button moves to the left: the artwork is mirrored with it (React Native already mirrors `left`, but not the picture).
+              style={{
+                position: 'absolute',
+                width: ART_W * k,
+                height: ART_H * k,
+                left: width * BLOBS_X - 14,
+                top: filterTop + 1 - TEAL_BOTTOM * ART_H * k,
+                transform: isRTL ? [{ scaleX: -1 }] : undefined,
+              }}
               contentFit="contain"
               pointerEvents="none"
               accessible={false}
