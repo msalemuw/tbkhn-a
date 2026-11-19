@@ -38,12 +38,16 @@ export default function Legal() {
 
   const rtl = lang === 'ar';
   // The page can be in the other language than the app: then its alignment is set by hand.
-  const align = rtl === isRTL ? undefined : rtl ? styles.rtl : styles.ltr;
+  // textAlign left/right swap when the phone layout is right-to-left, so pick the one that lands on the wanted side.
+  const align = {
+    textAlign: (rtl ? !isRTL : isRTL) ? ('right' as const) : ('left' as const),
+    writingDirection: rtl ? ('rtl' as const) : ('ltr' as const),
+  };
   const blocks = page ? parseLegal(rtl ? page.body_ar : page.body_en) : [];
 
   return (
     <SafeAreaView style={styles.screen}>
-      <BackHeader title={page ? (rtl ? page.title_ar : page.title_en) : slug === 'terms' ? t('Terms of use') : t('Privacy policy')} />
+      <BackHeader verbatim title={page ? (rtl ? page.title_ar : page.title_en) : slug === 'terms' ? t('Terms of use') : t('Privacy policy')} />
       <View style={styles.langRow}>
         {(['en', 'ar'] as const).map((l) => (
           <Pressable key={l} onPress={() => setLang(l)} accessibilityRole="button" accessibilityLabel={l === 'en' ? 'English' : 'العربية'} style={[styles.langBtn, lang === l && styles.langOn]}>
@@ -66,7 +70,7 @@ export default function Legal() {
             b.kind === 'heading' ? (
               <Text verbatim key={i} style={[styles.h, align]}>{b.text}</Text>
             ) : b.kind === 'bullet' ? (
-              <View key={i} style={[styles.bulletRow, rtl !== isRTL && { flexDirection: 'row-reverse' }]}>
+              <View key={i} style={[styles.bulletRow, rtl !== isRTL && { flexDirection: 'row-reverse' as const }]}>
                 <Text style={styles.dot}>•</Text>
                 <Text verbatim style={[styles.p, styles.flex, align]}>{b.text}</Text>
               </View>
@@ -90,8 +94,6 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 22, paddingBottom: 48, gap: 6 },
   h: { fontFamily: fonts.extraBold, fontSize: 17, color: colors.ink, marginTop: 18 },
   p: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 23, color: colors.ink, marginTop: 4 },
-  rtl: { textAlign: 'right', writingDirection: 'rtl' },
-  ltr: { textAlign: 'left', writingDirection: 'ltr' },
   flex: { flex: 1 },
   bulletRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   dot: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 27, color: colors.ink },

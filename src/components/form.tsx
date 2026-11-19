@@ -28,13 +28,13 @@ export function useKeyboardHeight() {
 }
 
 /** Back arrow row; with a title it is the small bold header from the design (s5). */
-export function BackHeader({ title, onBack }: { title?: string; onBack?: () => void }) {
+export function BackHeader({ title, onBack, verbatim }: { title?: string; onBack?: () => void; verbatim?: boolean }) {
   return (
     <View style={styles.header}>
       <Pressable hitSlop={12} onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))}>
         <FlipIcon name="arrow-back" size={28} color={colors.ink} />
       </Pressable>
-      {title ? <Text style={styles.headerTitle}>{title}</Text> : null}
+      {title ? <Text verbatim={verbatim} style={styles.headerTitle}>{title}</Text> : null}
     </View>
   );
 }
