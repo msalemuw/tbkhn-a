@@ -124,7 +124,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Tap Mark as ready when it’s done, and (.+) is told right away\.$/, 'دوس «علّم إنه جاهز» لما يخلص، و$1 هيتبلّغ على طول.'],
   [/^Tap Picked up when (.+) collects it\.$/, 'دوس «اتستلم» لما $1 يستلمه.'],
   [/^(.+) cancelled$/, '$1 لغى'],
-  [/^Please finish your mobile number \(example: (.+)\) or clear it\.$/, 'من فضلك كمّل رقم الموبايل (مثال: $1) أو امسحه.'],
+  [/^Please finish your mobile number \(example: (.+)\) or clear it\.$/, 'لو سمحت كمّل رقم الموبايل (مثلًا: $1) أو امسحه.'],
   [/^You can cancel for free until (.+) confirms\. If there’s no answer by (.+) it cancels itself\.$/, 'تقدر تلغي ببلاش لحد ما $1 يأكد. ولو مفيش رد قبل $2 بيتلغي لوحده.'],
   [/^Accept it if you can cook it in time\. They can still cancel until you mark it ready\. With no answer by (.+) it cancels itself\.$/, 'اقبله لو تقدر تطبخه في الميعاد. هو لسه يقدر يلغي لحد ما تعلّمه جاهز. ولو مفيش رد قبل $1 بيتلغي لوحده.'],
   [/^You can cancel for free until (.+) confirms\.$/, 'تقدر تلغي ببلاش لحد ما $1 يأكد.'],
