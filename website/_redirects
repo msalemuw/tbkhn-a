@@ -3,9 +3,9 @@
 /ng  /?utm_source=handout&utm_medium=print&utm_campaign=newgiza_handout&utm_term=New%20Giza&utm_content=flyer_v1  302
 
 # QR codes. /ig is the QR for the Instagram page: it counts the scan (step qr_scan_instagram) and opens Instagram.
-# /web is the QR for the website early sign-up: it opens the sign-up page tagged utm_source=website.
+# /web is the early sign-up QR printed on the Shooting Club cards (2,100 printed, handed out 20 Nov 2026): it opens the sign-up page tagged as a handout for Shooting Club.
 /ig   /follow.html  200
-/web  /?utm_source=website&utm_medium=qr&utm_campaign=early_signup  302
+/web  /?utm_source=handout&utm_medium=print&utm_campaign=shootingclub_cards&utm_term=Shooting%20Club&utm_content=card_v1  302
 
 # Shared links from the app: a short page that opens the same screen in the app.
 /post/*       /open.html  200
