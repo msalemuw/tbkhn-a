@@ -531,7 +531,7 @@ export default function ProfileStep() {
           </View>
 
           <Text style={styles.section}>
-            WHERE DO YOU LIVE? <Text style={{ color: colors.muted }}>*</Text>
+            YOUR COMMUNITY <Text style={{ color: colors.muted }}>*</Text>
           </Text>
           <Text style={styles.sectionSub}>Your area is your first community, a group of neighbors. You’ll see its cooks and posts, and they’ll see yours.</Text>
           <View style={styles.group}>
