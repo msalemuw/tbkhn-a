@@ -239,6 +239,7 @@ export default function EditProfile() {
           <SelectField
             label="AREA"
             required
+            disabled={!gov}
             value={areaName ?? (gov ? 'Choose' : 'Choose a governorate first')}
             onPress={() =>
               gov &&
@@ -249,7 +250,7 @@ export default function EditProfile() {
               })
             }
           />
-          <Text style={[formStyles.hint, { color: colors.muted }]}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Where you live. Can’t find your area? Tap Area, then Request it.'}</Text>
+          <Text style={[formStyles.hint, { color: colors.muted }]}>{requested ? `Thanks! “${requested}” is waiting for approval.` : 'Can’t find your area? Tap Area, then Request it.'}</Text>
           <Field label="INSTAPAY HANDLE">
             <TextInput value={instapay} onChangeText={setInstapay} placeholder="example: nour@instapay" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={60} style={formStyles.input} accessibilityLabel="InstaPay handle" />
           </Field>

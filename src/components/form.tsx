@@ -96,16 +96,26 @@ export function SelectField({
   value,
   required,
   borderColor,
+  disabled,
   onPress,
 }: {
   label: string;
   value: string;
   required?: boolean;
   borderColor?: string;
+  /** Greyed out and not tappable, e.g. Area before a governorate is chosen. */
+  disabled?: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${label}: ${value}`}>
+    <Pressable
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      accessibilityLabel={`${label}: ${value}`}
+      style={disabled ? { opacity: 0.5 } : undefined}
+    >
       <Field label={label} required={required} borderColor={borderColor}>
         <View style={styles.selectRow}>
           <Text style={[styles.value, value === 'None' && { color: colors.muted }]}>{value}</Text>
