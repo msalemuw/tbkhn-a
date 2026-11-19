@@ -854,7 +854,7 @@ export const ar: Record<string, string> = {
   'Alert sounds are off on this phone': 'صوت التنبيهات مقفول على التليفون ده',
   'You will not be told about new requests. Tap to turn them on.': 'مش هيوصلك تنبيه بالطلبات الجديدة. اضغط عشان تفتحها.',
   'New requests will not ring. Tap to turn sounds on.': 'الطلبات الجديدة مش هترن. اضغط عشان تفتح الصوت.',
-  'Test my alerts': 'جرّب تنبيهاتي',
+  'Test my alerts': 'اختبر تنبيهاتي',
   'Alerts are off': 'التنبيهات مقفولة',
   'Turn on notifications for tabkheen A in your phone settings, then test again.': 'افتح إشعارات tabkheen A من إعدادات التليفون وبعدين جرّب تاني.',
   'Test alert sent': 'اتبعت تنبيه تجريبي',
