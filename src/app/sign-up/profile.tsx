@@ -594,6 +594,7 @@ export default function ProfileStep() {
             <SelectField
               label="AREA"
               required
+              disabled={!gov?.trim()}
               borderColor={tried && !areaId ? danger : undefined}
               value={byId(areaId) ? label(byId(areaId)!) : gov?.trim() ? 'Choose' : `Choose a ${typedRegion ? 'region' : 'governorate'} first`}
               onPress={() =>
