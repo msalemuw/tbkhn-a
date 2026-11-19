@@ -63,10 +63,9 @@
   /* A yellow arrow from the offer down into the sign-in card, and a glowing ring on that card, so the eye ends on the buttons. */
   .gt-arrow { background: none; box-shadow: none; padding: 0; margin: 0 auto; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 16px solid var(--yellow); border-radius: 0; }
   #stepStart.gtgo { margin-top: 6px; box-shadow: 0 0 0 4px var(--yellow), 0 0 34px rgba(255,193,7,0.5); animation: gtglow 2.4s ease-in-out infinite; }
-  #stepStart.gtgo h2 { font-size: 30px; }
-  #stepStart.gtgo .sub { font-size: 16px; font-weight: 600; color: var(--navy); }
+  #stepStart.gtgo h2 { font-size: 30px; margin-bottom: 14px; }
+  #stepStart.gtgo .sub, #stepStart.gtgo .note { display: none; }
   #stepStart.gtgo .abtn { min-height: 54px; }
-  #stepStart.gtgo .gtnos { margin: 0 0 12px; padding-inline-start: 10px; border-inline-start: 3px solid var(--teal); font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--navy); }
   @keyframes gtglow { 50% { box-shadow: 0 0 0 4px var(--yellow), 0 0 12px rgba(255,193,7,0.25); } }
   @media (prefers-reduced-motion: reduce) { #stepStart.gtgo { animation: none; } }
   .gt .club { font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-indent: 0.3em; }
@@ -87,6 +86,7 @@
   html[lang="ar"] .gt .ph b { letter-spacing: 0; font-size: 13px; }
   .gt .ph span { display: block; font-size: 15px; font-weight: 600; line-height: 1.35; margin-top: 2px; }
   .gt .ph2 svg { fill: var(--teal); }
+  .gt .ph3 svg { fill: var(--yellow); }
   .gt .gnote { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
   .gt .gsteps svg { display: block; width: 30px; height: 30px; margin: 0 auto 8px; fill: var(--navy); }
   .topline b { color: var(--yellow); font-weight: inherit; }
@@ -577,16 +577,16 @@
   if (CARD_SC) {
     T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Think you’re the best cook in the club? Prove it.';
     T.en.gtB1 = 'AT LAUNCH: ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
-    T.en.gtP1 = 'TODAY · 60 SECONDS'; T.en.gtS1 = 'Sign up and pick Shooting Club as your club.';
+    T.en.gtP1 = 'NOW · 60 SECONDS'; T.en.gtS1 = 'Sign up and pick Shooting Club as your club.';
     T.en.gtP2 = 'THE DAY THE APP LAUNCHES'; T.en.gtS2 = 'Post your best dish. The club likes it. Most likes wins.';
-    T.en.gtNos = 'Meet your old club friends again. Don’t be the one who missed it.';
-    T.en.gtNote = 'Be in from the very first minute. Your account and your club are ready, so when the app opens you just post. Everyone says they cook the best. Now the club decides.';
+    T.en.gtP3 = 'FIRST 50'; T.en.gtS3 = 'Prize revealed to the first 50 who sign up.';
+    T.en.gtNote = 'Meet your old club friends again. Don’t be the one who missed it. Be in from the very first minute: your account and your club are ready, so when the app opens you just post.';
     T.ar.gtEdition = 'نسخة الطبخ أونلاين'; T.ar.gtThink = 'فاكر نفسك أحسن طباخ في النادي؟ ورّينا.';
     T.ar.gtB1 = 'أول ما التطبيق ينزل: صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
     T.ar.gtP1 = 'النهارده · 60 ثانية'; T.ar.gtS1 = 'سجّل واختار نادي الصيد كنادي ليك.';
     T.ar.gtP2 = 'يوم ما التطبيق ينزل'; T.ar.gtS2 = 'انشر أحسن طبق ليك. النادي يعمله لايك. أكتر لايكات تكسب.';
-    T.ar.gtNos = 'قابل صحابك القدام من النادي تاني، وماتبقاش اللي فاتك.';
-    T.ar.gtNote = 'كون موجود من أول دقيقة. حسابك ونادي الصيد جاهزين، وأول ما التطبيق يفتح تنشر على طول. كل واحد بيقول أكله هو الأحلى. دلوقتي النادي هو اللي بيحسم.';
+    T.ar.gtP3 = 'أول 50'; T.ar.gtS3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
+    T.ar.gtNote = 'قابل صحابك القدام من النادي تاني، وماتبقاش اللي فاتك. كون موجود من أول دقيقة: حسابك ونادي الصيد جاهزين، وأول ما التطبيق يفتح تنشر على طول.';
     var gtFont = document.createElement('link'); gtFont.rel = 'stylesheet';
     gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
     var topl = document.querySelector('.topline'); if (topl) topl.hidden = true;
@@ -597,17 +597,17 @@
       '<div class="gban"><div class="b1" data-t="gtB1"></div><div class="b2" data-t="gtB2"></div></div></div>' +
       '<div class="gt-arrow gt" aria-hidden="true"></div>');
     $('stepStart').classList.add('gtgo');
-    $('stepStart').querySelector('.sub').insertAdjacentHTML('afterend', '<p class="gtnos" data-t="gtNos"></p>');
     $('stepStart').insertAdjacentHTML('afterend',
       '<div class="gt gt2"><div><span class="pill" data-t="gtEdition"></span></div>' +
       '<div class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg><div><b data-t="gtP1"></b><span data-t="gtS1"></span></div></div>' +
       '<div class="ph ph2"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 6.2a4.8 4.8 0 110 9.6 4.8 4.8 0 010-9.6zm0 2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z"/></svg><div><b data-t="gtP2"></b><span data-t="gtS2"></span></div></div>' +
+      '<div class="ph ph3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l3 6.600 7.200.8-5.400 4.900 1.500 7.100L12 17.300l-6.300 3.600 1.500-7.100L1.800 8.900 9 8.100z"/></svg><div><b data-t="gtP3"></b><span data-t="gtS3"></span></div></div>' +
       '<p class="gnote" data-t="gtNote"></p></div>');
-    T.en.startTitle = 'Sign up in 60 seconds';
+    T.en.startTitle = 'Join Shooting Club';
     T.en.startSub = 'Free. Choose Shooting Club as your club. Prize revealed to the first 50 who sign up.';
     T.en.profileTitle3 = 'Last step: join Shooting Club';
     T.en.cardClubNote = 'To enter the competition, keep Shooting Club selected under CLUB, then tap Save and finish.';
-    T.ar.startTitle = 'سجّل في 60 ثانية';
+    T.ar.startTitle = 'انضم لنادي الصيد';
     T.ar.startSub = 'مجاني. اختار نادي الصيد كنادي ليك. الجايزة بتتكشف لأول 50 يسجّلوا.';
     T.ar.profileTitle3 = 'آخر خطوة: انضم لنادي الصيد';
     T.ar.cardClubNote = 'عشان تدخل المسابقة، سيب "Shooting Club نادي الصيد" مختار تحت النادي، وبعدين دوس احفظ وخلّص.';
