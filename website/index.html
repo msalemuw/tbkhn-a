@@ -81,6 +81,12 @@
   html[lang="ar"] .gt .gban .b1, html[lang="ar"] .gt .pill { letter-spacing: 0; }
   .gt .gban .b2 { font-size: 22px; font-weight: 800; line-height: 1.15; margin: 2px 0 0; }
   .gt .gban .b3 { font-size: 13px; font-weight: 600; }
+  .gt .ph { display: flex; align-items: center; gap: 12px; text-align: start; padding: 12px 4px; border-top: 2px solid var(--light-blue); }
+  .gt .ph svg { flex: none; width: 30px; height: 30px; fill: var(--navy); }
+  .gt .ph b { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--navy); }
+  html[lang="ar"] .gt .ph b { letter-spacing: 0; font-size: 13px; }
+  .gt .ph span { display: block; font-size: 15px; font-weight: 600; line-height: 1.35; margin-top: 2px; }
+  .gt .ph2 svg { fill: var(--teal); }
   .gt .gnote { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
   .gt .gsteps svg { display: block; width: 30px; height: 30px; margin: 0 auto 8px; fill: var(--navy); }
   .topline b { color: var(--yellow); font-weight: inherit; }
@@ -570,15 +576,17 @@
   var CARD_SC = source.utm_campaign === 'shootingclub_cards';
   if (CARD_SC) {
     T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Think you’re the best cook in the club? Prove it.';
-    T.en.gtB1 = 'ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
-    T.en.gtS1 = '1. Sign up (60 seconds)'; T.en.gtS2 = '2. Post your best dish'; T.en.gtS3 = '3. Join Shooting Club'; T.en.gtS4 = '4. Get the most likes';
+    T.en.gtB1 = 'AT LAUNCH: ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
+    T.en.gtP1 = 'TODAY · 60 SECONDS'; T.en.gtS1 = 'Sign up and pick Shooting Club as your club.';
+    T.en.gtP2 = 'THE DAY THE APP LAUNCHES'; T.en.gtS2 = 'Post your best dish. The club likes it. Most likes wins.';
     T.en.gtNos = 'Meet your old club friends again. Don’t be the one who missed it.';
-    T.en.gtNote = 'Everyone says they cook the best. Now the club decides, with likes. Free to enter. Posting opens when the app launches, and your account is ready now.';
+    T.en.gtNote = 'Be in from the very first minute. Your account and your club are ready, so when the app opens you just post. Everyone says they cook the best. Now the club decides.';
     T.ar.gtEdition = 'نسخة الطبخ أونلاين'; T.ar.gtThink = 'فاكر نفسك أحسن طباخ في النادي؟ ورّينا.';
-    T.ar.gtB1 = 'صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
-    T.ar.gtS1 = 'سجّل (60 ثانية)'; T.ar.gtS2 = 'انشر أحسن طبق'; T.ar.gtS3 = 'انضم لنادي الصيد'; T.ar.gtS4 = 'اجمع أكتر لايكات';
+    T.ar.gtB1 = 'أول ما التطبيق ينزل: صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
+    T.ar.gtP1 = 'النهارده · 60 ثانية'; T.ar.gtS1 = 'سجّل واختار نادي الصيد كنادي ليك.';
+    T.ar.gtP2 = 'يوم ما التطبيق ينزل'; T.ar.gtS2 = 'انشر أحسن طبق ليك. النادي يعمله لايك. أكتر لايكات تكسب.';
     T.ar.gtNos = 'قابل صحابك القدام من النادي تاني، وماتبقاش اللي فاتك.';
-    T.ar.gtNote = 'كل واحد بيقول أكله هو الأحلى. دلوقتي النادي هو اللي بيحسم، باللايكات. الاشتراك مجاني. النشر بيبدأ أول ما التطبيق ينزل، وحسابك جاهز من دلوقتي.';
+    T.ar.gtNote = 'كون موجود من أول دقيقة. حسابك ونادي الصيد جاهزين، وأول ما التطبيق يفتح تنشر على طول. كل واحد بيقول أكله هو الأحلى. دلوقتي النادي هو اللي بيحسم.';
     var gtFont = document.createElement('link'); gtFont.rel = 'stylesheet';
     gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
     var topl = document.querySelector('.topline'); if (topl) topl.hidden = true;
@@ -592,20 +600,17 @@
     $('stepStart').querySelector('.sub').insertAdjacentHTML('afterend', '<p class="gtnos" data-t="gtNos"></p>');
     $('stepStart').insertAdjacentHTML('afterend',
       '<div class="gt gt2"><div><span class="pill" data-t="gtEdition"></span></div>' +
-      '<div class="gsteps">' +
-      '<div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg><span data-t="gtS1"></span></div>' +
-      '<div><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 6.2a4.8 4.8 0 110 9.6 4.8 4.8 0 010-9.6zm0 2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z"/></svg><span data-t="gtS2"></span></div>' +
-      '<div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="3.5"/><circle cx="5" cy="9" r="2.8"/><circle cx="19" cy="9" r="2.8"/><path d="M6.5 21c0-4 2.5-6.500 5.500-6.500s5.500 2.500 5.500 6.500zM0.500 19c0-3 2-5 4.500-5 1 0 1.800.3 2.500.8-1.500 1.200-2.400 3-2.600 5.200zM23.500 19c0-3-2-5-4.500-5-1 0-1.800.3-2.500.8 1.500 1.200 2.400 3 2.600 5.200z"/></svg><span data-t="gtS3"></span></div>' +
-      '<div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22C5 16.5 2 13 2 8.8 2 5.9 4.2 4 6.8 4c1.9 0 3.7 1 5.2 3 1.5-2 3.3-3 5.2-3C19.8 4 22 5.9 22 8.8 22 13 19 16.5 12 22z"/></svg><span data-t="gtS4"></span></div>' +
-      '</div><p class="gnote" data-t="gtNote"></p></div>');
+      '<div class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg><div><b data-t="gtP1"></b><span data-t="gtS1"></span></div></div>' +
+      '<div class="ph ph2"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 6.2a4.8 4.8 0 110 9.6 4.8 4.8 0 010-9.6zm0 2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z"/></svg><div><b data-t="gtP2"></b><span data-t="gtS2"></span></div></div>' +
+      '<p class="gnote" data-t="gtNote"></p></div>');
     T.en.headline = 'Think you’re the best cook in the club? <b>Prove it</b>';
-    T.en.startTitle = 'Enter in 60 seconds';
-    T.en.startSub = 'Free. Prize revealed to the first 50 to enter.';
+    T.en.startTitle = 'Sign up in 60 seconds';
+    T.en.startSub = 'Free. Choose Shooting Club as your club. Prize revealed to the first 50 who sign up.';
     T.en.profileTitle3 = 'Last step: join Shooting Club';
     T.en.cardClubNote = 'To enter the competition, keep Shooting Club selected under CLUB, then tap Save and finish.';
     T.ar.headline = 'فاكر نفسك أحسن طباخ في النادي؟ <b>ورّينا</b>';
-    T.ar.startTitle = 'ادخل في 60 ثانية';
-    T.ar.startSub = 'مجاني. الجايزة بتتكشف لأول 50 يسجّلوا.';
+    T.ar.startTitle = 'سجّل في 60 ثانية';
+    T.ar.startSub = 'مجاني. اختار نادي الصيد كنادي ليك. الجايزة بتتكشف لأول 50 يسجّلوا.';
     T.ar.profileTitle3 = 'آخر خطوة: انضم لنادي الصيد';
     T.ar.cardClubNote = 'عشان تدخل المسابقة، سيب "Shooting Club نادي الصيد" مختار تحت النادي، وبعدين دوس احفظ وخلّص.';
   }

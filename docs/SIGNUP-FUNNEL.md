@@ -58,3 +58,5 @@ Visits tagged `utm_campaign=shootingclub_cards` (the `/web` link on the printed 
 Card visitors also see the card's design at the top (Got Talent title, cooking edition tag, "One photo. One minute. Most likes wins." with the first-50 prize reveal, four steps), a last step titled "Last step: join Shooting Club" with Shooting Club preselected under CLUB (they can change it), and no "Skip for now" on that step. Wording and defaults only; fields and saved data are the same as every other sign-up.
 
 Layout for card visitors: the offer sits above the sign-in card, a yellow arrow points into it, and the card has a glowing yellow ring, so the Google and Apple buttons are on the first screen even on small phones. The four steps and the note come below the buttons. The promo hides after sign-in.
+
+Timing on the card page: sign-up and choosing Shooting Club happen today ("TODAY · 60 SECONDS"); posting the dish and the likes competition start when the app launches ("THE DAY THE APP LAUNCHES"). The page says so in both languages; keep that if the wording changes, because the app cannot take dish posts until launch.
