@@ -38,13 +38,14 @@ export function ActionSheet({ title, actions, onClose, showTitle }: { title: str
   );
 }
 
+// 'left' is the start edge: React Native swaps it on a right-to-left phone, so Arabic lands on the right.
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(1,49,62,.5)' },
   sheet: { backgroundColor: ui.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingBottom: 8 },
   // Every line starts on the same side: the right in Arabic, the left in English.
-  title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 6, textAlign: isRTL ? 'right' : 'left' },
+  title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 6, textAlign: 'left' },
   row: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: ui.border },
-  rowText: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep, textAlign: isRTL ? 'right' : 'left' },
+  rowText: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep, textAlign: 'left' },
   cancel: { borderBottomWidth: 0 },
 });
