@@ -583,16 +583,16 @@
     document.documentElement.classList.add('card-sc');
     T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Got a dish you’re proud of? Show the club.';
     T.en.gtB1 = 'ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'AT LAUNCH. MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
-    T.en.gtP1 = 'NOW · 60 SECONDS'; T.en.gtS1 = 'Sign up and pick Shooting Club as your club.';
+    T.en.gtP1 = 'NOW · 60 SECONDS'; T.en.gtS1 = 'Sign up. You’re in Shooting Club automatically.';
     T.en.gtP2 = 'LATER · THE DAY THE APP LAUNCHES'; T.en.gtS2 = 'Post your best dish. The club likes it. Most likes wins.';
     T.en.gtP3 = 'BONUS · FIRST 50'; T.en.gtS3 = 'Prize revealed to the first 50 who sign up.';
-    T.en.gtNote = 'Meet your old club friends again. Don’t be the one who missed it. Be in from the very first minute: your account and your club are ready, so when the app opens you just post.';
+    T.en.gtNote = 'Meet your old club friends again. Be in from the first minute, so when the app opens you just post.';
     T.ar.gtEdition = 'نسخة الطبخ أونلاين'; T.ar.gtThink = 'عندك أكلة بتفتخر بيها؟ وري النادي كله.';
     T.ar.gtB1 = 'صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أول ما التطبيق ينزل. أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
-    T.ar.gtP1 = 'النهارده · 60 ثانية'; T.ar.gtS1 = 'سجّل واختار نادي الصيد كنادي ليك.';
+    T.ar.gtP1 = 'النهارده · 60 ثانية'; T.ar.gtS1 = 'سجّل، وهتبقى في نادي الصيد أوتوماتيك.';
     T.ar.gtP2 = 'بعدين · يوم ما التطبيق ينزل'; T.ar.gtS2 = 'انشر أحسن طبق ليك. النادي يعمله لايك. أكتر لايكات تكسب.';
     T.ar.gtP3 = 'مكافأة · أول 50'; T.ar.gtS3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
-    T.ar.gtNote = 'قابل صحابك القدام من النادي تاني، وماتبقاش اللي فاتك. كون موجود من أول دقيقة: حسابك ونادي الصيد جاهزين، وأول ما التطبيق يفتح تنشر على طول.';
+    T.ar.gtNote = 'قابل صحابك القدام من النادي تاني. كون موجود من أول دقيقة، وأول ما التطبيق يفتح تنشر على طول.';
     var gtFont = document.createElement('link'); gtFont.rel = 'stylesheet';
     gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
     var topl = document.querySelector('.topline'); if (topl) topl.hidden = true;
@@ -608,10 +608,9 @@
       '<div class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg><div><b data-t="gtP1"></b><span data-t="gtS1"></span></div></div>' +
       '<div class="ph ph3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l3 6.600 7.200.8-5.400 4.900 1.500 7.100L12 17.300l-6.300 3.600 1.500-7.100L1.800 8.900 9 8.100z"/></svg><div><b data-t="gtP3"></b><span data-t="gtS3"></span></div></div>' +
       '<div class="ph ph2"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 6.2a4.8 4.8 0 110 9.6 4.8 4.8 0 010-9.6zm0 2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z"/></svg><div><b data-t="gtP2"></b><span data-t="gtS2"></span></div></div>' +
-      '<p class="gnote" data-t="gtNote"></p></div>');
+      '</div>');
     T.en.startTitle = 'Join Shooting Club';
     T.en.startSub = 'Free. Choose Shooting Club as your club. Prize revealed to the first 50 who sign up.';
-    T.en.profileTitle3 = 'Last step: join Shooting Club';
     T.en.doneTitle = function (u) { return 'You’re all set, @' + u + '!'; };
     T.ar.doneTitle = function (u) { return 'كل حاجة جاهزة يا @' + u + '!'; };
     T.en.doneSub = 'You’re in Shooting Club. We’ll notify you the day the app opens, and that’s when you post your dish. Follow us on Instagram to stay updated.';
@@ -620,7 +619,7 @@
     T.en.cardClubNote = 'To enter the competition, keep Shooting Club selected under CLUB, then tap Save and finish.';
     T.ar.startTitle = 'انضم لنادي الصيد';
     T.ar.startSub = 'مجاني. اختار نادي الصيد كنادي ليك. الجايزة بتتكشف لأول 50 يسجّلوا.';
-    T.ar.profileTitle3 = 'آخر خطوة: انضم لنادي الصيد';
+   
     T.ar.cardClubNote = 'عشان تدخل المسابقة، سيب "Shooting Club نادي الصيد" مختار تحت النادي، وبعدين دوس احفظ وخلّص.';
   }
 
