@@ -3,7 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { GrabHandle } from '@/components/grab-handle';
-import { colors, fonts, ui } from '@/constants/theme';
+import { fonts, ui } from '@/constants/theme';
+import { isRTL } from '@/lib/i18n';
 
 export type SheetAction = { label: string; destructive?: boolean; onPress: () => void };
 
@@ -25,7 +26,7 @@ export function ActionSheet({ title, actions, onClose }: { title: string | null;
                 a.onPress();
               }}
               accessibilityRole="button">
-              <Text style={[styles.rowText, a.destructive && styles.destructive]}>{a.label}</Text>
+              <Text style={styles.rowText} numberOfLines={1}>{a.label}</Text>
             </Pressable>
           ))}
           <Pressable style={[styles.row, styles.cancel]} onPress={onClose} accessibilityRole="button">
@@ -41,9 +42,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: { backgroundColor: 'rgba(1,49,62,.5)' },
   sheet: { backgroundColor: ui.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingBottom: 8 },
-  title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 6 },
+  // Every line starts on the same side: the right in Arabic, the left in English (a name typed in English no longer pulls its line left).
+  title: { fontFamily: fonts.extraBold, fontSize: 16, color: ui.deep, marginBottom: 6, textAlign: isRTL ? 'right' : 'left' },
   row: { paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: ui.border },
-  rowText: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep },
-  destructive: { color: colors.navy, textDecorationLine: 'underline' },
+  rowText: { fontFamily: fonts.bold, fontSize: 16, color: ui.deep, textAlign: isRTL ? 'right' : 'left' },
   cancel: { borderBottomWidth: 0 },
 });
