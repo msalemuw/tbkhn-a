@@ -57,17 +57,26 @@
   .topline { font: 400 30px/1.12 var(--serif); margin: 18px 0 0; }
   /* The Shooting Club "Got Talent" card, repeated at the top of the page for people who scan it (/web). */
   .gt { background: var(--white); color: var(--navy); border-radius: 28px; padding: 22px 16px 20px; margin-top: 18px; text-align: center; box-shadow: 0 0 0 2px var(--light-blue); }
+  .gt.gt1 { padding: 14px 14px 14px; margin-top: 10px; }
+  .gt.gt2 { margin-top: 18px; }
+  .gt.gt2 .pill { margin: 0 0 16px; }
+  /* A yellow arrow from the offer down into the sign-in card, and a glowing ring on that card, so the eye ends on the buttons. */
+  .gt-arrow { background: none; box-shadow: none; padding: 0; margin: 0 auto; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 16px solid var(--yellow); border-radius: 0; }
+  #stepStart.gtgo { margin-top: 6px; box-shadow: 0 0 0 4px var(--yellow), 0 0 34px rgba(255,193,7,0.5); animation: gtglow 2.4s ease-in-out infinite; }
+  #stepStart.gtgo h2 { font-size: 24px; }
+  @keyframes gtglow { 50% { box-shadow: 0 0 0 4px var(--yellow), 0 0 12px rgba(255,193,7,0.25); } }
+  @media (prefers-reduced-motion: reduce) { #stepStart.gtgo { animation: none; } }
   .gt .club { font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-indent: 0.3em; }
-  .gt .title { display: inline-flex; align-items: flex-start; gap: 4px; margin-top: 4px; font: 400 54px/1.05 'Kaushan Script', cursive; direction: ltr; }
-  .gt .title svg { width: 30px; height: 40px; margin-top: 2px; }
+  .gt .title { display: inline-flex; align-items: flex-start; gap: 4px; margin-top: 2px; font: 400 46px/1.05 'Kaushan Script', cursive; direction: ltr; }
+  .gt .title svg { width: 26px; height: 34px; margin-top: 2px; }
   .gt .pill { display: inline-block; margin-top: 8px; background: var(--navy); color: var(--white); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; padding: 7px 16px; border-radius: 999px; }
-  .gt .think { font-size: 19px; font-weight: 700; line-height: 1.3; margin: 18px 4px 16px; }
+  .gt .think { font-size: 17px; font-weight: 700; line-height: 1.3; margin: 8px 4px 12px; }
   .gt .gsteps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 8px; }
   .gt .gsteps div { font-size: 13px; font-weight: 700; line-height: 1.3; }
-  .gt .gban { background: var(--yellow); border-radius: 18px; padding: 14px 12px; margin: 0 0 16px; }
+  .gt .gban { background: var(--yellow); border-radius: 18px; padding: 12px 12px; margin: 0; }
   .gt .gban .b1 { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; }
   html[lang="ar"] .gt .gban .b1, html[lang="ar"] .gt .pill { letter-spacing: 0; }
-  .gt .gban .b2 { font-size: 30px; font-weight: 800; line-height: 1.1; margin: 4px 0; }
+  .gt .gban .b2 { font-size: 28px; font-weight: 800; line-height: 1.1; margin: 4px 0; }
   .gt .gban .b3 { font-size: 13px; font-weight: 600; }
   .gt .gnote { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
   .gt .gsteps svg { display: block; width: 30px; height: 30px; margin: 0 auto 8px; fill: var(--navy); }
@@ -569,11 +578,14 @@
     gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
     var topl = document.querySelector('.topline'); if (topl) topl.hidden = true;
     $('stepStart').insertAdjacentHTML('beforebegin',
-      '<div class="gt"><div class="club">SHOOTING CLUB</div>' +
+      '<div class="gt gt1"><div class="club">SHOOTING CLUB</div>' +
       '<div class="title">Got Talent<svg viewBox="0 0 30 40" fill="none" stroke="#00c2a8" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M8 7l14-5M12 20h16M8 33l14 5"/></svg></div>' +
-      '<div><span class="pill" data-t="gtEdition"></span></div>' +
       '<p class="think" data-t="gtThink"></p>' +
-      '<div class="gban"><div class="b1" data-t="gtB1"></div><div class="b2" data-t="gtB2"></div><div class="b3" data-t="gtB3"></div></div>' +
+      '<div class="gban"><div class="b1" data-t="gtB1"></div><div class="b2" data-t="gtB2"></div><div class="b3" data-t="gtB3"></div></div></div>' +
+      '<div class="gt-arrow gt" aria-hidden="true"></div>');
+    $('stepStart').classList.add('gtgo');
+    $('stepStart').insertAdjacentHTML('afterend',
+      '<div class="gt gt2"><div><span class="pill" data-t="gtEdition"></span></div>' +
       '<div class="gsteps">' +
       '<div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg><span data-t="gtS1"></span></div>' +
       '<div><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 6.2a4.8 4.8 0 110 9.6 4.8 4.8 0 010-9.6zm0 2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z"/></svg><span data-t="gtS2"></span></div>' +
@@ -581,13 +593,13 @@
       '<div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22C5 16.5 2 13 2 8.8 2 5.9 4.2 4 6.8 4c1.9 0 3.7 1 5.2 3 1.5-2 3.3-3 5.2-3C19.8 4 22 5.9 22 8.8 22 13 19 16.5 12 22z"/></svg><span data-t="gtS4"></span></div>' +
       '</div><p class="gnote" data-t="gtNote"></p></div>');
     T.en.headline = 'Think you’re the best cook in the club? <b>Prove it</b>';
-    T.en.startTitle = 'Join Shooting Club Got Talent';
-    T.en.startSub = 'Sign up and join Shooting Club, post your signature dish, and get likes to win. Make your account now and you’re in.';
+    T.en.startTitle = 'Enter in 60 seconds';
+    T.en.startSub = 'Sign up and join Shooting Club. Free.';
     T.en.profileTitle3 = 'Last step: join Shooting Club';
     T.en.cardClubNote = 'To enter the competition, keep Shooting Club selected under CLUB, then tap Save and finish.';
     T.ar.headline = 'فاكر نفسك أحسن طباخ في النادي؟ <b>ورّينا</b>';
-    T.ar.startTitle = 'اشترك في Shooting Club Got Talent';
-    T.ar.startSub = 'سجّل وانضم لنادي الصيد، وانشر طبقك المميز، وخد لايكات عشان تكسب. اعمل حسابك دلوقتي وتبقى معانا.';
+    T.ar.startTitle = 'ادخل في 60 ثانية';
+    T.ar.startSub = 'سجّل وانضم لنادي الصيد. مجاني.';
     T.ar.profileTitle3 = 'آخر خطوة: انضم لنادي الصيد';
     T.ar.cardClubNote = 'عشان تدخل المسابقة، سيب "Shooting Club نادي الصيد" مختار تحت النادي، وبعدين دوس احفظ وخلّص.';
   }
@@ -700,6 +712,8 @@
     // The sign-in card is at the top of the page, so each later step starts at the top too.
     if (state.shownStep && state.shownStep !== state.step && state.step !== 'start') window.scrollTo(0, 0);
     state.shownStep = state.step;
+    // The card promo (Shooting Club visitors) belongs to the first screen only.
+    document.querySelectorAll('.gt').forEach(function (el) { el.hidden = state.step !== 'start'; });
     if (state.step === 'profile') {
       var part = state.part === 3 ? 3 : state.part === 2 ? 2 : 1;
       $('part1').hidden = part !== 1; $('part2').hidden = part !== 2; $('part3').hidden = part !== 3;
