@@ -129,7 +129,7 @@ export default function OrderScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={colors.teal} />}>
-        <BackHeader title={isCook ? 'Order for you' : 'Your order'} />
+        <BackHeader title={isCook ? 'Incoming order' : 'Your order'} />
 
         <View style={styles.hero}>
           <View style={[styles.heroIcon, { backgroundColor: head.bg }]}>

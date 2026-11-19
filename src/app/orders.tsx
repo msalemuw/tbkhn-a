@@ -67,7 +67,7 @@ export default function Orders() {
         <View style={styles.tabs}>
           {(['buyer', 'cook'] as const).map((t) => (
             <Pressable key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: tab === t }}>
-              <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'buyer' ? 'My orders' : 'Orders for you'}</Text>
+              <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === 'buyer' ? 'My orders' : 'Incoming orders'}</Text>
             </Pressable>
           ))}
         </View>

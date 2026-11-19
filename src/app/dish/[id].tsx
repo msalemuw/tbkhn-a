@@ -165,7 +165,7 @@ export default function DishScreen() {
           {posted ? (
             <View style={styles.note}>
               <MaterialIcons name="check-circle" size={19} color={colors.teal} />
-              <Text style={styles.noteText}>Your dish is live in Today’s menu, with a story until midnight. Orders show under Orders for you.</Text>
+              <Text style={styles.noteText}>Your dish is live in Today’s menu, with a story until midnight. Orders show under Incoming orders.</Text>
             </View>
           ) : null}
 
@@ -260,7 +260,7 @@ export default function DishScreen() {
 
           {mine ? (
             <>
-              <PrimaryButton label="See orders for you" onPress={() => router.push({ pathname: '/orders', params: { tab: 'cook' } })} style={{ marginTop: 20 }} />
+              <PrimaryButton label="See incoming orders" onPress={() => router.push({ pathname: '/orders', params: { tab: 'cook' } })} style={{ marginTop: 20 }} />
               <Pressable style={styles.remove} onPress={confirmRemove} accessibilityRole="button" accessibilityLabel="Remove from Today’s menu">
                 <MaterialIcons name="delete-outline" size={19} color={colors.navy} />
                 <Text style={styles.removeText}>Remove from Today’s menu</Text>
