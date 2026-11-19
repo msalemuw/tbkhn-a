@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import { GrabHandle } from '@/components/grab-handle';
 import { fonts, ui } from '@/constants/theme';
-import { isRTL } from '@/lib/i18n';
 
 export type SheetAction = { label: string; destructive?: boolean; onPress: () => void };
 
