@@ -61,6 +61,7 @@
   .gt.gt2 { margin-top: 18px; }
   .gt.gt2 .pill { margin: 0 0 16px; }
   /* A yellow arrow from the offer down into the sign-in card, and a glowing ring on that card, so the eye ends on the buttons. */
+  .card-sc [data-t="secAbout"], .card-sc #loves { display: none; }
   .gt-arrow { background: none; box-shadow: none; padding: 0; margin: 0 auto; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 16px solid var(--yellow); border-radius: 0; }
   #stepStart.gtgo { margin-top: 6px; box-shadow: 0 0 0 4px var(--yellow), 0 0 34px rgba(255,193,7,0.5); animation: gtglow 2.4s ease-in-out infinite; }
   #stepStart.gtgo h2 { font-size: 30px; margin-bottom: 14px; }
@@ -415,7 +416,7 @@
       whatsappHint: 'We’ll message you here the day the app opens. Only our team sees it.',
       secAbout: 'ABOUT YOU (OPTIONAL)', lovesCooking: 'I love cooking', lovesEating: 'I love eating', lovesBoth: 'I love cooking and eating',
       errLoves: 'Please choose what you love: cooking, eating or both.',
-      secCommunities: 'WHERE DO YOU LIVE?',
+      secCommunities: 'YOUR COMMUNITY',
       secCommunitiesSub: 'Your area is your first community, a group of neighbours. You’ll see its cooks and posts, and they’ll see yours.',
       fCountry: 'COUNTRY', fGov: 'GOVERNORATE', fArea: 'AREA', choose: 'Choose', chooseGovFirst: 'Choose a governorate first', none: 'None',
       notListedArea: 'Can’t find your area? Request it', areaTypedPh: 'example: Rehab City',
@@ -482,7 +483,7 @@
       whatsappHint: 'هنبعتلك عليه أول يوم التطبيق ينزل. فريقنا بس اللي يشوفه.',
       secAbout: 'عنك (اختياري)', lovesCooking: 'بحب الطبخ', lovesEating: 'بحب الأكل', lovesBoth: 'بحب الطبخ والأكل',
       errLoves: 'من فضلك اختار: بتحب الطبخ، الأكل، ولا الاتنين.',
-      secCommunities: 'إنت ساكن فين؟',
+      secCommunities: 'مجتمعك',
       secCommunitiesSub: 'منطقتك هي أول مجتمع ليك، مجموعة من الجيران. هتشوف الطباخين والبوستات اللي فيها وهما هيشوفوا بتاعتك.',
       fCountry: 'الدولة', fGov: 'المحافظة', fArea: 'المنطقة', choose: 'اختار', chooseGovFirst: 'اختار المحافظة الأول', none: 'لا يوجد',
       notListedArea: 'منطقتك مش موجودة؟ اطلبها', areaTypedPh: 'مثال: مدينة الرحاب',
@@ -577,6 +578,8 @@
   // promise first. Same words as the card: sign up, post your signature dish, get likes to win. Nothing else changes.
   var CARD_SC = source.utm_campaign === 'shootingclub_cards';
   if (CARD_SC) {
+    // The "I love cooking / eating" question is left out for card visitors: one less thing between them and the club.
+    document.documentElement.classList.add('card-sc');
     T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Got a dish you’re proud of? Show the club.';
     T.en.gtB1 = 'ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'AT LAUNCH. MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
     T.en.gtP1 = 'NOW · 60 SECONDS'; T.en.gtS1 = 'Sign up and pick Shooting Club as your club.';

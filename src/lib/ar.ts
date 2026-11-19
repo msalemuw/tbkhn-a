@@ -516,7 +516,7 @@ export const ar: Record<string, string> = {
   WORK: 'الشغل',
   'We couldn’t save your profile. Check your connection and try again.': 'معرفناش نحفظ بروفايلك. اتأكد من النت وجرّب تاني.',
   'YOUR COMMUNITIES': 'مجتمعاتك',
-  'WHERE DO YOU LIVE?': 'إنت ساكن فين؟',
+  'YOUR COMMUNITY': 'مجتمعك',
   'JOIN MORE COMMUNITIES': 'انضم لمجتمعات تانية',
   'ABOUT YOU (OPTIONAL)': 'عنك (اختياري)',
   'Your area is your first community, a group of neighbors. You’ll see its cooks and posts, and they’ll see yours.': 'منطقتك هي أول مجتمع ليك، مجموعة من الجيران. هتشوف الطباخين والبوستات اللي فيها وهما هيشوفوا بتاعتك.',
