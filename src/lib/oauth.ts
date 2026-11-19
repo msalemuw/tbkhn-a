@@ -22,11 +22,18 @@ export const APPLE_SIGNIN = Platform.OS === 'ios';
 
 const FAILED = t('We couldn’t sign you in. Check your connection and try again.');
 
+// A sign-in that stops before the server is reached (the person cancelled, or Apple's or Google's own screen failed) used to leave no trace.
+// Logged on the same step as the tap, with the same `result` prop as the server check below, so counts of taps with no result can be split.
+function logStopped(method: OAuthMethod, started: number, result: 'cancelled' | 'error', stage: string, e?: unknown) {
+  const code = (e as { code?: unknown } | undefined)?.code;
+  logFunnel('signup_method_chosen', { method, result, stage }, { latencyMs: Date.now() - started, errorCode: result === 'error' ? String(code ?? 'unknown') : undefined });
+}
+
 async function finish(method: OAuthMethod, started: number, token: string, nonce?: string, fullName?: string): Promise<OAuthResult> {
   const { data, error } = await supabase.auth.signInWithIdToken({ provider: method, token, nonce });
   logFunnel(
     'signup_method_chosen',
-    { method, result: error ? 'error' : 'ok' },
+    { method, result: error ? 'error' : 'ok', stage: 'server' },
     { latencyMs: Date.now() - started, errorCode: error?.code, userRef: data.user?.id },
   );
   if (error || !data.user) return { ok: false, message: FAILED };
@@ -43,11 +50,18 @@ export async function signInWithGoogle(): Promise<OAuthResult> {
     GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID, iosClientId: GOOGLE_IOS_CLIENT_ID });
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const res = await GoogleSignin.signIn();
-    if (res.type !== 'success') return { ok: false, cancelled: true, message: '' };
+    if (res.type !== 'success') {
+      logStopped('google', started, 'cancelled', 'native');
+      return { ok: false, cancelled: true, message: '' };
+    }
     const token = res.data.idToken;
-    if (!token) return { ok: false, message: FAILED };
+    if (!token) {
+      logStopped('google', started, 'error', 'no_token');
+      return { ok: false, message: FAILED };
+    }
     return await finish('google', started, token);
-  } catch {
+  } catch (e) {
+    logStopped('google', started, 'error', 'native', e);
     return { ok: false, message: FAILED };
   }
 }
@@ -65,11 +79,18 @@ export async function signInWithApple(): Promise<OAuthResult> {
       requestedScopes: [Apple.AppleAuthenticationScope.FULL_NAME, Apple.AppleAuthenticationScope.EMAIL],
       nonce: hashed,
     });
-    if (!credential.identityToken) return { ok: false, message: FAILED };
+    if (!credential.identityToken) {
+      logStopped('apple', started, 'error', 'no_token');
+      return { ok: false, message: FAILED };
+    }
     const fullName = credential.fullName ? Apple.formatFullName(credential.fullName) : undefined;
     return await finish('apple', started, credential.identityToken, nonce, fullName || undefined);
   } catch (e) {
-    if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') return { ok: false, cancelled: true, message: '' };
+    if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') {
+      logStopped('apple', started, 'cancelled', 'native');
+      return { ok: false, cancelled: true, message: '' };
+    }
+    logStopped('apple', started, 'error', 'native', e);
     return { ok: false, message: FAILED };
   }
 }

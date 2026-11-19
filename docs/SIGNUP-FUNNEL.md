@@ -4,7 +4,7 @@ The mobile app never shows this data. Goal: see where new users get stuck and te
 
 ## Steps (event names)
 1. `welcome_viewed`
-2. `signup_method_chosen` — `method`: phone | google | apple; in the app `mode` is `welcome` when tapped on the welcome screen (Google and Apple sit there since 2026-10-25, so there is no separate "Create account" screen before them; "More sign-in options" opens the old choice screen with phone, demo sign-in and help)
+2. `signup_method_chosen` — `method`: phone | google | apple; since 2026-11-19 the app also logs how a Google or Apple attempt ended, on this same step: `result` = `ok` | `error` | `cancelled` and `stage` = `native` (the Apple or Google sign-in screen itself: cancelled, or failed with its own `error_code` such as ERR_REQUEST_UNKNOWN) | `no_token` | `server` (the token was handed to our server). A tap with no `result` in its session is a person who closed the app or lost the connection. In the app `mode` is `welcome` when tapped on the welcome screen (Google and Apple sit there since 2026-10-25, so there is no separate "Create account" screen before them; "More sign-in options" opens the old choice screen with phone, demo sign-in and help)
 3. `phone_entered` — `valid`: bool, `attempts`
 4. `code_sent` — `channel`: whatsapp (no SMS since 2026-10-04), `provider_status`
 5. `code_entered` — `attempts`, `result`: ok | wrong | expired
