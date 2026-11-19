@@ -66,6 +66,7 @@
   #stepStart.gtgo h2 { font-size: 30px; }
   #stepStart.gtgo .sub { font-size: 16px; font-weight: 600; color: var(--navy); }
   #stepStart.gtgo .abtn { min-height: 54px; }
+  #stepStart.gtgo .gtnos { margin: 0 0 12px; padding-inline-start: 10px; border-inline-start: 3px solid var(--teal); font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--navy); }
   @keyframes gtglow { 50% { box-shadow: 0 0 0 4px var(--yellow), 0 0 12px rgba(255,193,7,0.25); } }
   @media (prefers-reduced-motion: reduce) { #stepStart.gtgo { animation: none; } }
   .gt .club { font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-indent: 0.3em; }
@@ -571,10 +572,12 @@
     T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Think you’re the best cook in the club? Prove it.';
     T.en.gtB1 = 'ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
     T.en.gtS1 = '1. Sign up (60 seconds)'; T.en.gtS2 = '2. Post your best dish'; T.en.gtS3 = '3. Join Shooting Club'; T.en.gtS4 = '4. Get the most likes';
+    T.en.gtNos = 'Meet your old club friends again. Don’t be the one who missed it.';
     T.en.gtNote = 'Everyone says they cook the best. Now the club decides, with likes. Free to enter. Posting opens when the app launches, and your account is ready now.';
     T.ar.gtEdition = 'نسخة الطبخ أونلاين'; T.ar.gtThink = 'فاكر نفسك أحسن طباخ في النادي؟ ورّينا.';
     T.ar.gtB1 = 'صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
     T.ar.gtS1 = 'سجّل (60 ثانية)'; T.ar.gtS2 = 'انشر أحسن طبق'; T.ar.gtS3 = 'انضم لنادي الصيد'; T.ar.gtS4 = 'اجمع أكتر لايكات';
+    T.ar.gtNos = 'قابل صحابك القدام من النادي تاني، وماتبقاش اللي فاتك.';
     T.ar.gtNote = 'كل واحد بيقول أكله هو الأحلى. دلوقتي النادي هو اللي بيحسم، باللايكات. الاشتراك مجاني. النشر بيبدأ أول ما التطبيق ينزل، وحسابك جاهز من دلوقتي.';
     var gtFont = document.createElement('link'); gtFont.rel = 'stylesheet';
     gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
@@ -586,6 +589,7 @@
       '<div class="gban"><div class="b1" data-t="gtB1"></div><div class="b2" data-t="gtB2"></div></div></div>' +
       '<div class="gt-arrow gt" aria-hidden="true"></div>');
     $('stepStart').classList.add('gtgo');
+    $('stepStart').querySelector('.sub').insertAdjacentHTML('afterend', '<p class="gtnos" data-t="gtNos"></p>');
     $('stepStart').insertAdjacentHTML('afterend',
       '<div class="gt gt2"><div><span class="pill" data-t="gtEdition"></span></div>' +
       '<div class="gsteps">' +
