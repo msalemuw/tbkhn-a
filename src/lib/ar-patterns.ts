@@ -1,6 +1,7 @@
 // Arabic for text with numbers or names inside, tried in order when ar.ts has no exact match.
 // [pattern for the whole English text, Arabic with $1 $2 for the captured parts, or a function making it].
 import { ar } from '@/lib/ar';
+import { halfName } from '@/lib/names';
 
 type To = string | ((...m: string[]) => string);
 
@@ -15,7 +16,7 @@ const NOUN: Record<string, string> = {
 };
 // A place or community name in Arabic when we have it, else as typed.
 const arByLower = new Map(Object.entries(ar).map(([k, v]) => [k.toLowerCase(), v]));
-const nm = (x: string) => arByLower.get(x.toLowerCase()) ?? x;
+const nm = (x: string) => arByLower.get(x.toLowerCase()) ?? halfName(x, true);
 const noun = (n: string) => NOUN[n] ?? n;
 const NEW: Record<string, string> = { area: 'منطقة جديدة', club: 'نادي جديد', school: 'مدرسة جديدة', workplace: 'مكان شغل جديد', work: 'مكان شغل جديد', 'Sahel community': 'مجتمع ساحل جديد', community: 'مجتمع جديد' };
 
@@ -73,7 +74,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Likes · (\d+)$/, 'اللايكات · $1'],
   [/^Inbox, (\d+) new$/, 'الرسايل، $1 جديدة'],
   [/^(\d+) likes\. See who liked$/, '$1 لايك. شوف مين عمل لايك'],
-  [/^#(\d+) Likes · (.+)$/, (_, r, c) => `#${r} لايكات · ${nm(c)}`],
+  [/^#(\d+) Likes · (.+)$/, (_, r, c) => `#${r} في اللايكات · ${nm(c)}`],
   [/^#(\d+) in (.+) · Likes$/, (_, r, c) => `#${r} في ${nm(c)} · لايكات`],
   [/^#(\d+) in (.+)$/, (_, r, c) => `#${r} في ${nm(c)}`],
   [/^TOP COOKS IN (.+)$/i, (_, c) => `أفضل الطباخين في ${nm(c)}`],
