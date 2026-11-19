@@ -77,6 +77,32 @@ Deno.serve(async (req) => {
       return reply({ hits });
     }
 
+    // Staff only: the English and Arabic spelling of a place, so a new community gets both names.
+    //   { action: 'names', q }  ->  { en, ar, line2 }  (the top Google suggestion in each language; null when none)
+    if (body.action === 'names') {
+      const { data: staff } = await admin.from('admin_staff').select('role').eq('user_id', auth.user.id).maybeSingle();
+      if (!staff || !['owner', 'moderator'].includes(staff.role)) return reply({ error: 'not allowed' }, 403);
+      const q = String(body.q ?? '').trim().slice(0, 120);
+      if (q.length < 2) return reply({ en: null, ar: null, line2: '' });
+      if (!(await underCap(auth.user.id, 'search'))) return reply({ error: 'daily limit reached' }, 429);
+      const top = async (languageCode: string) => {
+        const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+          method: 'POST',
+          headers: { ...JSON_HEADERS, 'X-Goog-Api-Key': KEY },
+          body: JSON.stringify({ input: q, includedRegionCodes: ['eg'], languageCode }),
+        });
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          console.log('names failed', languageCode, res.status, JSON.stringify(json));
+          return null;
+        }
+        const p = (json?.suggestions ?? []).map((s: any) => s.placePrediction).filter(Boolean)[0];
+        return p ? { name: p.structuredFormat?.mainText?.text ?? p.text?.text ?? null, line2: p.structuredFormat?.secondaryText?.text ?? '' } : null;
+      };
+      const [en, ar] = await Promise.all([top('en'), top('ar')]);
+      return reply({ en: en?.name ?? null, ar: ar?.name ?? null, line2: en?.line2 ?? '' });
+    }
+
     if (body.action === 'pick') {
       const id = String(body.id ?? '');
       if (!/^[\w-]{10,200}$/.test(id)) return reply({ error: 'bad id' }, 400);
