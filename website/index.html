@@ -55,6 +55,41 @@
   .top { align-items: center; justify-content: space-between; }
   .top .toplogo { height: 34px; width: auto; }
   .topline { font: 400 30px/1.12 var(--serif); margin: 18px 0 0; }
+  /* The Shooting Club "Got Talent" card, repeated at the top of the page for people who scan it (/web). */
+  .gt { background: var(--white); color: var(--navy); border-radius: 28px; padding: 22px 16px 20px; margin-top: 18px; text-align: center; box-shadow: 0 0 0 2px var(--light-blue); }
+  .gt.gt1 { padding: 14px 14px 14px; margin-top: 10px; }
+  .gt.gt2 { margin-top: 18px; }
+  .gt.gt2 .pill { margin: 0 0 16px; }
+  /* A yellow arrow from the offer down into the sign-in card, and a glowing ring on that card, so the eye ends on the buttons. */
+  .gt-arrow { background: none; box-shadow: none; padding: 0; margin: 0 auto; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 16px solid var(--yellow); border-radius: 0; }
+  #stepStart.gtgo { margin-top: 6px; box-shadow: 0 0 0 4px var(--yellow), 0 0 34px rgba(255,193,7,0.5); animation: gtglow 2.4s ease-in-out infinite; }
+  #stepStart.gtgo h2 { font-size: 30px; margin-bottom: 14px; }
+  #stepStart.gtgo .sub, #stepStart.gtgo .note { display: none; }
+  #stepStart.gtgo .abtn { min-height: 54px; }
+  @keyframes gtglow { 50% { box-shadow: 0 0 0 4px var(--yellow), 0 0 12px rgba(255,193,7,0.25); } }
+  @media (prefers-reduced-motion: reduce) { #stepStart.gtgo { animation: none; } }
+  .gt .club { font-size: 12px; font-weight: 700; letter-spacing: 0.3em; text-indent: 0.3em; }
+  .gt .title { display: inline-flex; align-items: flex-start; gap: 4px; margin-top: 2px; font: 400 46px/1.05 'Kaushan Script', cursive; direction: ltr; }
+  .gt .title svg { width: 26px; height: 34px; margin-top: 2px; }
+  .gt .pill { display: inline-block; margin-top: 8px; background: var(--navy); color: var(--white); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; padding: 7px 16px; border-radius: 999px; }
+  .gt .think { font-size: 17px; font-weight: 700; line-height: 1.3; margin: 8px 4px 12px; }
+  .gt .gsteps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 8px; }
+  .gt .gsteps div { font-size: 13px; font-weight: 700; line-height: 1.3; }
+  .gt .gban { background: var(--yellow); border-radius: 14px; padding: 8px 12px; margin: 0; }
+  .gt .gban .b1 { font-size: 22px; font-weight: 800; line-height: 1.15; }
+  html[lang="ar"] .gt .gban .b1, html[lang="ar"] .gt .pill { letter-spacing: 0; }
+  .gt .gban .b2 { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; margin: 3px 0 0; }
+  html[lang="ar"] .gt .gban .b2 { letter-spacing: 0; }
+  .gt .gban .b3 { font-size: 13px; font-weight: 600; }
+  .gt .ph { display: flex; align-items: center; gap: 12px; text-align: start; padding: 12px 4px; border-top: 2px solid var(--light-blue); }
+  .gt .ph svg { flex: none; width: 30px; height: 30px; fill: var(--navy); }
+  .gt .ph b { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; color: var(--navy); }
+  html[lang="ar"] .gt .ph b { letter-spacing: 0; font-size: 13px; }
+  .gt .ph span { display: block; font-size: 15px; font-weight: 600; line-height: 1.35; margin-top: 2px; }
+  .gt .ph2 svg { fill: var(--teal); }
+  .gt .ph3 svg { fill: var(--yellow); }
+  .gt .gnote { margin: 14px 0 0; font-size: 13px; line-height: 1.45; color: var(--muted); }
+  .gt .gsteps svg { display: block; width: 30px; height: 30px; margin: 0 auto 8px; fill: var(--navy); }
   .topline b { color: var(--yellow); font-weight: inherit; }
   html[lang="ar"] .topline { font-weight: 600; font-size: 26px; line-height: 1.35; }
   .more { margin-top: 18px; border-top: 1.5px solid var(--light-blue); padding-top: 4px; }
@@ -260,6 +295,7 @@
         </div>
 
         <div id="part3" hidden>
+        <p class="hint" id="cardClubNote" hidden style="font-weight:600"></p>
         <div id="optional"></div>
         <p class="hint" data-t="moreLater"></p>
 
@@ -302,6 +338,7 @@
       <h2 id="doneTitle"></h2>
       <p class="sub" data-t="doneSub"></p>
       <div class="note"><span>ⓘ</span><span id="doneNote"></span></div>
+      <a class="cta" id="igFollow" href="https://instagram.com/tabkheen.a" target="_blank" rel="noopener" data-t="igFollow" hidden style="display:block;text-align:center;text-decoration:none;line-height:1.2;padding-top:16px"></a>
       <button class="cta" id="share" type="button" data-t="share"></button>
       <button class="ghost" id="copy" type="button" data-t="copy"></button>
       <p class="hint" data-t="shareHint" style="text-align:center"></p>
@@ -536,6 +573,52 @@
   var inApp = /Instagram/.test(ua) ? 'instagram' : /FBAN|FBAV|FB_IAB|FB4A|FBIOS|MessengerForiOS/.test(ua) ? 'facebook' : '';
   var ref = (params.get('ref') || store('tabkheen.ref') || '').toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
   if (ref) { source.ref = ref; store('tabkheen.ref', ref); }
+  // The printed Shooting Club "Got Talent" cards promise a competition, so people arriving from them (/web) see that
+  // promise first. Same words as the card: sign up, post your signature dish, get likes to win. Nothing else changes.
+  var CARD_SC = source.utm_campaign === 'shootingclub_cards';
+  if (CARD_SC) {
+    T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Got a dish you’re proud of? Show the club.';
+    T.en.gtB1 = 'ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'AT LAUNCH. MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
+    T.en.gtP1 = 'NOW · 60 SECONDS'; T.en.gtS1 = 'Sign up and pick Shooting Club as your club.';
+    T.en.gtP2 = 'LATER · THE DAY THE APP LAUNCHES'; T.en.gtS2 = 'Post your best dish. The club likes it. Most likes wins.';
+    T.en.gtP3 = 'BONUS · FIRST 50'; T.en.gtS3 = 'Prize revealed to the first 50 who sign up.';
+    T.en.gtNote = 'Meet your old club friends again. Don’t be the one who missed it. Be in from the very first minute: your account and your club are ready, so when the app opens you just post.';
+    T.ar.gtEdition = 'نسخة الطبخ أونلاين'; T.ar.gtThink = 'عندك أكلة بتفتخر بيها؟ وري النادي كله.';
+    T.ar.gtB1 = 'صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أول ما التطبيق ينزل. أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
+    T.ar.gtP1 = 'النهارده · 60 ثانية'; T.ar.gtS1 = 'سجّل واختار نادي الصيد كنادي ليك.';
+    T.ar.gtP2 = 'بعدين · يوم ما التطبيق ينزل'; T.ar.gtS2 = 'انشر أحسن طبق ليك. النادي يعمله لايك. أكتر لايكات تكسب.';
+    T.ar.gtP3 = 'مكافأة · أول 50'; T.ar.gtS3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
+    T.ar.gtNote = 'قابل صحابك القدام من النادي تاني، وماتبقاش اللي فاتك. كون موجود من أول دقيقة: حسابك ونادي الصيد جاهزين، وأول ما التطبيق يفتح تنشر على طول.';
+    var gtFont = document.createElement('link'); gtFont.rel = 'stylesheet';
+    gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
+    var topl = document.querySelector('.topline'); if (topl) topl.hidden = true;
+    $('stepStart').insertAdjacentHTML('beforebegin',
+      '<div class="gt gt1"><div class="club">SHOOTING CLUB</div>' +
+      '<div class="title">Got Talent<svg viewBox="0 0 30 40" fill="none" stroke="#00c2a8" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M8 7l14-5M12 20h16M8 33l14 5"/></svg></div>' +
+      '<p class="think" data-t="gtThink"></p>' +
+      '<div class="gban"><div class="b1" data-t="gtB1"></div><div class="b2" data-t="gtB2"></div></div></div>' +
+      '<div class="gt-arrow gt" aria-hidden="true"></div>');
+    $('stepStart').classList.add('gtgo');
+    $('stepStart').insertAdjacentHTML('afterend',
+      '<div class="gt gt2"><div><span class="pill" data-t="gtEdition"></span></div>' +
+      '<div class="ph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4.5"/><path d="M3 22c0-5 4-8 9-8s9 3 9 8z"/></svg><div><b data-t="gtP1"></b><span data-t="gtS1"></span></div></div>' +
+      '<div class="ph ph3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l3 6.600 7.200.8-5.400 4.900 1.500 7.100L12 17.300l-6.300 3.600 1.500-7.100L1.800 8.900 9 8.100z"/></svg><div><b data-t="gtP3"></b><span data-t="gtS3"></span></div></div>' +
+      '<div class="ph ph2"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 6.2a4.8 4.8 0 110 9.6 4.8 4.8 0 010-9.6zm0 2a2.8 2.8 0 100 5.6 2.8 2.8 0 000-5.6z"/></svg><div><b data-t="gtP2"></b><span data-t="gtS2"></span></div></div>' +
+      '<p class="gnote" data-t="gtNote"></p></div>');
+    T.en.startTitle = 'Join Shooting Club';
+    T.en.startSub = 'Free. Choose Shooting Club as your club. Prize revealed to the first 50 who sign up.';
+    T.en.profileTitle3 = 'Last step: join Shooting Club';
+    T.en.doneTitle = function (u) { return 'You’re all set, @' + u + '!'; };
+    T.ar.doneTitle = function (u) { return 'كل حاجة جاهزة يا @' + u + '!'; };
+    T.en.doneSub = 'You’re in Shooting Club. We’ll notify you the day the app opens, and that’s when you post your dish. Follow us on Instagram to stay updated.';
+    T.ar.doneSub = 'إنت دلوقتي في نادي الصيد. هنبلّغك يوم ما التطبيق ينزل، ساعتها تنشر أكلتك. تابعنا على إنستجرام عشان تفضل عارف كل جديد.';
+    T.en.igFollow = 'Follow tabkheen.a on Instagram'; T.ar.igFollow = 'تابع tabkheen.a على إنستجرام';
+    T.en.cardClubNote = 'To enter the competition, keep Shooting Club selected under CLUB, then tap Save and finish.';
+    T.ar.startTitle = 'انضم لنادي الصيد';
+    T.ar.startSub = 'مجاني. اختار نادي الصيد كنادي ليك. الجايزة بتتكشف لأول 50 يسجّلوا.';
+    T.ar.profileTitle3 = 'آخر خطوة: انضم لنادي الصيد';
+    T.ar.cardClubNote = 'عشان تدخل المسابقة، سيب "Shooting Club نادي الصيد" مختار تحت النادي، وبعدين دوس احفظ وخلّص.';
+  }
 
   // A small Supabase client: the same auth (Google or Apple ID token) and database API the app uses, without a
   // library download, so the page keeps working if a script CDN is slow or blocked.
@@ -628,6 +711,7 @@
     $('stepStart').hidden = state.step !== 'start';
     $('stepProfile').hidden = state.step !== 'profile';
     $('stepDone').hidden = state.step !== 'done';
+    $('igFollow').hidden = !CARD_SC;
     $('emailBox').hidden = !(state.user && state.user.email); if (state.user && state.user.email) $('emailShown').textContent = state.user.email;
     if (state.user) $('signedInAs').textContent = t('signedInAs')(providerName()) + (state.user.email || '');
     // Inside Instagram/Facebook the way out (open the browser) comes first; the sign-in buttons stay below it for those who can use them.
@@ -645,6 +729,8 @@
     // The sign-in card is at the top of the page, so each later step starts at the top too.
     if (state.shownStep && state.shownStep !== state.step && state.step !== 'start') window.scrollTo(0, 0);
     state.shownStep = state.step;
+    // The card promo (Shooting Club visitors) belongs to the first screen only.
+    document.querySelectorAll('.gt').forEach(function (el) { el.hidden = state.step !== 'start'; });
     if (state.step === 'profile') {
       var part = state.part === 3 ? 3 : state.part === 2 ? 2 : 1;
       $('part1').hidden = part !== 1; $('part2').hidden = part !== 2; $('part3').hidden = part !== 3;
@@ -652,6 +738,8 @@
       $('partNote').textContent = t('stepOf')(part);
       $('submit').textContent = t(part === 3 ? 'save' : part === 2 ? 'submit' : 'next');
       $('skip').hidden = part !== 3; $('back').hidden = part === 1;
+      // Card visitors join Shooting Club on this last step, so it can't be skipped past the club.
+      $('cardClubNote').hidden = true; if (CARD_SC) $('cardClubNote').textContent = t('cardClubNote');
       fillCountries(); fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
@@ -934,6 +1022,11 @@
       var sel = document.createElement('select'); sel.id = 'opt-' + kind; sel.dataset.kind = kind;
       var list = state.communities.filter(function (c) { return c.kind === kind; });
       fillSelect(sel, [{ value: '', label: t('none') }].concat(list.map(function (c) { return { value: c.id, label: communityLabel(c) }; }), [{ value: OTHER, label: t('notListedOpt')[kind] }]), cur[kind] || '');
+      // Card visitors: Shooting Club is chosen for them once (they can still change it).
+      if (CARD_SC && kind === 'club' && !state.clubPreset) {
+        var sc = list.filter(function (c) { return c.status === 'approved' && /^shooting club/i.test(c.name); })[0];
+        if (sc) { sel.value = sc.id; state.clubPreset = true; }
+      }
       // Same as the app's "Can't find your club? Request it": the typed name becomes a community request.
       var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 80; inp.id = 'opt-' + kind + '-typed'; inp.dataset.kind = kind;
       inp.placeholder = t('optTypedPh'); inp.style.marginTop = '8px'; inp.value = typed[kind] || ''; inp.hidden = sel.value !== OTHER;
@@ -1192,7 +1285,9 @@
         Object.keys(heard).forEach(function (k) { row[k] = heard[k]; });
         return sb.update('profiles', 'id=eq.' + uid, row).then(function (res) {
           if (res.error) throw res.error;
-          return join([area]);
+          // Card visitors are put in Shooting Club here, so closing the page after this step still leaves them in the competition.
+          var scClub = CARD_SC ? state.communities.filter(function (c) { return c.status === 'approved' && /^shooting club/i.test(c.name); })[0] : null;
+          return join(scClub ? [area, scClub] : [area]).then(function (n) { if (scClub) logFunnel('card_club_joined'); return n; });
         });
       }).then(function (n) {
         logFunnel('communities_selected', { count: n });

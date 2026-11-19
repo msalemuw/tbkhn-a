@@ -52,3 +52,13 @@ Two QR codes, two destinations. `tabkheen-a.com/web` (website early sign-up) ope
 
 ## Shooting Club cards (2026-11-19)
 2,100 cards were printed with two QR codes: the left one opens `tabkheen-a.com/web`, the right one opens instagram.com/tabkheen.a directly (checked by decoding a photo of a printed card). `/web` now sends people to the sign-up page with `utm_source=handout`, `utm_medium=print`, `utm_campaign=shootingclub_cards`, `utm_term=Shooting Club`, `utm_content=card_v1`, so the admin shows these sign-ups as source "handout" with campaign "shootingclub_cards". Before this change `/web` was tagged `utm_source=website`. The Instagram QR is not counted by our backend.
+
+### Shooting Club card wording (2026-11-19)
+Visits tagged `utm_campaign=shootingclub_cards` (the `/web` link on the printed cards) show the card's promise first: "Think you're the best cook in the club? Prove it", "Join Shooting Club Got Talent", sign up / post your signature dish / get likes to win (Arabic too). All other visits keep the normal wording. Wording only; the sign-up steps are identical.
+Card visitors also see the card's design at the top (Got Talent title, cooking edition tag, "One photo. One minute. Most likes wins." with the first-50 prize reveal, four steps), a last step titled "Last step: join Shooting Club" with Shooting Club preselected under CLUB (they can change it), and no "Skip for now" on that step. Wording and defaults only; fields and saved data are the same as every other sign-up.
+
+Layout for card visitors: the offer sits above the sign-in card, a yellow arrow points into it, and the card has a glowing yellow ring, so the Google and Apple buttons are on the first screen even on small phones. The four steps and the note come below the buttons. The promo hides after sign-in.
+
+Timing on the card page: sign-up and choosing Shooting Club happen today ("TODAY · 60 SECONDS"); posting the dish and the likes competition start when the app launches ("THE DAY THE APP LAUNCHES"). The page says so in both languages; keep that if the wording changes, because the app cannot take dish posts until launch.
+
+- Shooting Club card auto-join (founder, 2026-11-19): visitors from the card (`utm_campaign=shootingclub_cards`) are added to Shooting Club when step 2 is finished (event `card_club_joined`), so closing the page before the optional step 3 still leaves them in the competition. The skip button is back for them. Their done screen says "You're all set", that they will be notified the day the app opens, and has a Follow on Instagram button. Website only (card page); not an app change.
