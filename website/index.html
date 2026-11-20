@@ -613,8 +613,8 @@
     T.en.startSub = 'Free. Choose Shooting Club as your club. Prize revealed to the first 50 who sign up.';
     T.en.doneTitle = function (u) { return 'You’re all set, @' + u + '!'; };
     T.ar.doneTitle = function (u) { return 'كل حاجة جاهزة يا @' + u + '!'; };
-    T.en.doneSub = 'You’re in Shooting Club. We’ll notify you the day the app opens, and that’s when you post your dish. Follow us on Instagram to stay updated.';
-    T.ar.doneSub = 'إنت دلوقتي في نادي الصيد. هنبلّغك يوم ما التطبيق ينزل، ساعتها تنشر أكلتك. تابعنا على إنستجرام عشان تفضل عارف كل جديد.';
+    T.en.doneSub = 'You’re all set. We’ll notify you the day the app opens, and that’s when you post your dish. Follow us on Instagram to stay updated.';
+    T.ar.doneSub = 'كل حاجة جاهزة. هنبلّغك يوم ما التطبيق ينزل، ساعتها تنشر أكلتك. تابعنا على إنستجرام عشان تفضل عارف كل جديد.';
     T.en.igFollow = 'Follow tabkheen.a on Instagram'; T.ar.igFollow = 'تابع tabkheen.a على إنستجرام';
     T.en.cardClubNote = 'To enter the competition, keep Shooting Club selected under CLUB, then tap Save and finish.';
     T.ar.startTitle = 'انضم للمسابقة';
@@ -1025,11 +1025,6 @@
       var sel = document.createElement('select'); sel.id = 'opt-' + kind; sel.dataset.kind = kind;
       var list = state.communities.filter(function (c) { return c.kind === kind; });
       fillSelect(sel, [{ value: '', label: t('none') }].concat(list.map(function (c) { return { value: c.id, label: communityLabel(c) }; }), [{ value: OTHER, label: t('notListedOpt')[kind] }]), cur[kind] || '');
-      // Card visitors: Shooting Club is chosen for them once (they can still change it).
-      if (CARD_SC && kind === 'club' && !state.clubPreset) {
-        var sc = list.filter(function (c) { return c.status === 'approved' && /^shooting club/i.test(c.name); })[0];
-        if (sc) { sel.value = sc.id; state.clubPreset = true; }
-      }
       // Same as the app's "Can't find your club? Request it": the typed name becomes a community request.
       var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 80; inp.id = 'opt-' + kind + '-typed'; inp.dataset.kind = kind;
       inp.placeholder = t('optTypedPh'); inp.style.marginTop = '8px'; inp.value = typed[kind] || ''; inp.hidden = sel.value !== OTHER;
@@ -1288,9 +1283,7 @@
         Object.keys(heard).forEach(function (k) { row[k] = heard[k]; });
         return sb.update('profiles', 'id=eq.' + uid, row).then(function (res) {
           if (res.error) throw res.error;
-          // Card visitors are put in Shooting Club here, so closing the page after this step still leaves them in the competition.
-          var scClub = CARD_SC ? state.communities.filter(function (c) { return c.status === 'approved' && /^shooting club/i.test(c.name); })[0] : null;
-          return join(scClub ? [area, scClub] : [area]).then(function (n) { if (scClub) logFunnel('card_club_joined'); return n; });
+          return join([area]);
         });
       }).then(function (n) {
         logFunnel('communities_selected', { count: n });
