@@ -581,13 +581,13 @@
   if (CARD_SC) {
     // The "I love cooking / eating" question is left out for card visitors: one less thing between them and the club.
     document.documentElement.classList.add('card-sc');
-    T.en.gtEdition = 'ONLINE COOKING EDITION'; T.en.gtThink = 'Got a dish you’re proud of? Show the club.';
+    T.en.gtEdition = 'ONLINE FOOD EDITION'; T.en.gtThink = 'Got a dish you’re proud of? Show the club.';
     T.en.gtB1 = 'ONE PHOTO. ONE MINUTE.'; T.en.gtB2 = 'AT LAUNCH. MOST LIKES WINS.'; T.en.gtB3 = 'Prize revealed to the first 50 who sign up.';
     T.en.gtP1 = 'NOW · 60 SECONDS'; T.en.gtS1 = 'Sign up.';
     T.en.gtP2 = 'LATER · THE DAY THE APP LAUNCHES'; T.en.gtS2 = 'Post your best dish. The club likes it. Most likes wins.';
     T.en.gtP3 = 'BONUS · FIRST 50'; T.en.gtS3 = 'Prize revealed to the first 50 who sign up.';
     T.en.gtNote = 'Meet your old club friends again. Be in from the first minute, so when the app opens you just post.';
-    T.ar.gtEdition = 'نسخة الطبخ أونلاين'; T.ar.gtThink = 'عندك أكلة بتفتخر بيها؟ وري النادي كله.';
+    T.ar.gtEdition = 'نسخة الأكل أونلاين'; T.ar.gtThink = 'عندك أكلة بتفتخر بيها؟ وري النادي كله.';
     T.ar.gtB1 = 'صورة واحدة. دقيقة واحدة.'; T.ar.gtB2 = 'أول ما التطبيق ينزل. أكتر لايكات تكسب.'; T.ar.gtB3 = 'الجايزة بتتكشف لأول 50 يسجّلوا.';
     T.ar.gtP1 = 'النهارده · 60 ثانية'; T.ar.gtS1 = 'سجّل.';
     T.ar.gtP2 = 'بعدين · يوم ما التطبيق ينزل'; T.ar.gtS2 = 'انشر أحسن طبق ليك. النادي يعمله لايك. أكتر لايكات تكسب.';
@@ -597,7 +597,7 @@
     gtFont.href = 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap'; document.head.appendChild(gtFont);
     var topl = document.querySelector('.topline'); if (topl) topl.hidden = true;
     $('stepStart').insertAdjacentHTML('beforebegin',
-      '<div class="gt gt1"><div class="club">SHOOTING CLUB</div>' +
+      '<div class="gt gt1">' +
       '<div class="title">Got Talent<svg viewBox="0 0 30 40" fill="none" stroke="#00c2a8" stroke-width="4" stroke-linecap="round" aria-hidden="true"><path d="M8 7l14-5M12 20h16M8 33l14 5"/></svg></div>' +
       '<p class="think" data-t="gtThink"></p>' +
       '<div class="gban"><div class="b1" data-t="gtB1"></div><div class="b2" data-t="gtB2"></div></div></div>' +
