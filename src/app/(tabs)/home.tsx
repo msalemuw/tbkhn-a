@@ -22,7 +22,8 @@ import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked } from '@/lib/feed';
-import { useCriticIds } from '@/lib/critics';
+import { refreshCritics, useCriticIds } from '@/lib/critics';
+import { refreshVerified } from '@/lib/verified';
 import { distanceMeters } from '@/lib/format';
 import { useDataVersion } from '@/lib/live';
 import { reportMyPosition, useMyLocation } from '@/lib/location';
@@ -69,6 +70,9 @@ export default function Home() {
   const load = useCallback(async () => {
     if (!supabaseConfigured) return setLoading(false);
     setLoading(true);
+    // Pull to refresh (and coming back to Home) also picks up newly verified members and critics.
+    void refreshVerified();
+    void refreshCritics();
     try {
       const [feed, communities, follows, groups, seenIds] = await Promise.all([
         fetchFeed(me),
