@@ -27,8 +27,8 @@ const DAYS_AR = ['الأحد', 'الاتنين', 'التلات', 'الأربع',
 
 export const arPatterns: [RegExp, To][] = [
   // Time and distance (format.ts)
-  [/^Show (\d+) posts?$/, 'اعرض $1 منشور'],
-  [/^Show (\d+) (?:dish|dishes)$/, 'اعرض $1 أكلة'],
+  [/^Show (\d+) posts?$/, 'شوف $1 بوست'],
+  [/^Show (\d+) (?:dish|dishes)$/, 'شوف $1 أكلة'],
   [/^Pickup near (.+)$/, (_, a) => `الاستلام قريب من ${nm(a)}`],
   [/^The exact pickup spot is shared once (.+) (?:accepts your order|accepts)\.$/, 'مكان الاستلام بالظبط هيظهر لك لما $1 يقبل الطلب.'],
   [/^in (\d+) min$/, 'بعد $1 دقيقة'],
@@ -56,8 +56,8 @@ export const arPatterns: [RegExp, To][] = [
 
   [/^(.+) away$/, '$1 بعيد'],
   [/^See all (\d+) cooks$/, 'شوف كل الـ $1 طباخ'],
-  [/^Nothing on today’s menu in (.+) yet\.$/, (_, c) => `مفيش حاجة في قائمة النهاردة في ${nm(c)} لسه.`],
-  [/^Today’s menu in (.+)$/, (_, c) => `قائمة النهاردة في ${nm(c)}`],
+  [/^Nothing on today’s menu in (.+) yet\.$/, (_, c) => `مفيش حاجة في منيو النهاردة في ${nm(c)} لسه.`],
+  [/^Today’s menu in (.+)$/, (_, c) => `منيو النهاردة في ${nm(c)}`],
   [/^We got your message and will answer on (.+)\.$/, 'وصلتنا رسالتك وهنرد عليك على $1.'],
   [/^Tell us what happened and we will answer here\.$/, 'قولنا حصل إيه وهنرد عليك هنا.'],
   [/^Tell us what happened and we will answer here, on the email or phone you leave\.$/, 'قولنا حصل إيه وهنرد عليك على الإيميل أو الموبايل اللي هتسيبه.'],
@@ -97,7 +97,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Thanks! “(.+)” is waiting for approval\.$/, 'شكرًا! «$1» مستني الموافقة.'],
 
   // Dish and order
-  [/^Pickup spot: (.+)\. Show on map$/, 'مكان الاستلام: $1. اعرضه على الخريطة'],
+  [/^Pickup spot: (.+)\. Show on map$/, 'مكان الاستلام: $1. شوفه على الخريطة'],
   [/^Order a plate of (.+)$/, 'احجز طبق $1'],
   [/^Pickup (.+)$/, 'الاستلام $1'],
   [/^Ready now$/, 'جاهز دلوقتي'],
@@ -125,7 +125,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Tap Mark as ready when it’s done, and (.+) is told right away\.$/, 'دوس «علّم إنه جاهز» لما يخلص، و$1 هيتبلّغ على طول.'],
   [/^Tap Picked up when (.+) collects it\.$/, 'دوس «اتستلم» لما $1 يستلمه.'],
   [/^(.+) cancelled$/, '$1 لغى'],
-  [/^Please finish your mobile number \(example: (.+)\) or clear it\.$/, 'من فضلك كمّل رقم الموبايل (مثال: $1) أو امسحه.'],
+  [/^Please finish your mobile number \(example: (.+)\) or clear it\.$/, 'لو سمحت كمّل رقم الموبايل (مثلًا: $1) أو امسحه.'],
   [/^You can cancel for free until (.+) confirms\. If there’s no answer by (.+) it cancels itself\.$/, 'تقدر تلغي ببلاش لحد ما $1 يأكد. ولو مفيش رد قبل $2 بيتلغي لوحده.'],
   [/^Accept it if you can cook it in time\. They can still cancel until you mark it ready\. With no answer by (.+) it cancels itself\.$/, 'اقبله لو تقدر تطبخه في الميعاد. هو لسه يقدر يلغي لحد ما تعلّمه جاهز. ولو مفيش رد قبل $1 بيتلغي لوحده.'],
   [/^You can cancel for free until (.+) confirms\.$/, 'تقدر تلغي ببلاش لحد ما $1 يأكد.'],
@@ -177,7 +177,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^How was your order from (.+)\?$/, 'طلبك من $1 كان عامل إزاي؟'],
   [/^(.+) sent the InstaPay payment$/, '$1 بعت الدفع بإنستاباي'],
   [/^(.+) confirmed your payment$/, '$1 أكّد دفعك'],
-  [/^(.+) added to today’s menu$/, '$1 ضاف لقائمة النهاردة'],
+  [/^(.+) added to today’s menu$/, '$1 ضاف لمنيو النهاردة'],
   [/^(.+) liked your post$/, '$1 عمل لايك لبوستك'],
   [/^(.+) commented on your post$/, '$1 علّق على بوستك'],
   [/^(.+) replied to your comment$/, '$1 رد على تعليقك'],
@@ -203,7 +203,7 @@ export const arPatterns: [RegExp, To][] = [
   [/^Waiting for (.+) to pay\. Start cooking once the payment is confirmed\.$/, 'مستني $1 يدفع. ابدأ الطبخ لما الدفع يتأكد.'],
   [/^You can cook this order\. Tap Mark as ready when it’s done, and (.+) is told right away\.$/, 'تقدر تطبخ الطلب. دوس «علّم إنه جاهز» لما يخلص، و$1 هيتبلّغ على طول.'],
   [/^(.+) is preparing your order\. You’ll be told when it’s ready\.$/, '$1 بيجهّز طلبك. هنبلّغك لما يبقى جاهز.'],
-  [/^(.+) didn’t pay in time\. The plates went back on your menu\.$/, '$1 ما دفعش في الوقت. الأطباق رجعت للقائمة بتاعتك.'],
+  [/^(.+) didn’t pay in time\. The plates went back on your menu\.$/, '$1 ما دفعش في الوقت. الأطباق رجعت للمنيو بتاعتك.'],
   [/^(.+)’s payment is confirmed$/, 'دفع $1 اتأكد'],
   [/^(.+) · your pickup code is in the order$/, '$1 · كود الاستلام جوه الطلب'],
   [/^(.+) · you can start cooking$/, '$1 · تقدر تبدأ الطبخ'],
