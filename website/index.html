@@ -575,9 +575,10 @@
   var inApp = /Instagram/.test(ua) ? 'instagram' : /FBAN|FBAV|FB_IAB|FB4A|FBIOS|MessengerForiOS/.test(ua) ? 'facebook' : '';
   var ref = (params.get('ref') || store('tabkheen.ref') || '').toLowerCase().replace(/[^a-z0-9._]/g, '').slice(0, 20);
   if (ref) { source.ref = ref; store('tabkheen.ref', ref); }
-  // The printed Shooting Club "Got Talent" cards promise a competition, so people arriving from them (/web) see that
-  // promise first. Same words as the card: sign up, post your signature dish, get likes to win. Nothing else changes.
-  var CARD_SC = source.utm_campaign === 'shootingclub_cards';
+  // Card visitors (/web, utm_campaign=shootingclub_cards) used to get a card-themed page. Founder, 2026-11-21: they now see
+  // the normal website. The handout tags above are still read, stored and saved with the sign-up (signup_source,
+  // ad tags on funnel events), so handout sign-ups stay countable. Set to the campaign test to bring the card page back.
+  var CARD_SC = false; // was: source.utm_campaign === 'shootingclub_cards'
   if (CARD_SC) {
     // The "I love cooking / eating" question is left out for card visitors: one less thing between them and the club.
     document.documentElement.classList.add('card-sc');
