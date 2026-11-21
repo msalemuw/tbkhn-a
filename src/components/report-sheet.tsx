@@ -16,7 +16,7 @@ export function ReportSheet({ target, onClose, onBlocked }: { target: ReportTarg
   const actions: SheetAction[] = target
     ? REASONS.map((reason) => ({ label: reason, onPress: () => submit(target, reason, onBlocked) }))
     : [];
-  return <ActionSheet title={target ? 'Why are you reporting this?' : null} actions={actions} onClose={onClose} />;
+  return <ActionSheet title={target ? 'Why are you reporting this?' : null} showTitle actions={actions} onClose={onClose} />;
 }
 
 function submit(t: ReportTarget, reason: string, onBlocked?: () => void) {
