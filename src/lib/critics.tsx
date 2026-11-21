@@ -14,10 +14,16 @@ const listeners = new Set<() => void>();
 
 export function refreshCritics(): Promise<void> {
   loading = (async () => {
-    const { data } = await supabase.from('profiles').select('id').not('critic_at', 'is', null).limit(1000);
-    ids = new Set((data ?? []).map((r: { id: string }) => r.id));
+    const { data, error } = await supabase.from('profiles').select('id').not('critic_at', 'is', null).limit(1000);
+    // A failed read (no network yet, session still loading) must not be remembered as "nobody": keep what we had and try again later.
+    if (error || !data) return;
+    ids = new Set((data as { id: string }[]).map((r) => r.id));
     listeners.forEach((l) => l());
-  })().catch(() => {});
+  })()
+    .catch(() => {})
+    .finally(() => {
+      loading = null;
+    });
   return loading;
 }
 
