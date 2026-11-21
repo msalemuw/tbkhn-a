@@ -15,6 +15,7 @@ import type { FeedPost } from '@/lib/feed';
 import { fmtAgo, fmtLive } from '@/lib/format';
 import { mediaUrl, personName } from '@/lib/posts';
 import type { Badge } from '@/lib/rankings';
+import { CriticBadge } from '@/lib/critics';
 import { VerifiedTick } from '@/lib/verified';
 
 /** One signature-dish post in the Home feed (design s6): cook line, photo, caption, likes, comments, share. */
@@ -72,6 +73,7 @@ export function PostCard({
           <Pressable style={styles.nameRow} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: post.author_id } })} accessibilityRole="link" accessibilityLabel={`${personName(post.author)}'s profile`}>
             <Text style={styles.name} numberOfLines={1}>{personName(post.author)}</Text>
             <VerifiedTick id={post.author_id} size={16} />
+            <CriticBadge id={post.author_id} />
           </Pressable>
           {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
           <Text style={styles.meta} numberOfLines={1}>
