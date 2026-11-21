@@ -22,6 +22,7 @@ import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked } from '@/lib/feed';
+import { useCriticIds } from '@/lib/critics';
 import { distanceMeters } from '@/lib/format';
 import { useDataVersion } from '@/lib/live';
 import { reportMyPosition, useMyLocation } from '@/lib/location';
@@ -51,6 +52,7 @@ export default function Home() {
   const [mine, setMine] = useState<MyCommunity[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [watching, setWatching] = useState<Watching | null>(null);
+  const criticIds = useCriticIds();
   // Which communities each cook belongs to: a cook shows under a community they live in even when a post was shared publicly.
   const [memberships, setMemberships] = useState<Map<string, string[]>>(new Map());
   const [watchOpen, setWatchOpen] = useState(false);
@@ -125,9 +127,16 @@ export default function Home() {
     }, [me, dataVersion]),
   );
 
-  const all = !watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id)));
+  const all = !watching?.criticsOnly && (!watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id))));
   const shown = useMemo(() => {
     if (!watching) return posts.filter((p) => p.author_id !== me);
+    // "Critics near me": only approved critics' posts, closest first (those with no known spot go last).
+    if (watching.criticsOnly) {
+      const list = posts.filter((p) => p.author_id !== me && !!criticIds?.has(p.author_id));
+      if (!here) return list;
+      const d = (p: FeedPost) => meters.get(p.author_id) ?? (p.spot ? distanceMeters(here, p.spot) : Infinity);
+      return [...list].sort((a, b) => d(a) - d(b));
+    }
     // Home is for other cooks' posts; the member's own live on their Profile.
     const list = posts.filter(
       (p) =>
@@ -143,7 +152,7 @@ export default function Home() {
     const isPublic = (p: FeedPost) => !p.community_ids.length && p.author_id !== me && !(watching.following && following.includes(p.author_id));
     const dist = (p: FeedPost) => meters.get(p.author_id) ?? (p.spot ? distanceMeters(here, p.spot) : Infinity);
     return [...list.filter((p) => !isPublic(p)), ...list.filter(isPublic).sort((a, b) => dist(a) - dist(b))];
-  }, [posts, watching, following, me, here, meters, memberships]);
+  }, [posts, watching, following, me, here, meters, memberships, criticIds]);
 
   const patch = (id: string, f: (p: FeedPost) => FeedPost) => setPosts((list) => list.map((p) => (p.id === id ? f(p) : p)));
 
@@ -200,7 +209,9 @@ export default function Home() {
       ? 'We couldn’t load the feed. Pull down to try again.'
       : loading
         ? ''
-        : posts.length
+        : watching?.criticsOnly
+          ? 'No critic has posted yet. Critics near you will show here, closest first.'
+          : posts.length
           ? 'No posts match your feed filter. Change “Feed filter” to see more.'
           : 'No posts yet. Share your signature dish from the Post tab, or follow cooks near you.';
 
@@ -251,7 +262,7 @@ export default function Home() {
             <View style={styles.bar}>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
-                <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : 'Custom'}</Text>
+                <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : watching?.criticsOnly ? 'Critics' : 'Custom'}</Text>
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
             </View>

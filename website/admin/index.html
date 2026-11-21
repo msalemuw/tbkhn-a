@@ -901,7 +901,7 @@
   var STAGE_HELP = ['signed in with Google or Apple but did not save a username', 'photo, name and username saved, required details not yet', 'required details saved (the account is complete), optional extras not yet', 'optional extras saved or skipped'];
   // Members: everyone who signed up (newest first), search, verify, suspend, download
   function viewMembers(v) {
-    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '', stages = null, testers = {}, picked = {}, fil = { who: 'all' };
+    var PAGE = 50, items = [], q = '', all = [], total = 0, listErr = '', stages = null, testers = {}, critics = {}, picked = {}, fil = { who: 'all' };
     v.innerHTML = '<div class="row"><h2 class="grow">Members</h2>' + (role === 'owner' ? '<button class="btn" id="exportMembers">Download all members (CSV)</button>' : '') + '</div>' +
       '<div class="card"><div class="row"><input type="text" id="mq" placeholder="Username, name, phone or email" autocomplete="off"><button class="btn strong" id="mgo">Search</button></div><div id="mres"></div></div>';
     // Excel-style filters: every column header opens a list of its values to tick, with sort. They work on the full list,
@@ -999,11 +999,11 @@
         '<td>' + esc(phone) + (m.whatsapp && m.phone && m.phone !== m.whatsapp ? '<br><span class="muted">' + esc(m.phone) + '</span>' : '') + '</td>' +
         '<td>' + esc(m.area || '') + '</td><td>' + esc(m.governorate || '') + '</td>' +
         '<td>' + esc(when(m.created_at)) + '</td><td>' + (m.via === 'website' ? 'Website' : 'App') + '</td><td>' + esc(m.source || '') + '</td>' +
-        '<td>' + (m.verified_at ? '<span class="tag">VERIFIED</span>' : '') + '</td>' +
+        '<td>' + (m.verified_at ? '<span class="tag">VERIFIED</span>' : '') + (critics[m.id] ? ' <span class="tag" title="Approved food critic">CRITIC</span>' : '') + '</td>' +
         '<td>' + (m.banned_at ? '<span class="tag">BANNED</span>' : m.suspended_at ? '<span class="tag">SUSPENDED</span>' : 'Active') + '</td>' +
         '<td>' + (testers[m.id] ? '<span class="tag" title="Left out of ad and sign-up reports">TESTER</span>' : '') + '</td>' +
         '<td>' + (m.posts || 0) + '</td><td>' + (m.orders || 0) + '</td><td>' + (m.open_reports || 0) + '</td>' +
-        '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' +
+        '<td>' + (m.id === me ? '' : '<button class="btn" data-verify="' + i + '">' + (m.verified_at ? 'Remove tick' : 'Verify') + '</button> ' + (canAct() ? '<button class="btn" data-critic="' + i + '">' + (critics[m.id] ? 'Remove critic' : 'Make critic') + '</button> ' : '') +
           (canAct() && !m.staff_role && !m.banned_at ? (m.suspended_at ? '<button class="btn" data-lift="' + i + '">Lift suspension</button>' : '<button class="btn danger" data-susp="' + i + '">Suspend…</button>') : '')) +
           ' <button class="btn" data-manage="' + i + '">Manage…' + (m.notes ? ' (' + m.notes + ' note' + (m.notes === 1 ? '' : 's') + ')' : '') + '</button></td>';
     }
@@ -1046,7 +1046,10 @@
     }
     $('mgo').onclick = search;
     $('mq').onkeydown = function (e) { if (e.key === 'Enter') search(); };
-    draw(); loadList(0).then(loadTesters);
+    function loadCritics() {
+      return rpc('admin_critic_ids').then(function (r) { critics = {}; r.forEach(function (x) { critics[x && x.admin_critic_ids ? x.admin_critic_ids : x] = true; }); draw(); }).catch(function () {});
+    }
+    draw(); loadList(0).then(loadTesters).then(loadCritics);
     var ex = $('exportMembers');
     if (ex) ex.onclick = function () {
       ex.disabled = true;
@@ -1096,6 +1099,8 @@
       if (e.target.closest('#mtest')) { setTesters(true); return; }
       if (e.target.closest('#muntest')) { setTesters(false); return; }
       if (e.target.closest('#mmore')) { loadList(all.length); return; }
+      var cr = e.target.closest('[data-critic]');
+      if (cr) { var mc = list[cr.getAttribute('data-critic')]; rpc('admin_set_critic', { p_user_id: mc.id, p_critic: !critics[mc.id] }).then(loadCritics).then(search).catch(fail); return; }
       var vf = e.target.closest('[data-verify]'), li = e.target.closest('[data-lift]'), su = e.target.closest('[data-susp]'), mg = e.target.closest('[data-manage]');
       if (mg) manageMember(list[mg.getAttribute('data-manage')], search);
       if (vf) { var m = list[vf.getAttribute('data-verify')]; rpc('admin_set_verified', { p_user_id: m.id, p_verified: !m.verified_at }).then(search).catch(fail); }
@@ -1827,7 +1832,7 @@
   }
 
   // Action log
-  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', data_exported: 'Downloaded data', data_browsed: 'Opened a table in the data browser', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status', ranking_excluded: 'Kept a member out of the rankings', ranking_restored: 'Put a member back in the rankings' };
+  var ACTION_LABEL = { community_approved: 'Approved community', community_rejected: 'Rejected community', community_joined_existing: 'Added requester to existing community', community_resolved: 'Added requester to communities', community_created: 'Created community', community_edited: 'Edited community', community_hidden: 'Hid community', community_shown: 'Showed community again', community_merged: 'Merged communities', post_removed: 'Removed post', reports_dismissed: 'Dismissed reports', member_suspended: 'Suspended member', member_unsuspended: 'Lifted suspension', staff_role_set: 'Changed staff role', announcement_posted: 'Sent announcement', control_changed: 'Changed a control', member_verified: 'Verified member', member_note_added: 'Added a note on a member', order_note_added: 'Added a note on an order', order_status_forced: 'Changed an order status', member_warned: 'Warned a member', member_banned: 'Banned member', member_unbanned: 'Lifted a ban', member_deleted: 'Deleted member account', member_unverified: 'Removed verified mark', member_critic_on: 'Made a member a critic', member_critic_off: 'Removed critic status', data_exported: 'Downloaded data', data_browsed: 'Opened a table in the data browser', verification_saved: 'Saved a verification checklist', support_replied: 'Replied to a support message', support_note_added: 'Added a note on a support message', support_status_set: 'Changed a support message status', ranking_excluded: 'Kept a member out of the rankings', ranking_restored: 'Put a member back in the rankings' };
   function viewLog(v) {
     return rpc('admin_recent_actions', { p_limit: 200 }).then(function (rows) {
       v.innerHTML = '<h2>Action log</h2><div class="card"><div class="tablewrap"><table><tr><th>When</th><th>Who</th><th>What</th><th>Why</th></tr>' + rows.map(function (a) {

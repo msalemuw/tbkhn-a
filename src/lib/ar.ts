@@ -895,4 +895,9 @@ export const ar: Record<string, string> = {
   'Show the full description': 'شوف الوصف كامل',
   'Silence the ring': 'اكتم الرنين',
   Silence: 'اكتم',
+  Critic: 'ناقد',
+  Critics: 'النقّاد',
+  'FIND A CRITIC': 'دوّر على ناقد',
+  'Critics near me': 'نقّاد قريبين مني',
+  'No critic has posted yet. Critics near you will show here, closest first.': 'لسه مفيش ناقد نشر. النقّاد القريبين منك هيظهروا هنا، الأقرب الأول.',
 };

@@ -1,7 +1,7 @@
 import { type FilterSection, FilterSheet } from '@/components/filter-sheet';
 import type { MyCommunity } from '@/lib/posts';
 
-export type Watching = { communities: string[]; nearby: boolean; following: boolean };
+export type Watching = { communities: string[]; nearby: boolean; following: boolean; /** Show only critics' posts, nearest first. */ criticsOnly?: boolean };
 
 /** Home "Feed filter" from the design: choose which communities, nearby (public) posts and followed cooks fill the feed. */
 export function WatchingSheet({
@@ -27,13 +27,14 @@ export function WatchingSheet({
   // Apply waits until something is ticked, and closing with nothing ticked goes back to everything.
   const everything: Watching = { communities: mine.map((c) => c.id), nearby: true, following: true };
   const nothing: Watching = { communities: [], nearby: false, following: false };
+  const criticsOnly = !!value.criticsOnly;
   const toggle = (id: string) => onChange({ ...value, communities: value.communities.includes(id) ? value.communities.filter((c) => c !== id) : [...value.communities, id] });
   const toggleNearby = () => {
     onChange({ ...value, nearby: !value.nearby });
     if (!value.nearby) onNearbyOn?.();
   };
   const toggleFollowing = () => onChange({ ...value, following: !value.following });
-  const empty = !value.nearby && !value.following && !value.communities.length;
+  const empty = !criticsOnly && !value.nearby && !value.following && !value.communities.length;
   const close = () => {
     if (empty) onChange(everything);
     onClose();
@@ -46,6 +47,12 @@ export function WatchingSheet({
         { key: 'nearby', icon: 'near-me' as const, label: 'Nearby', on: value.nearby, onPress: toggleNearby },
         { key: 'following', icon: 'person' as const, label: 'Following', on: value.following, onPress: toggleFollowing },
       ],
+    },
+    // One choice that stands apart from the communities: only approved critics, nearest first, to find one to taste your food.
+    {
+      label: 'FIND A CRITIC',
+      radio: true,
+      rows: [{ key: 'critics', icon: 'workspace-premium' as const, label: 'Critics near me', on: criticsOnly, onPress: () => onChange({ ...value, criticsOnly: !criticsOnly }) }],
     },
   ];
   return <FilterSheet visible={visible} title="Feed filter" sub="" sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} applyLabel={applyLabel} />;
