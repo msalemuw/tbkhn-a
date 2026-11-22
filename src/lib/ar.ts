@@ -429,6 +429,12 @@ export const ar: Record<string, string> = {
   'Stays 24 hours': 'بتفضل 24 ساعة',
   'This story has ended.': 'الستوري دي خلصت.',
   Unlike: 'إلغاء اللايك',
+  'Like comment': 'لايك للكومنت',
+  'Unlike comment': 'إلغاء لايك الكومنت',
+  'Save post': 'احفظ البوست',
+  'Unsave post': 'شيل البوست من المحفوظات',
+  Saved: 'المحفوظات',
+  'Nothing saved yet. Tap the bookmark under a post to keep it here.': 'مفيش حاجة محفوظة لسه. دوس على العلامة تحت أي بوست عشان يتحفظ هنا.',
   'We couldn’t delete the story': 'معرفناش نمسح الستوري',
 
   // Location

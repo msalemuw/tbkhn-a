@@ -20,6 +20,8 @@ export type FeedPost = {
   likes: number;
   comments: number;
   liked: boolean;
+  /** Saved by the viewer (private bookmark). */
+  saved: boolean;
   rating: number | null;
   /** The cook's live today's menu dish, if any: the small "See today's menu" notice. */
   cookingDishId: string | null;
@@ -32,7 +34,7 @@ const POST_SELECT =
   ' author:profiles!author_id(id, username, display_name, avatar_path),' +
   ' community:communities(name), likes(count), comments(count)';
 
-type Row = Omit<FeedPost, 'likes' | 'comments' | 'liked' | 'rating' | 'cookingDishId' | 'spot'> & {
+type Row = Omit<FeedPost, 'likes' | 'comments' | 'liked' | 'saved' | 'rating' | 'cookingDishId' | 'spot'> & {
   likes: { count: number }[];
   comments: { count: number }[];
 };
@@ -66,13 +68,15 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const authors = [...new Set(rows.map((r) => r.author_id))];
-  const [mine, reviews, live, spots] = await Promise.all([
+  const [mine, savedMine, reviews, live, spots] = await Promise.all([
     me ? supabase.from('likes').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
+    me ? supabase.from('saved_posts').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
     supabase.from('reviews').select('cook_id, rating').in('cook_id', authors),
     supabase.from('posts').select('id, author_id').eq('kind', 'cooking_today').gt('expires_at', new Date().toISOString()).in('author_id', authors),
     supabase.from('pickup_points').select('owner_id, area_lat, area_lng').in('owner_id', authors),
   ]);
   const likedSet = new Set((mine.data ?? []).map((l) => l.post_id));
+  const savedSet = new Set((savedMine.data ?? []).map((l) => l.post_id));
   const sums = new Map<string, { sum: number; n: number }>();
   for (const r of reviews.data ?? []) {
     const s = sums.get(r.cook_id) ?? { sum: 0, n: 0 };
@@ -89,6 +93,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
       likes: r.likes?.[0]?.count ?? 0,
       comments: r.comments?.[0]?.count ?? 0,
       liked: likedSet.has(r.id),
+      saved: savedSet.has(r.id),
       rating: s ? s.sum / s.n : null,
       cookingDishId: liveBy.get(r.author_id) ?? null,
       spot: spotBy.get(r.author_id) ?? null,
@@ -105,6 +110,28 @@ export async function fetchLiveDistances(ids: string[], from: LatLng): Promise<M
   return out;
 }
 
+/** The member's saved posts, most recently saved first. Posts since deleted or hidden by a block drop out. */
+export async function fetchSaved(me: string): Promise<FeedPost[]> {
+  const { data: saves, error } = await supabase.from('saved_posts').select('post_id').eq('user_id', me).order('created_at', { ascending: false }).limit(100);
+  if (error) throw error;
+  const ids = (saves ?? []).map((s) => s.post_id);
+  if (!ids.length) return [];
+  const { data, error: postsError } = await supabase.from('posts').select(POST_SELECT).eq('kind', 'signature').in('id', ids);
+  if (postsError) throw postsError;
+  const rows = await withoutBlocked((data ?? []) as unknown as Row[], (r) => r.author_id);
+  const order = new Map(ids.map((id, i) => [id, i]));
+  rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return enrich(rows, me);
+}
+
+export async function setSaved(me: string, postId: string, saved: boolean): Promise<void> {
+  const q = saved
+    ? supabase.from('saved_posts').insert({ post_id: postId, user_id: me })
+    : supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', me);
+  const { error } = await q;
+  if (error && error.code !== '23505') throw error;
+}
+
 export async function setLiked(me: string, postId: string, liked: boolean): Promise<void> {
   const q = liked
     ? supabase.from('likes').insert({ post_id: postId, user_id: me })
@@ -115,9 +142,9 @@ export async function setLiked(me: string, postId: string, liked: boolean): Prom
 }
 
 /** `parent_id` is the top-level comment a reply sits under; `reply_to_id` is the exact comment it answers (null for a top-level comment). */
-export type Comment = { id: string; body: string; created_at: string; author: Person; parent_id: string | null; reply_to_id: string | null };
+export type Comment = { id: string; body: string; created_at: string; author: Person; parent_id: string | null; reply_to_id: string | null; likes: number; liked: boolean };
 
-export async function fetchComments(postId: string): Promise<Comment[]> {
+export async function fetchComments(postId: string, me: string | null): Promise<Comment[]> {
   const { data, error } = await supabase
     .from('comments')
     .select('id, body, created_at, parent_id, reply_to_id, author:profiles!author_id(id, username, display_name, avatar_path)')
@@ -125,7 +152,26 @@ export async function fetchComments(postId: string): Promise<Comment[]> {
     .order('created_at', { ascending: true })
     .limit(200);
   if (error) throw error;
-  return withoutBlocked((data ?? []) as unknown as Comment[], (c) => c.author?.id);
+  const rows = await withoutBlocked((data ?? []) as unknown as Omit<Comment, 'likes' | 'liked'>[], (c) => c.author?.id);
+  if (!rows.length) return [];
+  // One read for every like in the thread: the count per comment, and which ones are the member's own.
+  // If the likes cannot be read (for example before the database is updated) the comments still show, with no hearts.
+  const { data: likes } = await supabase.from('comment_likes').select('comment_id, user_id').in('comment_id', rows.map((c) => c.id)).limit(5000);
+  const count = new Map<string, number>();
+  const mine = new Set<string>();
+  for (const l of likes ?? []) {
+    count.set(l.comment_id, (count.get(l.comment_id) ?? 0) + 1);
+    if (me && l.user_id === me) mine.add(l.comment_id);
+  }
+  return rows.map((c) => ({ ...c, likes: count.get(c.id) ?? 0, liked: mine.has(c.id) }));
+}
+
+export async function setCommentLiked(me: string, commentId: string, liked: boolean): Promise<void> {
+  const q = liked
+    ? supabase.from('comment_likes').insert({ comment_id: commentId, user_id: me })
+    : supabase.from('comment_likes').delete().eq('comment_id', commentId).eq('user_id', me);
+  const { error } = await q;
+  if (error && error.code !== '23505') throw error;
 }
 
 /** Who liked a post, newest like first (likes are readable by everyone, like on Instagram). */

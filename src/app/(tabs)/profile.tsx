@@ -32,9 +32,14 @@ export default function Profile() {
     <CookProfileView
       id={session.user.id}
       barRight={
-        <Pressable onPress={() => router.push('/settings')} hitSlop={10} style={styles.gear} accessibilityRole="button" accessibilityLabel="Settings">
-          <MaterialIcons name="settings" size={26} color={colors.ink} />
-        </Pressable>
+        <View style={styles.barRight}>
+          <Pressable onPress={() => router.push('/saved')} hitSlop={10} style={styles.gear} accessibilityRole="button" accessibilityLabel="Saved">
+            <MaterialIcons name="bookmark-border" size={26} color={colors.ink} />
+          </Pressable>
+          <Pressable onPress={() => router.push('/settings')} hitSlop={10} style={styles.gear} accessibilityRole="button" accessibilityLabel="Settings">
+            <MaterialIcons name="settings" size={26} color={colors.ink} />
+          </Pressable>
+        </View>
       }
       actions={
         <>
@@ -55,6 +60,7 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   pad: { padding: 22 },
+  barRight: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   gear: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   btn: { flex: 1, borderRadius: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, paddingVertical: 11, alignItems: 'center' },
   btnText: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.ink },

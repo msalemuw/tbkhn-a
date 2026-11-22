@@ -15,7 +15,7 @@ import { colors, fonts } from '@/constants/theme';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
-import { addComment, type Comment, deleteComment, fetchComments } from '@/lib/feed';
+import { addComment, type Comment, deleteComment, fetchComments, setCommentLiked } from '@/lib/feed';
 import { fmtAgo } from '@/lib/format';
 import { personName } from '@/lib/posts';
 
@@ -57,8 +57,8 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
   const { height: screenH } = useWindowDimensions();
 
   const load = useCallback(() => {
-    fetchComments(postId).then(setItems, () => setItems([]));
-  }, [postId]);
+    fetchComments(postId, me).then(setItems, () => setItems([]));
+  }, [postId, me]);
 
   useEffect(load, [load]);
 
@@ -76,6 +76,22 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
       return [{ kind: 'comment', c: t, reply: false }, ...(rs.length ? [{ kind: 'toggle' as const, parent: t, count: rs.length, open }] : []), ...(open ? rs.map((c) => ({ kind: 'comment' as const, c, reply: true })) : [])];
     });
   }, [items, expanded]);
+
+  // Heart a comment: shown at once, undone if it could not be saved.
+  async function toggleLike(c: Comment) {
+    if (!me) {
+      onClose();
+      return router.push('/sign-up');
+    }
+    const next = !c.liked;
+    const patch = (liked: boolean, delta: number) => setItems((l) => (l ?? []).map((x) => (x.id === c.id ? { ...x, liked, likes: Math.max(0, x.likes + delta) } : x)));
+    patch(next, next ? 1 : -1);
+    try {
+      await setCommentLiked(me, c.id, next);
+    } catch {
+      patch(!next, next ? -1 : 1);
+    }
+  }
 
   function startReply(c: Comment) {
     if (!me) {
@@ -188,6 +204,10 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
                           <Text style={styles.replyText}>Reply</Text>
                         </Pressable>
                       </View>
+                      <Pressable onPress={() => toggleLike(item)} hitSlop={8} accessibilityRole="button" accessibilityLabel={item.liked ? 'Unlike comment' : 'Like comment'} style={styles.heart}>
+                        <MaterialIcons name={item.liked ? 'favorite' : 'favorite-border'} size={18} color={item.liked ? colors.teal : colors.muted} />
+                        {item.likes ? <Text style={styles.heartCount}>{item.likes}</Text> : null}
+                      </Pressable>
                       {me && item.author?.id === me ? (
                         <Pressable onPress={() => remove(item)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Delete your comment">
                           <MaterialIcons name="delete-outline" size={20} color={colors.muted} />
@@ -243,6 +263,8 @@ const styles = StyleSheet.create({
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 30 },
   row: { flexDirection: 'row', gap: 10, paddingVertical: 9 },
   replyRow: { marginLeft: 42 },
+  heart: { alignItems: 'center', minWidth: 22, paddingTop: 2 },
+  heartCount: { fontFamily: fonts.bold, fontSize: 11, color: colors.muted, marginTop: 1 },
   replyBtn: { alignSelf: 'flex-start', paddingTop: 4 },
   replyText: { fontFamily: fonts.bold, fontSize: 12, color: colors.muted },
   answering: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted, marginTop: 1 },
