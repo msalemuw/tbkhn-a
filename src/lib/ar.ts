@@ -351,6 +351,8 @@ export const ar: Record<string, string> = {
   'Picked up': 'اتستلم',
   'Ready for pickup': 'جاهز للاستلام',
   Send: 'ابعت',
+  'Send reply': 'ابعت الرد',
+  'Couldn’t send. Try again.': 'ماتبعتش. جرّب تاني.',
   'Waiting for the cook to accept': 'مستني الطباخ يقبل',
   'Accept order': 'اقبل الطلب',
   'Cancel order': 'إلغاء الطلب',
