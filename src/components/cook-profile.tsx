@@ -39,6 +39,7 @@ import { fetchStoryRing } from '@/lib/stories';
 import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
 import { shareLink } from '@/lib/share';
+import { markFollowed } from '@/components/follow-button';
 
 type Tab = 'posts' | 'today' | 'reviews';
 
@@ -101,6 +102,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
     setStats((s) => (s ? { ...s, followers: Math.max(0, s.followers + (next ? 1 : -1)) } : s));
     try {
       await setFollowing(me, id, next);
+      markFollowed(me, id, next);
     } catch {
       setFollowingState(!next);
       fetchCookStats(id).then(setStats, () => {});

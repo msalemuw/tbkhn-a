@@ -8,6 +8,7 @@ import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
+import { FollowButton } from '@/components/follow-button';
 import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts, ui } from '@/constants/theme';
 import { useMenuOff } from '@/lib/app-status';
@@ -93,6 +94,7 @@ export function PostCard({
             </Pressable>
           ) : null}
         </View>
+        <FollowButton id={post.author_id} />
         <Pressable onPress={onMore} hitSlop={10} accessibilityLabel="More">
           <MaterialIcons name="more-horiz" size={22} color={colors.muted} />
         </Pressable>

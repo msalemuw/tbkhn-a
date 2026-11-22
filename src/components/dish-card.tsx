@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Avatar } from '@/components/avatar';
+import { FollowButton } from '@/components/follow-button';
 import { RankBadge } from '@/components/rank-badge';
 import { colors, fonts, ui } from '@/constants/theme';
 import { distanceMeters, fmtDist, fmtReady, type LatLng } from '@/lib/format';
@@ -59,6 +60,7 @@ export function DishCard({ dish, here, badges, rating, onPress }: { dish: Dish; 
         {/* One line: who cooks it, their rating, and how far the pickup area is. */}
         <View style={styles.cookRow}>
           <Text style={styles.cook} numberOfLines={1} onPress={openCook} accessibilityRole="link">{personName(dish.author)}</Text>
+          <FollowButton id={dish.author_id} />
           {rating ? <Text style={styles.rating}>{`★ ${rating.avg.toFixed(1)} (${rating.n})`}</Text> : null}
           {badges?.map((b) => <RankBadge key={b.kind} badge={b} />)}
           <Pressable style={styles.where} onPress={pp ? openMap : onPress} hitSlop={6} accessibilityRole={pp ? 'link' : undefined} accessibilityLabel={pp ? 'Pickup area. Show on map' : undefined}>
