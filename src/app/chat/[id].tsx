@@ -146,8 +146,10 @@ export default function ChatScreen() {
         <Pressable hitSlop={12} onPress={() => (router.canGoBack() ? router.back() : router.replace('/inbox'))} accessibilityLabel="Back">
           <FlipIcon name="arrow-back" size={28} color={colors.ink} />
         </Pressable>
-        <Avatar person={partner} size={36} />
-        <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        <Pressable onPress={() => router.push({ pathname: '/cook/[id]', params: { id: partnerId } })} accessibilityRole="link" accessibilityLabel={`${name}'s profile`} style={styles.who}>
+          <Avatar person={partner} size={36} />
+          <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        </Pressable>
         <Pressable hitSlop={12} onPress={openMore} accessibilityRole="button" accessibilityLabel="More">
           <MaterialIcons name="more-horiz" size={28} color={colors.ink} />
         </Pressable>
@@ -281,6 +283,7 @@ function OrderCard({ order, me, name, paying, onPay }: { order: Order; me: strin
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
+  who: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   name: { flex: 1, fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
   order: { margin: 12, marginBottom: 0, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white, padding: 12 },
