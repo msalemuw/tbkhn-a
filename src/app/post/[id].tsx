@@ -13,7 +13,7 @@ import { LikesSheet } from '@/components/likes-sheet';
 import { useKeyboardHeight } from '@/components/form';
 import { PostCard } from '@/components/post-card';
 import { colors, fonts, ui } from '@/constants/theme';
-import { deletePost, type FeedPost, fetchPostsBy, setLiked, updateCaption } from '@/lib/feed';
+import { deletePost, type FeedPost, fetchPostsBy, fetchSaved, setLiked, setSaved, updateCaption } from '@/lib/feed';
 import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
 import { personName } from '@/lib/posts';
@@ -36,7 +36,7 @@ export default function PostScreen() {
   const scrolled = useRef(false);
 
   const load = useCallback(() => {
-    fetchPostsBy(me, by ?? me ?? '').then(setPosts, () => setPosts([]));
+    (by === 'saved' && me ? fetchSaved(me) : fetchPostsBy(me, by ?? me ?? '')).then(setPosts, () => setPosts([]));
   }, [by, me]);
   useEffect(load, [load]);
 
@@ -59,6 +59,17 @@ export default function PostScreen() {
       await setLiked(me, p.id, next);
     } catch {
       patch(p.id, (x) => ({ ...x, liked: !next, likes: Math.max(0, x.likes + (next ? -1 : 1)) }));
+    }
+  }
+
+  async function onSave(p: FeedPost) {
+    if (!me) return router.push('/sign-up');
+    const next = !p.saved;
+    patch(p.id, (x) => ({ ...x, saved: next }));
+    try {
+      await setSaved(me, p.id, next);
+    } catch {
+      patch(p.id, (x) => ({ ...x, saved: !next }));
     }
   }
 
@@ -127,7 +138,7 @@ export default function PostScreen() {
             setTimeout(() => list.current?.scrollToIndex({ index: info.index, animated: false }), 100);
           }}
           renderItem={({ item }) => (
-            <PostCard post={item} meters={null} onLike={() => onLike(item)} onLikes={() => setLikesFor(item.id)} onComments={() => setCommentsFor(item.id)} onShare={() => onShare(item)} onMore={() => onMore(item)} />
+            <PostCard post={item} meters={null} onLike={() => onLike(item)} onLikes={() => setLikesFor(item.id)} onSave={() => onSave(item)} onComments={() => setCommentsFor(item.id)} onShare={() => onShare(item)} onMore={() => onMore(item)} />
           )}
           ListEmptyComponent={<Text style={styles.empty}>No posts here any more.</Text>}
         />

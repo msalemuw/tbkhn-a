@@ -25,6 +25,7 @@ export function PostCard({
   meters,
   onLike,
   onLikes,
+  onSave,
   onComments,
   onShare,
   onMore,
@@ -36,6 +37,7 @@ export function PostCard({
   onLike: () => void;
   /** Opens the list of who liked the post (tap the count, like Instagram). */
   onLikes: () => void;
+  onSave: () => void;
   onComments: () => void;
   onShare: () => void;
   onMore: () => void;
@@ -146,6 +148,9 @@ export function PostCard({
         </Pressable>
         <Pressable style={styles.act} onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="Share">
           <Ionicons name="arrow-redo-outline" size={26} color={ui.deep} />
+        </Pressable>
+        <Pressable style={[styles.act, { marginLeft: 'auto' }]} onPress={onSave} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.saved ? 'Unsave post' : 'Save post'}>
+          <Ionicons name={post.saved ? 'bookmark' : 'bookmark-outline'} size={25} color={post.saved ? ui.deepTeal : ui.deep} />
         </Pressable>
       </View>
     </View>

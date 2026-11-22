@@ -21,7 +21,7 @@ import { FadeBg } from '@/components/fade-bg';
 import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
-import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked } from '@/lib/feed';
+import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked, setSaved } from '@/lib/feed';
 import { refreshCritics, useCriticIds } from '@/lib/critics';
 import { refreshVerified } from '@/lib/verified';
 import { distanceMeters } from '@/lib/format';
@@ -171,6 +171,17 @@ export default function Home() {
     }
   }
 
+  async function onSave(p: FeedPost) {
+    if (!me) return router.push('/sign-up');
+    const next = !p.saved;
+    patch(p.id, (x) => ({ ...x, saved: next }));
+    try {
+      await setSaved(me, p.id, next);
+    } catch {
+      patch(p.id, (x) => ({ ...x, saved: !next }));
+    }
+  }
+
   function onShare(p: FeedPost) {
     const text = p.caption ? `${personName(p.author)} on tabkheen A: ${p.caption}` : `${personName(p.author)}’s signature dish on tabkheen A`;
     shareLink('post', p.id, text, p.author_id);
@@ -252,6 +263,7 @@ export default function Home() {
             meters={meters.get(item.author_id) ?? null}
             onLike={() => onLike(item)}
             onLikes={() => setLikesFor(item.id)}
+            onSave={() => onSave(item)}
             onComments={() => setCommentsFor(item.id)}
             onShare={() => onShare(item)}
             onMore={() => onMore(item)}
