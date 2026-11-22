@@ -301,6 +301,11 @@
         <div id="optional"></div>
         <p class="hint" data-t="moreLater"></p>
 
+        <h3 class="sec" data-t="secIg"></h3>
+        <label class="f" for="ig" data-t="fIg"></label>
+        <div class="ltr"><input id="ig" type="text" autocapitalize="none" autocorrect="off" maxlength="200" placeholder="@yourname"></div>
+        <p class="hint" data-t="igHint"></p>
+
         <h3 class="sec" data-t="secPaid"></h3>
         <label class="f" for="instapay" data-t="fInstapay"></label>
         <div class="ltr"><input id="instapay" type="text" autocapitalize="none" autocorrect="off" maxlength="60" placeholder="nour@instapay"></div>
@@ -427,6 +432,7 @@
       optTypedPh: 'Type the name', errOptTyped: 'Please type the name of the community you want to add.',
       moreOpt: 'More details (optional): club, school, work, InstaPay',
       moreLater: 'A community is a group of neighbours: your club, Sahel compound, school or workplace. Join any that fit to see their cooks and posts. You can also do it anytime in the app.',
+      secIg: 'YOUR INSTAGRAM', fIg: 'INSTAGRAM USERNAME OR LINK (OPTIONAL)', igHint: 'Shown on your profile so people who follow you there can find you here too.', errIg: 'That doesn’t look like an Instagram username or link.',
       secPaid: 'GETTING PAID', fInstapay: 'INSTAPAY HANDLE (OPTIONAL)',
       instapayHint: 'Needed when you cook, so neighbours can pay you directly. Add it later if you like.',
       secHeard: 'HOW DID YOU HEAR ABOUT TABKHEEN A? (OPTIONAL)', fHeard: 'I HEARD FROM',
@@ -494,6 +500,7 @@
       optTypedPh: 'اكتب الاسم', errOptTyped: 'اكتب اسم المجتمع اللي عايز تضيفه.',
       moreOpt: 'تفاصيل زيادة (اختياري): نادي، مدرسة، شغل، إنستاباي',
       moreLater: 'المجتمع هو مجموعة جيران: ناديك أو قريتك في الساحل أو مدرستك أو شغلك. انضم لأي واحد يناسبك علشان تشوف الطباخين والبوستات بتوعه. وتقدر تعمل كده في أي وقت من التطبيق.',
+      secIg: 'إنستجرامك', fIg: 'اسم المستخدم أو لينك إنستجرام (اختياري)', igHint: 'بيظهر على بروفايلك عشان اللي بيتابعوك هناك يلاقوك هنا كمان.', errIg: 'ده مش شكل اسم مستخدم أو لينك إنستجرام.',
       secPaid: 'استلام الفلوس', fInstapay: 'حساب إنستاباي (اختياري)',
       instapayHint: 'محتاجه لما تطبخ، عشان جيرانك يدفعولك على طول. تقدر تضيفه بعدين.',
       secHeard: 'عرفت tabkheen A منين؟ (اختياري)', fHeard: 'عرفت من',
@@ -1302,13 +1309,15 @@
     var optTyped = OPTIONAL.filter(function (k) { return $('opt-' + k).value === OTHER; })
       .map(function (k) { return { kind: k, name: $('opt-' + k + '-typed').value.trim() }; });
     if (optTyped.some(function (o) { return o.name.length < 2; })) return fail('errOptTyped');
+    var igUrl = normalizeIg($('ig').value);
+    if (igUrl === undefined) return fail('errIg');
     btn.disabled = true; btn.textContent = t('sending');
     var pgov = state.profile && state.profile.governorate || '', parea = state.profile && state.profile.area || '';
     var typedOptional = [];
     return Promise.all(optTyped.map(function (o) {
       return requestCommunity(o.kind, o.name, parea, pgov).then(function (c) { typedOptional.push(c); });
     })).then(function () {
-      var row = { instapay_handle: $('instapay').value.trim() || null };
+      var row = { instagram_url: igUrl, instapay_handle: $('instapay').value.trim() || null };
       var heard3 = heardRow(); Object.keys(heard3).forEach(function (k) { row[k] = heard3[k]; });
       return sb.update('profiles', 'id=eq.' + uid, row);
     }).then(function (res) {
@@ -1324,6 +1333,19 @@
       fail(err && err.msg ? err.msg : 'errNet');
     }).then(reset);
   });
+  // Same rules as the app (src/lib/social.ts): empty gives null, an unusable value gives undefined, otherwise a clean https link.
+  function normalizeIg(input) {
+    var v = String(input || '').trim();
+    if (!v) return null;
+    if (/^https?:\/\//i.test(v) || v.toLowerCase().indexOf('instagram.com') !== -1) {
+      var url = /^https?:\/\//i.test(v) ? v : 'https://' + v;
+      var host = url.replace(/^https?:\/\//i, '').split(/[\/?#]/)[0].toLowerCase();
+      if (host !== 'instagram.com' && !/\.instagram\.com$/.test(host)) return undefined;
+      return url.length <= 200 ? url : undefined;
+    }
+    var h = v.replace(/^@/, '');
+    return /^[A-Za-z0-9._-]{1,60}$/.test(h) ? 'https://instagram.com/' + h : undefined;
+  }
   // Marks step 3 as reached (saved or skipped) for the admin. Best effort: it never blocks the person.
   function markExtrasDone(uid) { sb.update('profiles', 'id=eq.' + uid, { extras_done_at: new Date().toISOString() }).then(function () {}, function () {}); }
   $('skip').addEventListener('click', function () {
