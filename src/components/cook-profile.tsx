@@ -38,6 +38,7 @@ import { useSession } from '@/lib/session';
 import { fetchStoryRing } from '@/lib/stories';
 import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
+import { CriticBadge } from '@/lib/critics';
 import { shareLink } from '@/lib/share';
 import { markFollowed } from '@/components/follow-button';
 
@@ -196,7 +197,8 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.row}>
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
-              <VerifiedTick id={cook.id} size={19} />
+              <VerifiedTick id={cook.id} size={16} />
+              <CriticBadge id={cook.id} />
             </View>
             {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={b.kind} badge={b} />)}</View> : null}
             {cook.area && !mine ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}
@@ -338,7 +340,7 @@ const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 6 },
   barRightRow: { flexDirection: 'row', alignItems: 'center' },
   barSlot: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  handle: { fontFamily: fonts.extraBold, fontSize: 22, color: colors.ink },
+  handle: { fontFamily: fonts.bold, fontSize: 18, color: colors.ink },
   top: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 22, paddingTop: 14 },
   // Same size as the plain photo (86), so the page does not move when a story starts or ends.
   avatarBox: { width: 86, height: 86 },
@@ -347,7 +349,7 @@ const styles = StyleSheet.create({
   ringUnseen: { borderColor: colors.yellow },
   ringSeen: { borderColor: 'rgba(40,48,58,0.2)' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name: { fontFamily: fonts.extraBold, fontSize: 21, color: colors.ink, flexShrink: 1 },
+  name: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },
   badges: { gap: 5, marginTop: 4 },
   area: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 2 },
   rating: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink, marginTop: 3 },
