@@ -38,6 +38,7 @@ import { useSession } from '@/lib/session';
 import { fetchStoryRing } from '@/lib/stories';
 import { useLive } from '@/lib/live';
 import { VerifiedTick } from '@/lib/verified';
+import { CriticBadge } from '@/lib/critics';
 import { shareLink } from '@/lib/share';
 import { markFollowed } from '@/components/follow-button';
 
@@ -197,6 +198,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
             <View style={styles.row}>
               <Text style={styles.name} numberOfLines={1}>{personName(cook)}</Text>
               <VerifiedTick id={cook.id} size={16} />
+              <CriticBadge id={cook.id} />
             </View>
             {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={b.kind} badge={b} />)}</View> : null}
             {cook.area && !mine ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}
