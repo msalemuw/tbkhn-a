@@ -221,7 +221,14 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
         ) : null}
 
         {mine ? (
-          actions ? <View style={styles.btns}>{actions}</View> : null
+          <>
+            {actions ? <View style={styles.btns}>{actions}</View> : null}
+            <Pressable style={styles.myRanks} onPress={() => router.push('/my-rankings')} accessibilityRole="button" accessibilityLabel="My rankings">
+              <MaterialIcons name="military-tech" size={18} color={colors.navy} />
+              <Text style={styles.myRanksText}>My rankings</Text>
+              <FlipIcon name="chevron-right" size={18} color={colors.muted} />
+            </Pressable>
+          </>
         ) : (
           <View style={styles.btns}>
             <Pressable
@@ -351,6 +358,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },
   badges: { gap: 5, marginTop: 4 },
+  myRanks: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 22, marginTop: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white },
+  myRanksText: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.navy },
   area: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 2 },
   rating: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink, marginTop: 3 },
   muted: { fontFamily: fonts.semiBold, fontSize: 13, color: colors.muted },

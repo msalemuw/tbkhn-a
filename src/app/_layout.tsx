@@ -106,6 +106,7 @@ export default function RootLayout() {
         <Stack.Screen name="support" />
         <Stack.Screen name="inbox" />
         <Stack.Screen name="saved" />
+        <Stack.Screen name="my-rankings" />
         <Stack.Screen name="chat/[id]" />
       </Stack>
       <LiveAlerts />
