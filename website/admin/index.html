@@ -454,6 +454,7 @@
     orders: { label: 'Orders', render: viewOrders },
     support: { label: 'Support', render: viewSupport },
     referrals: { label: 'Referrals', render: viewReferrals },
+    creators: { label: 'Creators', render: viewCreators },
     funnel: { label: 'Sign-up funnel', render: viewFunnel },
     announce: { label: 'Announcements', render: viewAnnounce },
     controls: { label: 'Controls', render: viewControls },
@@ -1779,6 +1780,25 @@
 
   // Referrals: how members heard about us, by week and detail
   var HEARD = { friend: 'A friend', family: 'Family', community: 'My community', social_media: 'Social media', ad: 'An ad', search: 'Search', event: 'An event', media: 'Media', other: 'Other' };
+  // Creators: everyone who answered Yes to "Are you an influencer / creator?" (sign-up step 3 or Edit profile). Filled automatically.
+  function viewCreators(v) {
+    v.innerHTML = '<div class="row"><h2 class="grow">Creators</h2>' + (role === 'owner' ? '<button class="btn" id="exportCreators">Download all (CSV)</button>' : '') + '</div>' +
+      '<div class="card"><div class="muted">Members who said they are an influencer or creator, newest first. This fills in on its own as people sign up or answer in Edit profile.</div></div><div id="cres"><div class="card muted">Loading…</div></div>';
+    var ex = $('exportCreators');
+    if (ex) ex.onclick = function () {
+      ex.disabled = true;
+      rpc('admin_export_creators').then(function (rows) { downloadCsv('tabkheen-creators', rows); }).catch(fail).then(function () { ex.disabled = false; });
+    };
+    return rpc('admin_list_creators').then(function (rows) {
+      $('cres').innerHTML = rows.length ? '<div class="card"><div class="muted" style="margin-bottom:8px">' + rows.length + ' creator' + (rows.length === 1 ? '' : 's') + '</div><div class="tablewrap"><table><tr><th>Member</th><th>Instagram</th><th>Where</th><th>Followers here</th><th>Posts</th><th>Joined</th></tr>' + rows.map(function (c) {
+        var ig = c.instagram_url ? '<a href="' + esc(c.instagram_url) + '" target="_blank" rel="noopener">' + esc(c.instagram_url.replace(/^https?:\/\/(www\.)?instagram\.com\//i, '@').replace(/\/$/, '')) + '</a>' : '<span class="muted">none</span>';
+        return '<tr><td dir="auto"><b>' + esc(who(c.username, c.display_name)) + '</b>' + (c.email ? '<div class="muted">' + esc(c.email) + '</div>' : '') + '</td><td>' + ig + '</td><td>' + esc([c.area, c.governorate].filter(Boolean).join(', ')) + '</td><td>' + c.followers + '</td><td>' + c.posts + '</td><td>' + esc(when(c.joined_at)) + '</td></tr>';
+      }).join('') + '</table></div></div>' : '<div class="card muted">No creators yet. They appear here as soon as someone answers Yes.</div>';
+    }).catch(function (e) {
+      $('cres').innerHTML = '<div class="card muted">' + (/admin_list_creators/.test(msg(e)) ? 'The Creators list appears once the latest database update (0069) is run in Supabase.' : esc(msg(e))) + '</div>';
+    });
+  }
+
   function viewReferrals(v) {
     var comm = null, communities = [];
     v.innerHTML = '<div class="row"><h2 class="grow">Referrals</h2><button class="btn" id="exportRef">Download table (CSV)</button></div>' +

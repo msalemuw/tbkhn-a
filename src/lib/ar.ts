@@ -913,4 +913,8 @@ export const ar: Record<string, string> = {
   'FIND A CRITIC': 'دوّر على ناقد',
   'Critics near me': 'نقّاد قريبين مني',
   'No critic has posted yet. Critics near you will show here, closest first.': 'لسه مفيش ناقد نشر. النقّاد القريبين منك هيظهروا هنا، الأقرب الأول.',
+  'ARE YOU AN INFLUENCER / CREATOR? (OPTIONAL)': 'هل أنت انفلونسر / كرييتور؟ (اختياري)',
+  'ARE YOU AN INFLUENCER / CREATOR?': 'هل أنت انفلونسر / كرييتور؟',
+  Yes: 'أيوه',
+  No: 'لا',
 };

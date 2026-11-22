@@ -91,6 +91,8 @@ export default function ProfileStep() {
   const [optional, setOptional] = useState<Partial<Record<Optional, string>>>({});
   const [instapay, setInstapay] = useState('');
   const [instagram, setInstagram] = useState('');
+  // "Are you an influencer / creator?" Optional; only a Yes is saved (the column defaults to No).
+  const [creator, setCreator] = useState<boolean | null>(null);
   // "A friend" is preselected and there is no "prefer not to say" (founder, 2026-10-10); the website matches.
   const [heard, setHeard] = useState<string | null>('friend');
   const [heardPick, setHeardPick] = useState<string | null>(null);
@@ -359,6 +361,7 @@ export default function ProfileStep() {
       .from('profiles')
       .update({
         instagram_url: igUrl,
+        ...(creator ? { is_creator: true } : {}),
         instapay_handle: instapay.trim() || null,
         heard_from: heard,
         heard_detail: heardDetail,
@@ -648,6 +651,12 @@ export default function ProfileStep() {
             <TextInput value={instagram} onChangeText={setInstagram} placeholder="example: @yourname" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={200} style={formStyles.input} />
           </Field>
           <Text style={[formStyles.hint, { color: colors.muted }]}>Shown on your profile so people who follow you there can find you here too.</Text>
+          <Field label="ARE YOU AN INFLUENCER / CREATOR? (OPTIONAL)">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Chip label="Yes" on={creator === true} onPress={() => setCreator(creator === true ? null : true)} />
+              <Chip label="No" on={creator === false} onPress={() => setCreator(creator === false ? null : false)} />
+            </View>
+          </Field>
 
           <Text style={styles.section}>GETTING PAID</Text>
           <Field label="INSTAPAY HANDLE (OPTIONAL)">

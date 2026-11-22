@@ -2,11 +2,12 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from '@/components/keyboard-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
+import { Chip } from '@/components/chip';
 import { BackHeader, danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, type SheetItem } from '@/components/form';
 import { Avatar } from '@/components/avatar';
 import { RequestCommunitySheet } from '@/components/request-community';
@@ -29,6 +30,8 @@ export default function EditProfile() {
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [instapay, setInstapay] = useState(profile?.instapay_handle ?? '');
   const [socials, setSocials] = useState<Record<string, string>>(() => Object.fromEntries(SOCIALS.map((x) => [x.kind, profile?.[x.column] ?? ''])));
+  const [creator, setCreator] = useState(Boolean((profile as { is_creator?: boolean | null } | null)?.is_creator));
+  const wasCreator = Boolean((profile as { is_creator?: boolean | null } | null)?.is_creator);
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [busy, setBusy] = useState(false);
   // Where you are: governorate and area (an approved area community). Changing it moves you to the new area's community.
@@ -114,7 +117,7 @@ export default function EditProfile() {
     }
     const { error: saveError } = await supabase
       .from('profiles')
-      .update({ ...(userChanged ? { username } : {}), display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(avatarPath ? { avatar_path: avatarPath } : {}), ...(placeChanged ? { country_code: country, governorate: gov, area: areaName } : {}) })
+      .update({ ...(userChanged ? { username } : {}), display_name: name.trim(), bio: bio.trim() || null, instapay_handle: instapay.trim() || null, ...links, ...(creator !== wasCreator ? { is_creator: creator } : {}), ...(avatarPath ? { avatar_path: avatarPath } : {}), ...(placeChanged ? { country_code: country, governorate: gov, area: areaName } : {}) })
       .eq('id', session.user.id);
     setBusy(false);
     if (saveError) {
@@ -196,6 +199,12 @@ export default function EditProfile() {
             </Field>
           ))}
           <Text style={[formStyles.hint, { color: colors.muted }]}>Optional. Shown on your profile so neighbors can find you.</Text>
+          <Field label="ARE YOU AN INFLUENCER / CREATOR?">
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Chip label="Yes" on={creator} onPress={() => setCreator(true)} />
+              <Chip label="No" on={!creator} onPress={() => setCreator(false)} />
+            </View>
+          </Field>
           {countries.length > 0 ? (
             <SelectField
               label="COUNTRY"

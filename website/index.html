@@ -305,6 +305,8 @@
         <label class="f" for="ig" data-t="fIg"></label>
         <div class="ltr"><input id="ig" type="text" autocapitalize="none" autocorrect="off" maxlength="200" placeholder="@yourname"></div>
         <p class="hint" data-t="igHint"></p>
+        <label class="f" for="creator" data-t="fCreator"></label>
+        <select id="creator"></select>
 
         <h3 class="sec" data-t="secPaid"></h3>
         <label class="f" for="instapay" data-t="fInstapay"></label>
@@ -432,7 +434,7 @@
       optTypedPh: 'Type the name', errOptTyped: 'Please type the name of the community you want to add.',
       moreOpt: 'More details (optional): club, school, work, InstaPay',
       moreLater: 'A community is a group of neighbours: your club, Sahel compound, school or workplace. Join any that fit to see their cooks and posts. You can also do it anytime in the app.',
-      secIg: 'YOUR INSTAGRAM', fIg: 'INSTAGRAM USERNAME OR LINK (OPTIONAL)', igHint: 'Shown on your profile so people who follow you there can find you here too.', errIg: 'That doesn’t look like an Instagram username or link.',
+      secIg: 'YOUR INSTAGRAM', fIg: 'INSTAGRAM USERNAME OR LINK (OPTIONAL)', igHint: 'Shown on your profile so people who follow you there can find you here too.', errIg: 'That doesn’t look like an Instagram username or link.', fCreator: 'ARE YOU AN INFLUENCER / CREATOR? (OPTIONAL)', creatorYes: 'Yes', creatorNo: 'No',
       secPaid: 'GETTING PAID', fInstapay: 'INSTAPAY HANDLE (OPTIONAL)',
       instapayHint: 'Needed when you cook, so neighbours can pay you directly. Add it later if you like.',
       secHeard: 'HOW DID YOU HEAR ABOUT TABKHEEN A? (OPTIONAL)', fHeard: 'I HEARD FROM',
@@ -500,7 +502,7 @@
       optTypedPh: 'اكتب الاسم', errOptTyped: 'اكتب اسم المجتمع اللي عايز تضيفه.',
       moreOpt: 'تفاصيل زيادة (اختياري): نادي، مدرسة، شغل، إنستاباي',
       moreLater: 'المجتمع هو مجموعة جيران: ناديك أو قريتك في الساحل أو مدرستك أو شغلك. انضم لأي واحد يناسبك علشان تشوف الطباخين والبوستات بتوعه. وتقدر تعمل كده في أي وقت من التطبيق.',
-      secIg: 'إنستجرامك', fIg: 'اسم المستخدم أو لينك إنستجرام (اختياري)', igHint: 'بيظهر على بروفايلك عشان اللي بيتابعوك هناك يلاقوك هنا كمان.', errIg: 'ده مش شكل اسم مستخدم أو لينك إنستجرام.',
+      secIg: 'إنستجرامك', fIg: 'اسم المستخدم أو لينك إنستجرام (اختياري)', igHint: 'بيظهر على بروفايلك عشان اللي بيتابعوك هناك يلاقوك هنا كمان.', errIg: 'ده مش شكل اسم مستخدم أو لينك إنستجرام.', fCreator: 'هل أنت انفلونسر / كرييتور؟ (اختياري)', creatorYes: 'أيوه', creatorNo: 'لا',
       secPaid: 'استلام الفلوس', fInstapay: 'حساب إنستاباي (اختياري)',
       instapayHint: 'محتاجه لما تطبخ، عشان جيرانك يدفعولك على طول. تقدر تضيفه بعدين.',
       secHeard: 'عرفت tabkheen A منين؟ (اختياري)', fHeard: 'عرفت من',
@@ -751,7 +753,7 @@
       $('skip').hidden = part !== 3; $('back').hidden = part === 1;
       // Card visitors join Shooting Club on this last step, so it can't be skipped past the club.
       $('cardClubNote').hidden = true; if (CARD_SC) $('cardClubNote').textContent = t('cardClubNote');
-      fillCountries(); fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); renderUsername(); }
+      fillCountries(); fillGovernorates(); fillAreas(); fillOptional(); fillHeard(); fillCreator(); renderUsername(); }
     if (state.step === 'done' && state.profile) {
       $('doneTitle').textContent = t(state.returning ? 'doneTitleBack' : 'doneTitle')(state.profile.username);
       store('tabkheen.doneUser', state.profile.username);
@@ -1051,6 +1053,10 @@
 
   var prefillHeard = null;
   function heardDef() { var v = $('heard').value; return HEARD.filter(function (h) { return h.value === v; })[0] || null; }
+  // "Are you an influencer / creator?": optional, only a Yes is saved (same as the app).
+  function fillCreator() {
+    fillSelect($('creator'), [{ value: '', label: t('choose') }, { value: 'yes', label: t('creatorYes') }, { value: 'no', label: t('creatorNo') }], $('creator').value);
+  }
   function fillHeard() {
     // "A friend" is preselected, the same as the app; there is no "prefer not to say".
     var cur = $('heard').value || (prefillHeard && prefillHeard.heard) || 'friend';
@@ -1318,6 +1324,7 @@
       return requestCommunity(o.kind, o.name, parea, pgov).then(function (c) { typedOptional.push(c); });
     })).then(function () {
       var row = { instagram_url: igUrl, instapay_handle: $('instapay').value.trim() || null };
+      if ($('creator').value === 'yes') row.is_creator = true;
       var heard3 = heardRow(); Object.keys(heard3).forEach(function (k) { row[k] = heard3[k]; });
       return sb.update('profiles', 'id=eq.' + uid, row);
     }).then(function (res) {
