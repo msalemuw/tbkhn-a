@@ -132,6 +132,13 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
   const handle = cook.username ? `@${cook.username}` : personName(cook);
 
   // Block / unblock and report this member, from the "…" on their profile.
+  function openMyPhoto() {
+    const actions: SheetAction[] = [{ label: 'Change profile photo', onPress: () => router.push('/edit-profile') }, { label: 'Add to your story', onPress: () => startCompose('story', '/compose/story') }];
+    if (ring !== 'none') actions.push({ label: 'View your story', onPress: () => router.push({ pathname: '/story/[id]', params: { id } }) });
+    if (!cook?.avatar_path && ring === 'none') return router.push('/edit-profile');
+    setMenu({ title: 'Profile photo', actions });
+  }
+
   function openMore() {
     if (!cook) return;
     const name = personName(cook);
@@ -166,10 +173,17 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
         <View style={styles.top}>
           <View style={styles.avatarBox}>
             {ring === 'none' ? (
-              <Avatar person={cook} size={86} />
+              // Your own photo: tapping it offers the choices (like Instagram). With no photo yet it goes straight to choosing one.
+              mine ? (
+                <Pressable onPress={openMyPhoto} accessibilityRole="button" accessibilityLabel={cook.avatar_path ? 'Profile photo options' : 'Add a profile photo'}>
+                  <Avatar person={cook} size={86} />
+                </Pressable>
+              ) : (
+                <Avatar person={cook} size={86} />
+              )
             ) : (
               // Like Instagram: a live story puts a ring around the photo, and tapping the photo opens the story.
-              <Pressable onPress={() => router.push({ pathname: '/story/[id]', params: { id } })} accessibilityRole="button" accessibilityLabel={mine ? 'Your story' : `${personName(cook)}'s story`} style={[styles.storyRing, ring === 'unseen' ? styles.ringUnseen : styles.ringSeen]}>
+              <Pressable onPress={() => (mine ? openMyPhoto() : router.push({ pathname: '/story/[id]', params: { id } }))} accessibilityRole="button" accessibilityLabel={mine ? 'Your photo and story' : `${personName(cook)}'s story`} style={[styles.storyRing, ring === 'unseen' ? styles.ringUnseen : styles.ringSeen]}>
                 <Avatar person={cook} size={74} />
               </Pressable>
             )}
