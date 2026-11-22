@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, PanResponder, type PanResponderGestureState, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Keyboard, PanResponder, type PanResponderGestureState, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
@@ -154,6 +154,8 @@ function Viewer({
   const [draft, setDraft] = useState('');
   const [liked, setLikedState] = useState(item.liked);
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [failed, setFailed] = useState(false);
   const photo = mediaUrl(item.media_path);
   const [wide, setWide] = useState(false);
   const order = item.kind === 'cooking_today';
@@ -241,15 +243,22 @@ function Viewer({
     });
   }
 
+  // Sends the reply. The emoji keyboard has no Return key, so a Send button shows as soon as there is something to send.
   async function reply() {
     if (!me) return router.push('/sign-up');
-    if (!draft.trim()) return;
+    if (!draft.trim() || sending) return;
+    setSending(true);
+    setFailed(false);
     try {
-      await sendMessage(me, group.author.id, `Replying to your story: ${draft}`, null);
+      await sendMessage(me, group.author.id, `Replying to your story: ${draft.trim()}`, null);
       setDraft('');
       setSent(true);
+      Keyboard.dismiss();
       setPaused(false);
-    } catch {}
+    } catch {
+      setFailed(true);
+    }
+    setSending(false);
   }
 
   return (
@@ -328,20 +337,29 @@ function Viewer({
           <View style={styles.replyRow}>
             <TextInput
               value={draft}
-              onChangeText={setDraft}
+              onChangeText={(t) => {
+                setDraft(t);
+                if (failed) setFailed(false);
+              }}
               onFocus={() => setPaused(true)}
               onBlur={() => setPaused(false)}
               onSubmitEditing={reply}
               returnKeyType="send"
-              placeholder={sent ? 'Sent' : `Reply to ${personName(group.author).split(' ')[0]}…`}
+              placeholder={failed ? 'Couldn’t send. Try again.' : sent ? 'Sent' : `Reply to ${personName(group.author).split(' ')[0]}…`}
               placeholderTextColor="rgba(255,255,255,.7)"
               style={styles.input}
               accessibilityLabel="Reply to story"
             />
-            <Pressable onPress={toggleLike} style={styles.round} accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'}>
-              <MaterialIcons name={liked ? 'favorite' : 'favorite-border'} size={22} color={colors.white} />
-            </Pressable>
-            {order && !menuOff ? (
+            {draft.trim() ? (
+              <Pressable onPress={reply} disabled={sending} style={styles.send} accessibilityRole="button" accessibilityLabel="Send reply">
+                {sending ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.sendText}>Send</Text>}
+              </Pressable>
+            ) : (
+              <Pressable onPress={toggleLike} style={styles.round} accessibilityRole="button" accessibilityLabel={liked ? 'Unlike' : 'Like'}>
+                <MaterialIcons name={liked ? 'favorite' : 'favorite-border'} size={22} color={colors.white} />
+              </Pressable>
+            )}
+            {order && !menuOff && !draft.trim() ? (
               <Pressable style={styles.reserve} onPress={() => router.replace({ pathname: '/dish/[id]', params: { id: item.id } })} accessibilityRole="button">
                 <MaterialIcons name="soup-kitchen" size={18} color={colors.navy} />
                 <Text style={styles.reserveText}>Reserve</Text>
@@ -384,6 +402,8 @@ const styles = StyleSheet.create({
   replyRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
   input: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: colors.white, borderWidth: 1.5, borderColor: 'rgba(255,255,255,.6)', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: 'rgba(40,48,58,.35)' },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(40,48,58,.35)' },
+  send: { minWidth: 72, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.teal, paddingHorizontal: 18 },
+  sendText: { fontFamily: fonts.extraBold, fontSize: 15, color: colors.navy },
   reserve: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.teal, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 12 },
   reserveText: { fontFamily: fonts.extraBold, fontSize: 14, color: colors.navy },
   mineRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
