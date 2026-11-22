@@ -15,6 +15,7 @@ import { RequestCommunitySheet } from '@/components/request-community';
 import { colors, fonts } from '@/constants/theme';
 import { logFunnel } from '@/lib/funnel';
 import { HEARD, OTHER_DETAIL } from '@/lib/heard';
+import { normalizeSocial } from '@/lib/social';
 import { cleanPhoneInput, DIALS, dialFor, formatPhone, isValidPhone, splitE164, toE164 } from '@/lib/phone';
 import { uploadPhoto } from '@/lib/posts';
 import { nameToUsername } from '@/lib/username';
@@ -89,6 +90,7 @@ export default function ProfileStep() {
   const [areaId, setAreaId] = useState<string | null>(null);
   const [optional, setOptional] = useState<Partial<Record<Optional, string>>>({});
   const [instapay, setInstapay] = useState('');
+  const [instagram, setInstagram] = useState('');
   // "A friend" is preselected and there is no "prefer not to say" (founder, 2026-10-10); the website matches.
   const [heard, setHeard] = useState<string | null>('friend');
   const [heardPick, setHeardPick] = useState<string | null>(null);
@@ -346,11 +348,17 @@ export default function ProfileStep() {
   // Step 3: the optional extras (club, Sahel, school, work, InstaPay, how they heard). Skipping it is fine.
   async function onExtras() {
     if (!session) return;
+    const igUrl = normalizeSocial('instagram', instagram);
+    if (igUrl === undefined) {
+      setError('That doesn’t look like an Instagram username or link.');
+      return;
+    }
     setBusy(true);
     setError(null);
     const { error: saveError } = await supabase
       .from('profiles')
       .update({
+        instagram_url: igUrl,
         instapay_handle: instapay.trim() || null,
         heard_from: heard,
         heard_detail: heardDetail,
@@ -634,6 +642,12 @@ export default function ProfileStep() {
             <MaterialIcons name="groups" size={19} color={colors.teal} />
             <Text style={styles.noteText}>You can join more communities anytime from your profile or the search tab.</Text>
           </View>
+
+          <Text style={styles.section}>YOUR INSTAGRAM</Text>
+          <Field label="INSTAGRAM USERNAME OR LINK (OPTIONAL)">
+            <TextInput value={instagram} onChangeText={setInstagram} placeholder="example: @yourname" placeholderTextColor={colors.faint} autoCapitalize="none" autoCorrect={false} maxLength={200} style={formStyles.input} />
+          </Field>
+          <Text style={[formStyles.hint, { color: colors.muted }]}>Shown on your profile so people who follow you there can find you here too.</Text>
 
           <Text style={styles.section}>GETTING PAID</Text>
           <Field label="INSTAPAY HANDLE (OPTIONAL)">
