@@ -14,6 +14,7 @@ import {
   fetchFollowedAmong,
   type FoundCommunity,
   type FoundCook,
+  fetchCommunitySizes,
   searchCommunities,
   searchCooks,
   setFollowing,
@@ -91,17 +92,20 @@ export default function Search() {
     let live = true;
     const t = setTimeout(
       () => {
-        Promise.all([searchCooks(text, me, place), searchCommunities(text)])
-          .then(async ([people, communities]) => {
+        Promise.all([searchCooks(text, me, place), searchCommunities(text), text ? Promise.resolve(new Map<string, number>()) : fetchCommunitySizes()])
+          .then(async ([people, communities, sizes]) => {
             const f = me ? await fetchFollowedAmong(me, people.map((p) => p.id)).catch(() => new Set<string>()) : new Set<string>();
             if (!live) return;
             setFailed(false);
             setFollowed((prev) => new Set([...prev, ...f]));
-            // With nothing typed, the screen is half cooks and half communities: five of each, communities nearest the member first.
+            // With nothing typed, the screen is half cooks and half communities: five of each. Communities have no coordinates,
+            // so: the member's own governorate first, then the biggest communities, then A to Z.
             const mine = profile?.governorate;
             const suggested = text
               ? communities
-              : [...communities].sort((a, b) => Number(b.governorate === mine) - Number(a.governorate === mine)).slice(0, 5);
+              : [...communities]
+                  .sort((a, b) => Number(b.governorate === mine) - Number(a.governorate === mine) || (sizes.get(b.id) ?? 0) - (sizes.get(a.id) ?? 0))
+                  .slice(0, 5);
             setFound({ q: text, people: text ? people : people.slice(0, 5), communities: suggested });
             fetchBadges(people.map((p) => p.id)).then((b) => live && setBadges(b), () => {});
           })

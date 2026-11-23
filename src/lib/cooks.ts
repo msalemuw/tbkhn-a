@@ -181,11 +181,18 @@ export type FoundCommunity = { id: string; name: string; kind: string; governora
 
 export async function searchCommunities(text: string): Promise<FoundCommunity[]> {
   const q = text.trim().replace(/[%,()*]/g, ' ').trim();
-  let query = supabase.from('communities').select('id, name, kind, governorate, area').eq('status', 'approved').order('name').limit(30);
+  let query = supabase.from('communities').select('id, name, kind, governorate, area').eq('status', 'approved').order('name').limit(q ? 30 : 300);
   if (q) query = query.ilike('name', `%${q}%`);
   const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
+}
+
+/** Member count per community (0071_community_sizes.sql). Empty if the function is not there yet, so callers fall back to name order. */
+export async function fetchCommunitySizes(): Promise<Map<string, number>> {
+  const { data, error } = await supabase.rpc('community_sizes');
+  if (error) return new Map();
+  return new Map(((data ?? []) as { community_id: string; members: number | string }[]).map((r) => [r.community_id, Number(r.members)]));
 }
 
 export async function setMembership(me: string, communityId: string, join: boolean): Promise<void> {
