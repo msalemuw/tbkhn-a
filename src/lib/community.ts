@@ -27,7 +27,7 @@ export async function fetchCommunityOverview(id: string): Promise<CommunityOverv
   ]);
   if (c.error) throw c.error;
   if (!c.data) return null;
-  const cookIds = [...new Set((posts.data ?? []).map((p) => p.author_id as string))];
+  const cookIds = await onlyMembers(id, [...new Set((posts.data ?? []).map((p) => p.author_id as string))]);
   return { info: c.data, members: members.count ?? 0, cookIds, today: dishes.filter((d) => d.community_ids.includes(id)) };
 }
 
@@ -60,6 +60,14 @@ export async function setCommunityCover(id: string, path: string | null): Promis
   if (error) throw error;
 }
 
+/** A post can be tagged for a community its author has not joined, so cooks are counted among the members only. */
+async function onlyMembers(communityId: string, ids: string[]): Promise<string[]> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from('community_members').select('user_id').eq('community_id', communityId).in('user_id', ids);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.user_id as string);
+}
+
 /** Members (joined) or cooks (posted a dish or signature dish for it) of a community, as people rows. */
 export async function fetchCommunityPeopleList(id: string, kind: 'members' | 'cooks'): Promise<FoundCook[]> {
   const ids =
@@ -68,9 +76,9 @@ export async function fetchCommunityPeopleList(id: string, kind: 'members' | 'co
           if (error) throw error;
           return (data ?? []).map((r) => r.user_id as string);
         })
-      : await supabase.from('posts').select('author_id').contains('community_ids', [id]).in('kind', ['cooking_today', 'signature']).limit(500).then(({ data, error }) => {
+      : await supabase.from('posts').select('author_id').contains('community_ids', [id]).in('kind', ['cooking_today', 'signature']).limit(500).then(async ({ data, error }) => {
           if (error) throw error;
-          return [...new Set((data ?? []).map((r) => r.author_id as string))];
+          return onlyMembers(id, [...new Set((data ?? []).map((r) => r.author_id as string))]);
         });
   if (!ids.length) return [];
   const { data, error } = await supabase.from('profiles').select('id, username, display_name, avatar_path, area').in('id', ids);
