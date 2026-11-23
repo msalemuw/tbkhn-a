@@ -917,4 +917,12 @@ export const ar: Record<string, string> = {
   'ARE YOU AN INFLUENCER / CREATOR?': 'هل أنت انفلونسر / كرييتور؟',
   Yes: 'أيوه',
   No: 'لا',
+  'My rankings': 'ترتيبي',
+  'Where you stand in each community you joined. The top 3 in each community get a badge.': 'ده ترتيبك في كل مجتمع انضميت له. أول 3 في كل مجتمع بياخدوا شارة.',
+  Likes: 'الإعجابات',
+  Service: 'الخدمة',
+  'Get likes on your signature dishes to be ranked.': 'خد إعجابات على أطباقك المميزة عشان تتصنف.',
+  'Finish a pickup and get a review to be ranked.': 'خلّص استلام واحد واحصل على تقييم عشان تتصنف.',
+  'We couldn’t load your rankings. Please try again in a moment.': 'مقدرناش نحمّل ترتيبك. جرّب تاني بعد شوية.',
+  'Join a community to see where you rank.': 'انضم لمجتمع عشان تشوف ترتيبك.',
 };

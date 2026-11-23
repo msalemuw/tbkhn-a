@@ -55,3 +55,23 @@ export async function fetchBadges(cookIds: string[]): Promise<Map<string, Badge[
   }
   return out;
 }
+
+export type MyRank = {
+  community_id: string;
+  community_name: string;
+  kind: string;
+  service_rank: number | null;
+  service_total: number;
+  likes_rank: number | null;
+  likes_total: number;
+  orders: number;
+  rating: number | null;
+  likes: number;
+};
+
+/** Your place in every community you belong to, for both rankings (null rank = not ranked yet). Needs migration 0070. */
+export async function fetchMyRanks(): Promise<MyRank[]> {
+  const { data, error } = await supabase.rpc('my_community_ranks');
+  if (error) throw error;
+  return ((data ?? []) as MyRank[]).map((r) => ({ ...r, rating: r.rating == null ? null : Number(r.rating) }));
+}
