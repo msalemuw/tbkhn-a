@@ -84,7 +84,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
     fetchCookDishes(id).then(setDishes, () => setDishes([]));
     fetchSignatures(id).then(setPosts, () => setPosts([]));
     fetchReviews(id).then(setReviews, () => setReviews([]));
-    fetchBadges([id]).then((m) => setBadges(m.get(id) ?? []), () => {});
+    fetchBadges([id], true).then((m) => setBadges(m.get(id) ?? []), () => {});
     fetchStoryRing(id).then(setRing, () => setRing('none'));
     if (me && !mine) {
       isFollowing(me, id).then(setFollowingState, () => {});
@@ -200,7 +200,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
               <VerifiedTick id={cook.id} size={16} />
               <CriticBadge id={cook.id} />
             </View>
-            {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={b.kind} badge={b} />)}</View> : null}
+            {badges.length ? <View style={styles.badges}>{badges.map((b) => <RankBadge key={`${b.kind}:${b.communityId}`} badge={b} />)}</View> : null}
             {cook.area && !mine ? <Text style={styles.area} numberOfLines={1}>{cook.area}</Text> : null}
             {stats?.rating != null ? (
               <Text style={styles.rating}>
