@@ -65,7 +65,7 @@ function Line({ icon, label, rank, total, hint }: { icon: 'favorite' | 'military
   return (
     <View style={styles.line}>
       <MaterialIcons name={icon} size={16} color={ui.deepTeal} />
-      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.label} numberOfLines={1}>{label}</Text>
       {rank != null ? (
         <Text style={[styles.rank, top && styles.rankTop]}>{`#${rank} of ${total}`}</Text>
       ) : (
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   name: { fontFamily: fonts.extraBold, fontSize: 16, color: colors.ink, flex: 1 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink, width: 64 },
+  label: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink, minWidth: 76, flexShrink: 0 },
   rank: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
   rankTop: { color: ui.deepTeal, fontFamily: fonts.extraBold },
   none: { fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted, flex: 1 },
