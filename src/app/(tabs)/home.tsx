@@ -25,6 +25,7 @@ import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistance
 import { refreshCritics, useCriticIds } from '@/lib/critics';
 import { refreshVerified } from '@/lib/verified';
 import { distanceMeters } from '@/lib/format';
+import { loadSeenPosts, markPostsSeen, rankFeed } from '@/lib/feed-rank';
 import { useDataVersion } from '@/lib/live';
 import { reportMyPosition, useMyLocation } from '@/lib/location';
 import { unreadMessageCount } from '@/lib/chat';
@@ -41,6 +42,14 @@ import { useRetap } from '@/lib/tab-retap';
 // Screen s6: Home is the social feed (design flow 15): signature dishes from the communities and cooks you watch.
 // Today’s menu and ordering live on the Menu tab.
 
+// A post counts as seen once it has been on screen for a moment; it then ranks lower the next time Home loads.
+// Module level so the list gets the same function on every render.
+function onViewable({ viewableItems }: { viewableItems: { item: FeedPost }[] }) {
+  const ids = viewableItems.map((v) => v.item.id);
+  if (ids.length) void markPostsSeen(ids);
+}
+const VIEW_CONFIG = { itemVisiblePercentThreshold: 60, minimumViewTime: 1000 };
+
 export default function Home() {
   const { session } = useSession();
   const me = session?.user.id ?? null;
@@ -50,6 +59,9 @@ export default function Home() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [stories, setStories] = useState<StoryGroup[]>([]);
   const [seen, setSeen] = useState<string[]>([]);
+  // Posts already seen on this phone, and a seed that changes on every load: they order the feed (see feed-rank.ts).
+  const [seenPosts, setSeenPosts] = useState<Set<string>>(new Set());
+  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
   const [mine, setMine] = useState<MyCommunity[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [watching, setWatching] = useState<Watching | null>(null);
@@ -74,13 +86,16 @@ export default function Home() {
     void refreshVerified();
     void refreshCritics();
     try {
-      const [feed, communities, follows, groups, seenIds] = await Promise.all([
+      const [feed, communities, follows, groups, seenIds, seenPostIds] = await Promise.all([
         fetchFeed(me),
         me ? fetchMyCommunities(me) : Promise.resolve([]),
         me ? fetchFollowing(me) : Promise.resolve([]),
         fetchStories(me).catch(() => [] as StoryGroup[]),
         loadSeen(),
+        loadSeenPosts(),
       ]);
+      setSeenPosts(seenPostIds);
+      setSeed(Math.floor(Math.random() * 1e9));
       setPosts(feed);
       // Rank badges are a nicety: the feed shows without them if they fail to load.
       fetchBadges(feed.map((p) => p.author_id)).then(setBadges, () => {});
@@ -150,13 +165,18 @@ export default function Home() {
           (!p.community_ids.length && watching.nearby) ||
           (watching.following && following.includes(p.author_id))),
     );
-    // Nearby: public posts come after the community and followed posts, closest cooks first, farther ones at the end.
-    // Posts with no known pickup spot (or no known location for me) go last, so no public post is ever lost.
-    if (!watching.nearby || !here) return list;
-    const isPublic = (p: FeedPost) => !p.community_ids.length && p.author_id !== me && !(watching.following && following.includes(p.author_id));
-    const dist = (p: FeedPost) => meters.get(p.author_id) ?? (p.spot ? distanceMeters(here, p.spot) : Infinity);
-    return [...list.filter((p) => !isPublic(p)), ...list.filter(isPublic).sort((a, b) => dist(a) - dist(b))];
-  }, [posts, watching, following, me, here, meters, memberships, criticIds]);
+    // Ranked by closeness, who I follow, shared communities, freshness and likes, minus posts I already saw, with a little
+    // shuffle each load (feed-rank.ts). Posts with no known pickup spot (or no known location for me) just score lower on distance.
+    const dist = (p: FeedPost) => (here ? meters.get(p.author_id) ?? (p.spot ? distanceMeters(here, p.spot) : Infinity) : Infinity);
+    return rankFeed(list, {
+      distance: dist,
+      useDistance: watching.nearby,
+      following: new Set(watching.following ? following : []),
+      inCommunity: (p) => p.community_ids.some((c) => watching.communities.includes(c)) || (memberships.get(p.author_id) ?? []).some((c) => watching.communities.includes(c)),
+      seen: seenPosts,
+      seed,
+    });
+  }, [posts, watching, following, me, here, meters, memberships, criticIds, seenPosts, seed]);
 
   const patch = (id: string, f: (p: FeedPost) => FeedPost) => setPosts((list) => list.map((p) => (p.id === id ? f(p) : p)));
 
@@ -256,6 +276,8 @@ export default function Home() {
         ref={listRef}
         data={shown}
         keyExtractor={(p) => p.id}
+        onViewableItemsChanged={onViewable}
+        viewabilityConfig={VIEW_CONFIG}
         renderItem={({ item }) => (
           <PostCard
             post={item}
