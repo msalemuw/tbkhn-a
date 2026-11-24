@@ -54,11 +54,11 @@ export function PostCard({
   const [pop] = useState(() => new Animated.Value(0));
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (openTimer.current) clearTimeout(openTimer.current); }, []);
-  // One tap opens the post in full (the feed shows it square); two quick taps like it, as on Instagram.
-  function onPhotoTap(now: number) {
+  // One tap opens the photo full screen (the feed shows it square); two quick taps like it, as on Instagram.
+  function onPhotoTap(now: number, at = 0) {
     if (now - lastTap.current > 320) {
       lastTap.current = now;
-      if (!fullShape) openTimer.current = setTimeout(() => router.push({ pathname: '/post/[id]', params: { id: post.id, by: post.author_id } }), 330);
+      openTimer.current = setTimeout(() => router.push({ pathname: '/photo-viewer', params: { paths: [post.media_path, ...(post.extra_media ?? [])].filter(Boolean).join('|'), index: String(at) } }), 330);
       return;
     }
     lastTap.current = 0;
@@ -121,8 +121,8 @@ export function PostCard({
             style={styles.carousel}
             onMomentumScrollEnd={(e) => slideW && setSlide(Math.round(e.nativeEvent.contentOffset.x / slideW))}
             scrollEventThrottle={16}>
-            {photos.map((uri) => (
-              <Pressable key={uri} onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false}>
+            {photos.map((uri, i) => (
+              <Pressable key={uri} onPress={(e) => onPhotoTap(e.nativeEvent.timestamp, i)} accessible={false}>
                 <Image source={{ uri }} style={[styles.photo, shape, slideW ? { width: slideW } : null]} contentFit="cover" />
               </Pressable>
             ))}
