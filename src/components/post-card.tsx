@@ -3,7 +3,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { FlipIcon } from '@/components/flip-icon';
@@ -64,6 +64,10 @@ export function PostCard({
     ]).start();
   }
   const photo = mediaUrl(post.media_path);
+  // A carousel post: the first photo plus the others, swiped sideways like Instagram.
+  const photos = [photo, ...(post.extra_media ?? []).map((m) => mediaUrl(m))].filter((u): u is string => !!u);
+  const [slide, setSlide] = useState(0);
+  const [slideW, setSlideW] = useState(0);
   const meta = meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at));
 
   return (
@@ -99,7 +103,34 @@ export function PostCard({
           <MaterialIcons name="more-horiz" size={22} color={colors.muted} />
         </Pressable>
       </View>
-      {photo ? (
+      {photos.length > 1 ? (
+        <View style={styles.photoWrap} onLayout={(e) => setSlideW(e.nativeEvent.layout.width)}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            style={styles.carousel}
+            onMomentumScrollEnd={(e) => slideW && setSlide(Math.round(e.nativeEvent.contentOffset.x / slideW))}
+            scrollEventThrottle={16}>
+            {photos.map((uri) => (
+              <Pressable key={uri} onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false}>
+                <Image source={{ uri }} style={[styles.photo, slideW ? { width: slideW } : null]} contentFit="cover" />
+              </Pressable>
+            ))}
+          </ScrollView>
+          <View pointerEvents="none" style={styles.counter}>
+            <Text style={styles.counterText}>{slide + 1}/{photos.length}</Text>
+          </View>
+          <View pointerEvents="none" style={styles.dots}>
+            {photos.map((_, i) => (
+              <View key={i} style={[styles.dot, i === slide && styles.dotOn]} />
+            ))}
+          </View>
+          <Animated.View pointerEvents="none" style={[styles.burst, { opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.1] }) }] }]}>
+            <Ionicons name="heart" size={96} color={colors.white} style={styles.burstHeart} />
+          </Animated.View>
+        </View>
+      ) : photo ? (
         <Pressable onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false} style={styles.photoWrap}>
           <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
           <Animated.View pointerEvents="none" style={[styles.burst, { opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.1] }) }] }]}>
@@ -171,6 +202,12 @@ const styles = StyleSheet.create({
   cookingText: { fontFamily: fonts.extraBold, fontSize: 13, color: ui.deep },
   photoWrap: { marginTop: 10 },
   photo: { width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: colors.cream },
+  carousel: { borderRadius: 16, overflow: 'hidden' },
+  counter: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(40,48,58,.7)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  counterText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },
+  dots: { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 5 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,.55)' },
+  dotOn: { backgroundColor: colors.white },
   burst: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   burstHeart: { textShadowColor: 'rgba(0,0,0,.35)', textShadowRadius: 14 },
   caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },

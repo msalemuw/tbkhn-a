@@ -22,7 +22,7 @@ export type Review = {
   reviewer: Person;
 };
 
-export type Signature = { id: string; caption: string | null; media_path: string | null; created_at: string };
+export type Signature = { id: string; caption: string | null; media_path: string | null; created_at: string; more?: number };
 
 export type CookStats = { followers: number; following: number; communities: number; reviews: number; rating: number | null };
 
@@ -90,7 +90,15 @@ export async function fetchSignatures(cookId: string): Promise<Signature[]> {
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) throw error;
-  return data ?? [];
+  const rows: Signature[] = data ?? [];
+  // How many extra photos each post has (carousel), for the small stacked-photos icon. A nicety: no icon if it cannot be read.
+  if (rows.length) {
+    const { data: media } = await supabase.from('post_media').select('post_id').in('post_id', rows.map((r) => r.id));
+    const count = new Map<string, number>();
+    for (const m of (media ?? []) as { post_id: string }[]) count.set(m.post_id, (count.get(m.post_id) ?? 0) + 1);
+    for (const r of rows) r.more = count.get(r.id) ?? 0;
+  }
+  return rows;
 }
 
 export async function fetchCookDishes(cookId: string): Promise<Dish[]> {

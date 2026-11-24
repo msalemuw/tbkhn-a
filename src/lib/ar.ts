@@ -153,6 +153,7 @@ export const ar: Record<string, string> = {
   'Share post': 'انشر البوست',
   'Signature dish': 'أكلة مميزة',
   'Take a photo': 'صوّر',
+  'Add more photos': 'أضف المزيد من الصور',
   'Tell neighbors about this dish': 'احكي لجيرانك عن الأكلة دي',
   'Add a photo for your story.': 'ضيف صورة للستوري.',
   'Food story': 'ستوري أكل',
