@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
@@ -52,12 +52,17 @@ export function PostCard({
   // Double-tap the photo to like, like Instagram: a heart pops up on the photo. It only likes; the heart button below is what unlikes.
   const lastTap = useRef(0);
   const [pop] = useState(() => new Animated.Value(0));
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (openTimer.current) clearTimeout(openTimer.current); }, []);
+  // One tap opens the post in full (the feed shows it square); two quick taps like it, as on Instagram.
   function onPhotoTap(now: number) {
     if (now - lastTap.current > 320) {
       lastTap.current = now;
+      if (!fullShape) openTimer.current = setTimeout(() => router.push({ pathname: '/post/[id]', params: { id: post.id, by: post.author_id } }), 330);
       return;
     }
     lastTap.current = 0;
+    if (openTimer.current) clearTimeout(openTimer.current);
     if (!post.liked) onLike();
     pop.setValue(0);
     Animated.sequence([
