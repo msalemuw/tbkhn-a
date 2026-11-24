@@ -138,7 +138,7 @@ export default function PostScreen() {
             setTimeout(() => list.current?.scrollToIndex({ index: info.index, animated: false }), 100);
           }}
           renderItem={({ item }) => (
-            <PostCard post={item} meters={null} onLike={() => onLike(item)} onLikes={() => setLikesFor(item.id)} onSave={() => onSave(item)} onComments={() => setCommentsFor(item.id)} onShare={() => onShare(item)} onMore={() => onMore(item)} />
+            <PostCard fullShape post={item} meters={null} onLike={() => onLike(item)} onLikes={() => setLikesFor(item.id)} onSave={() => onSave(item)} onComments={() => setCommentsFor(item.id)} onShare={() => onShare(item)} onMore={() => onMore(item)} />
           )}
           ListEmptyComponent={<Text style={styles.empty}>No posts here any more.</Text>}
         />
