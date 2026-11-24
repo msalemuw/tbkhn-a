@@ -30,8 +30,11 @@ export function PostCard({
   onComments,
   onShare,
   onMore,
+  fullShape = false,
 }: {
   post: FeedPost;
+  /** The post page shows the photo in its own shape; the feed keeps it square. */
+  fullShape?: boolean;
   badges?: Badge[];
   /** Live distance to the cook in metres, when both positions are known. */
   meters: number | null;
@@ -66,6 +69,7 @@ export function PostCard({
   const photo = mediaUrl(post.media_path);
   // A carousel post: the first photo plus the others, swiped sideways like Instagram.
   const photos = [photo, ...(post.extra_media ?? []).map((m) => mediaUrl(m))].filter((u): u is string => !!u);
+  const shape = { aspectRatio: fullShape ? post.media_aspect ?? 1 : 1 };
   const [slide, setSlide] = useState(0);
   const [slideW, setSlideW] = useState(0);
   const meta = meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at));
@@ -114,7 +118,7 @@ export function PostCard({
             scrollEventThrottle={16}>
             {photos.map((uri) => (
               <Pressable key={uri} onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false}>
-                <Image source={{ uri }} style={[styles.photo, slideW ? { width: slideW } : null]} contentFit="cover" />
+                <Image source={{ uri }} style={[styles.photo, shape, slideW ? { width: slideW } : null]} contentFit="cover" />
               </Pressable>
             ))}
           </ScrollView>
@@ -132,7 +136,7 @@ export function PostCard({
         </View>
       ) : photo ? (
         <Pressable onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false} style={styles.photoWrap}>
-          <Image source={{ uri: photo }} style={styles.photo} contentFit="cover" />
+          <Image source={{ uri: photo }} style={[styles.photo, shape]} contentFit="cover" />
           <Animated.View pointerEvents="none" style={[styles.burst, { opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.1] }) }] }]}>
             <Ionicons name="heart" size={96} color={colors.white} style={styles.burstHeart} />
           </Animated.View>

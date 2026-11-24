@@ -25,6 +25,8 @@ export default function ComposeSignature() {
     const first = peekPendingPhoto();
     return first ? [{ uri: first.uri, mimeType: first.mimeType }, ...(first.more ?? [])] : [];
   });
+  // The shape the photos were cropped to (width / height): the first photo's own shape, kept for the whole post.
+  const [aspect, setAspect] = useState<number>(() => peekPendingPhoto()?.aspect ?? 1);
   const photo = photos[0] ?? null;
   // The photo was handed over once; later visits start empty.
   useEffect(() => setPendingPhoto(null), []);
@@ -43,14 +45,17 @@ export default function ComposeSignature() {
 
   async function pickPhoto(start: PhotoStart) {
     const res = await choosePhoto('post', start, MAX_POST_PHOTOS);
-    if (res) setPhotos(flat(res));
+    if (res) {
+      setPhotos(flat(res));
+      setAspect(res.aspect ?? 1);
+    }
   }
 
   // "Add" in the photo strip: the same gallery picker, numbered in the order tapped, for the places that are left.
   async function addMore() {
     const room = MAX_POST_PHOTOS - photos.length;
     if (room <= 0) return;
-    const res = await choosePhoto('post', 'gallery', room);
+    const res = await choosePhoto('post', 'gallery', room, aspect);
     if (res) setPhotos((l) => [...l, ...flat(res)].slice(0, MAX_POST_PHOTOS));
   }
 
@@ -63,7 +68,7 @@ export default function ComposeSignature() {
       const path = await uploadPhoto(uid, photo.uri, photo.mimeType ?? 'image/jpeg');
       const morePaths: string[] = [];
       for (const m of photos.slice(1)) morePaths.push(await uploadPhoto(uid, m.uri, m.mimeType ?? 'image/jpeg'));
-      await postSignature(uid, caption, path, communityId, morePaths);
+      await postSignature(uid, caption, path, communityId, morePaths, aspect);
       router.dismissTo('/home');
     } catch (e) {
       setError(shareErrorMessage(e));
@@ -90,7 +95,7 @@ export default function ComposeSignature() {
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           {photo ? (
             <View>
-              <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" />
+              <Image source={{ uri: photo.uri }} style={[styles.photo, { aspectRatio: aspect }]} contentFit="cover" />
               <Pressable style={styles.retake} onPress={() => pickPhoto('gallery')}>
                 <MaterialIcons name="autorenew" size={16} color={colors.white} />
                 <Text style={styles.retakeText}>Change</Text>

@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
-import { finishPhoto, MAX_POST_PHOTOS, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
+import { clampPostAspect, finishPhoto, MAX_POST_PHOTOS, POST_ASPECT_MIN, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
 
 // The add-photo screen for stories, posts and menu dishes: a camera that fills the screen, with a button for the phone's own photo picker. The final look is drawn while choosing: stories fill the screen,
 // posts (square) and menu dishes (4:3) show a frame of that shape inside it. Phones on an older build never reach this screen (see photo-flow).
@@ -52,7 +52,7 @@ async function pickFromLibrary(kind: PhotoKind, limit: number): Promise<Shot[]> 
 }
 
 export default function AddPhoto() {
-  const params = useLocalSearchParams<{ kind?: string; mode?: string; limit?: string }>();
+  const params = useLocalSearchParams<{ kind?: string; mode?: string; limit?: string; aspect?: string }>();
   const kind: PhotoKind = params.kind === 'story' || params.kind === 'post' ? params.kind : 'menu';
   const startInLibrary = params.mode === 'gallery';
   const limit = Math.min(MAX_POST_PHOTOS, Math.max(1, Number(params.limit) || MAX_POST_PHOTOS));
@@ -61,6 +61,15 @@ export default function AddPhoto() {
   const [queue, setQueue] = useState<Shot[] | null>(null);
   const [step, setStep] = useState(0);
   const adjusted = useRef<PickedPhoto[]>([]);
+  // The shape every photo of a post is cropped to: a post keeps the first photo's own shape (4:5 to 1.91:1), or the shape the post already has when more are added.
+  const [frameAspect, setFrameAspect] = useState(FRAME_ASPECT[kind]);
+  const fixedAspect = Number(params.aspect) || 0;
+  function startAdjusting(shots: Shot[]) {
+    adjusted.current = [];
+    setStep(0);
+    setFrameAspect(kind === 'post' ? fixedAspect || clampPostAspect(shots[0].width / shots[0].height) : FRAME_ASPECT[kind]);
+    setQueue(shots);
+  }
 
   // Closing the screen any other way (swipe down, back) tells the form that nothing was chosen.
   useEffect(
@@ -74,9 +83,10 @@ export default function AddPhoto() {
   useEffect(() => {
     if (!startInLibrary) return;
     pickFromLibrary(kind, limit).then(
-      (shots) => (shots.length ? setQueue(shots) : router.back()),
+      (shots) => (shots.length ? startAdjusting(shots) : router.back()),
       () => router.back(),
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startInLibrary, kind, limit]);
 
   const finish = useCallback((photo: PickedPhoto | null) => {
@@ -93,6 +103,7 @@ export default function AddPhoto() {
         <Adjust
           key={step}
           kind={kind}
+          aspect={frameAspect}
           photo={queue[step]}
           title={queue.length > 1 ? `Move and zoom ${step + 1}/${queue.length}` : 'Move and zoom'}
           doneLabel={last ? 'Done' : 'Next'}
@@ -111,7 +122,8 @@ export default function AddPhoto() {
             adjusted.current.push(photo);
             if (!last) return setStep(step + 1);
             const [first, ...rest] = adjusted.current;
-            finish(rest.length ? { ...first, more: rest } : first);
+            const out = rest.length ? { ...first, more: rest } : first;
+            finish(kind === 'post' ? { ...out, aspect: frameAspect } : out);
           }}
         />
       </>
@@ -121,7 +133,7 @@ export default function AddPhoto() {
   return (
     <>
       <StatusBar style="light" />
-      {startInLibrary ? <View style={styles.screen} /> : <Camera kind={kind} limit={limit} onCaptured={(shots) => { adjusted.current = []; setStep(0); setQueue(shots); }} onDone={finish} />}
+      {startInLibrary ? <View style={styles.screen} /> : <Camera kind={kind} limit={limit} onCaptured={startAdjusting} onDone={finish} />}
     </>
   );
 }
@@ -138,10 +150,10 @@ function Camera({ kind, limit, onCaptured, onDone }: { kind: PhotoKind; limit: n
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Stories and menu dishes fill the whole screen (no frame); posts show their square in the middle.
+  // Stories and menu dishes fill the whole screen (no frame); posts show a 4:5 frame in the middle.
   const full = kind !== 'post';
-  const frameH = full ? height : Math.min(width, height - insets.top - insets.bottom - 200);
-  const frameW = full ? width : frameH;
+  const frameH = full ? height : Math.min(width / POST_ASPECT_MIN, height - insets.top - insets.bottom - 200);
+  const frameW = full ? width : Math.min(width, frameH * POST_ASPECT_MIN);
   const frameTop = Math.round((height - frameH) / 2);
   const frameLeft = Math.round((width - frameW) / 2);
   // A menu dish also shows the 4:3 part the Menu card will show.
@@ -248,11 +260,10 @@ function MenuGuide({ top, height, width, screenH, storyTagTop }: { top: number; 
 
 // ---------- Adjust: move and zoom the photo inside the final frame ----------
 
-function Adjust({ kind, photo, title = 'Move and zoom', doneLabel = 'Done', onBack, onDone }: { kind: PhotoKind; photo: Shot; title?: string; doneLabel?: string; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
+function Adjust({ kind, aspect, photo, title = 'Move and zoom', doneLabel = 'Done', onBack, onDone }: { kind: PhotoKind; aspect: number; photo: Shot; title?: string; doneLabel?: string; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
-  const aspect = FRAME_ASPECT[kind];
   // The frame is as big as the screen allows (a story fills the width), centered in the space under the top bar.
   const room = height - insets.top - insets.bottom - 70;
   const frameH = Math.min(width / aspect, room);
