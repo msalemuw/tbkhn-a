@@ -5,7 +5,11 @@ import { Platform } from 'react-native';
 
 // Where a photo is going decides the final look: stories are full screen (9:16), posts are square and menu dishes are 4:3 landscape.
 export type PhotoKind = 'story' | 'post' | 'menu';
-export type PickedPhoto = { uri: string; mimeType: string };
+/** `more` holds the rest of a multi-photo pick (signature posts only), in the order they were chosen. */
+export type PickedPhoto = { uri: string; mimeType: string; more?: PickedPhoto[] };
+
+/** Photos in one signature post: the first plus up to 9 more. */
+export const MAX_POST_PHOTOS = 10;
 export type PhotoStart = 'auto' | 'camera' | 'gallery';
 
 export const FRAME_ASPECT: Record<PhotoKind, number> = { story: 9 / 16, post: 1, menu: 4 / 3 };
@@ -20,7 +24,14 @@ export function addPhotoScreenReady(): boolean {
 }
 
 // The phone's own picker or camera (the way every phone worked before the new screen).
-export async function systemPick(kind: PhotoKind, camera: boolean): Promise<PickedPhoto | null> {
+export async function systemPick(kind: PhotoKind, camera: boolean, limit = MAX_POST_PHOTOS): Promise<PickedPhoto | null> {
+  // Signature posts take several photos from the gallery (no crop step in the phone's own picker, so they show centred and square).
+  if (kind === 'post' && !camera) {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsMultipleSelection: true, orderedSelection: true, selectionLimit: Math.max(1, limit) });
+    if (res.canceled || !res.assets.length) return null;
+    const all = res.assets.map((a) => ({ uri: a.uri, mimeType: a.mimeType ?? 'image/jpeg' }));
+    return { ...all[0], more: all.slice(1) };
+  }
   const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: kind === 'story' ? [9, 16] : kind === 'menu' ? [4, 3] : [1, 1] };
   if (camera) {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -34,13 +45,13 @@ export async function systemPick(kind: PhotoKind, camera: boolean): Promise<Pick
 let waiting: ((photo: PickedPhoto | null) => void) | null = null;
 
 // Opens the add-photo screen (a full-screen camera with a button for the phone's photo picker) and resolves with the photo, or null if they close it.
-export function choosePhoto(kind: PhotoKind, start: PhotoStart = 'auto'): Promise<PickedPhoto | null> {
-  if (!addPhotoScreenReady()) return systemPick(kind, start === 'camera');
+export function choosePhoto(kind: PhotoKind, start: PhotoStart = 'auto', limit = MAX_POST_PHOTOS): Promise<PickedPhoto | null> {
+  if (!addPhotoScreenReady()) return systemPick(kind, start === 'camera', limit);
   const mode = start === 'gallery' ? 'gallery' : 'camera';
   return new Promise((resolve) => {
     waiting?.(null);
     waiting = resolve;
-    router.push({ pathname: '/add-photo', params: { kind, mode } });
+    router.push({ pathname: '/add-photo', params: { kind, mode, limit: String(limit) } });
   });
 }
 
