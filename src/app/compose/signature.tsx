@@ -1,9 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { KeyboardAvoidingView } from '@/components/keyboard-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,20 +13,21 @@ import { danger, Field, formStyles, PickerSheet, PrimaryButton, SelectField, typ
 import { colors, fonts } from '@/constants/theme';
 import { postSignature } from '@/lib/feed';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
-import { choosePhoto, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
+import { choosePhoto, MAX_POST_PHOTOS, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
 import { useSession } from '@/lib/session';
-
-const MAX_MORE = 9;
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
 export default function ComposeSignature() {
   const { session } = useSession();
   const uid = session?.user.id;
-  const [photo, setPhoto] = useState<PickedPhoto | null>(() => peekPendingPhoto());
+  // Up to 10 photos: the first is the cover, the rest follow in order (a carousel post).
+  const [photos, setPhotos] = useState<PickedPhoto[]>(() => {
+    const first = peekPendingPhoto();
+    return first ? [{ uri: first.uri, mimeType: first.mimeType }, ...(first.more ?? [])] : [];
+  });
+  const photo = photos[0] ?? null;
   // The photo was handed over once; later visits start empty.
   useEffect(() => setPendingPhoto(null), []);
-  // Up to 9 more photos after the first (a carousel post).
-  const [more, setMore] = useState<PickedPhoto[]>([]);
   const [caption, setCaption] = useState('');
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
@@ -37,18 +39,19 @@ export default function ComposeSignature() {
     if (uid) fetchMyCommunities(uid).then(setCommunities, () => null);
   }, [uid]);
 
+  const flat = (res: PickedPhoto): PickedPhoto[] => [{ uri: res.uri, mimeType: res.mimeType }, ...(res.more ?? [])];
+
   async function pickPhoto(start: PhotoStart) {
-    const res = await choosePhoto('post', start);
-    if (res) setPhoto(res);
+    const res = await choosePhoto('post', start, MAX_POST_PHOTOS);
+    if (res) setPhotos(flat(res));
   }
 
-
+  // "Add" in the photo strip: the same gallery picker, numbered in the order tapped, for the places that are left.
   async function addMore() {
-    const room = MAX_MORE - more.length;
+    const room = MAX_POST_PHOTOS - photos.length;
     if (room <= 0) return;
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, orderedSelection: true, selectionLimit: room, quality: 0.8 });
-    if (res.canceled) return;
-    setMore((m) => [...m, ...res.assets.map((a) => ({ uri: a.uri, mimeType: a.mimeType ?? 'image/jpeg' }))].slice(0, MAX_MORE));
+    const res = await choosePhoto('post', 'gallery', room);
+    if (res) setPhotos((l) => [...l, ...flat(res)].slice(0, MAX_POST_PHOTOS));
   }
 
   async function onPost() {
@@ -59,7 +62,7 @@ export default function ComposeSignature() {
     try {
       const path = await uploadPhoto(uid, photo.uri, photo.mimeType ?? 'image/jpeg');
       const morePaths: string[] = [];
-      for (const m of more) morePaths.push(await uploadPhoto(uid, m.uri, m.mimeType ?? 'image/jpeg'));
+      for (const m of photos.slice(1)) morePaths.push(await uploadPhoto(uid, m.uri, m.mimeType ?? 'image/jpeg'));
       await postSignature(uid, caption, path, communityId, morePaths);
       router.dismissTo('/home');
     } catch (e) {
@@ -105,24 +108,7 @@ export default function ComposeSignature() {
               </Pressable>
             </View>
           )}
-          {photo ? (
-            <View style={styles.moreRow}>
-              {more.map((m, i) => (
-                <View key={m.uri} style={styles.thumbWrap}>
-                  <Image source={{ uri: m.uri }} style={styles.thumb} contentFit="cover" />
-                  <Pressable style={styles.thumbX} hitSlop={6} onPress={() => setMore((l) => l.filter((_, j) => j !== i))} accessibilityLabel="Remove photo">
-                    <MaterialIcons name="close" size={14} color={colors.white} />
-                  </Pressable>
-                </View>
-              ))}
-              {more.length < MAX_MORE ? (
-                <Pressable style={styles.addMore} onPress={addMore} accessibilityRole="button" accessibilityLabel="Add more photos">
-                  <MaterialIcons name="add-photo-alternate" size={24} color={colors.teal} />
-                  <Text style={styles.addMoreText}>{more.length ? 'Add' : 'Add more photos'}</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
+          {photo ? <PhotoStrip photos={photos} onChange={setPhotos} onAdd={addMore} /> : null}
           <View style={styles.group}>
             <Field label="CAPTION">
               <TextInput value={caption} onChangeText={setCaption} placeholder="Tell neighbors about this dish" placeholderTextColor={colors.faint} multiline maxLength={500} style={[formStyles.input, { minHeight: 60 }]} accessibilityLabel="Caption" />
@@ -136,6 +122,70 @@ export default function ComposeSignature() {
       </KeyboardAvoidingView>
       <PickerSheet title="Share with" items={sheet} onClose={() => setSheet(null)} />
     </SafeAreaView>
+  );
+}
+
+const THUMB = 64;
+const GAP = 8;
+const STEP = THUMB + GAP;
+
+// The photos in this post as a row of thumbnails: press and hold one, then drag it left or right to reorder (like Instagram). The first is the cover.
+function PhotoStrip({ photos, onChange, onAdd }: { photos: PickedPhoto[]; onChange: (p: PickedPhoto[]) => void; onAdd: () => void }) {
+  function move(from: number, to: number) {
+    const target = Math.max(0, Math.min(photos.length - 1, to));
+    if (target === from) return;
+    const next = [...photos];
+    const [it] = next.splice(from, 1);
+    next.splice(target, 0, it);
+    onChange(next);
+  }
+  return (
+    <GestureHandlerRootView style={styles.moreRow}>
+      {photos.map((m, i) => (
+        <Thumb key={m.uri} photo={m} index={i} cover={i === 0} onMove={move} onRemove={() => onChange(photos.filter((_, j) => j !== i))} />
+      ))}
+      {photos.length < MAX_POST_PHOTOS ? (
+        <Pressable style={styles.addMore} onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add more photos">
+          <MaterialIcons name="add-photo-alternate" size={24} color={colors.teal} />
+          <Text style={styles.addMoreText}>{photos.length > 1 ? 'Add' : 'Add more photos'}</Text>
+        </Pressable>
+      ) : null}
+    </GestureHandlerRootView>
+  );
+}
+
+function Thumb({ photo, index, cover, onMove, onRemove }: { photo: PickedPhoto; index: number; cover: boolean; onMove: (from: number, to: number) => void; onRemove: () => void }) {
+  const x = useSharedValue(0);
+  const lift = useSharedValue(0);
+  const drag = Gesture.Pan()
+    .activateAfterLongPress(250)
+    .onStart(() => {
+      lift.value = withSpring(1);
+    })
+    .onUpdate((e) => {
+      x.value = e.translationX;
+    })
+    .onEnd((e) => {
+      const to = index + Math.round(e.translationX / STEP);
+      x.value = withSpring(0);
+      lift.value = withSpring(0);
+      if (to !== index) runOnJS(onMove)(index, to);
+    });
+  const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }, { scale: 1 + lift.value * 0.12 }], zIndex: lift.value > 0.01 ? 10 : 0 }));
+  return (
+    <GestureDetector gesture={drag}>
+      <Animated.View style={[styles.thumbWrap, style]}>
+        <Image source={{ uri: photo.uri }} style={styles.thumb} contentFit="cover" />
+        {cover ? (
+          <View style={styles.coverTag}>
+            <Text style={styles.coverTagText}>Cover</Text>
+          </View>
+        ) : null}
+        <Pressable style={styles.thumbX} hitSlop={6} onPress={onRemove} accessibilityLabel="Remove photo">
+          <MaterialIcons name="close" size={14} color={colors.white} />
+        </Pressable>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
@@ -155,6 +205,8 @@ const styles = StyleSheet.create({
   thumbWrap: { width: 64, height: 64 },
   thumb: { width: 64, height: 64, borderRadius: 10, backgroundColor: colors.cream },
   thumbX: { position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(40,48,58,.85)', alignItems: 'center', justifyContent: 'center' },
+  coverTag: { position: 'absolute', left: 4, bottom: 4, backgroundColor: 'rgba(40,48,58,.75)', borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 },
+  coverTagText: { fontFamily: fonts.bold, fontSize: 10, color: colors.white },
   addMore: { minWidth: 64, height: 64, borderRadius: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.teal, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, gap: 2 },
   addMoreText: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink },
   group: { gap: 12, marginTop: 14 },

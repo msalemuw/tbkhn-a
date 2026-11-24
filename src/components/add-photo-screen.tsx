@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
-import { finishPhoto, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
+import { finishPhoto, MAX_POST_PHOTOS, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
 
 // The add-photo screen for stories, posts and menu dishes: a camera that fills the screen, with a button for the phone's own photo picker. The final look is drawn while choosing: stories fill the screen,
 // posts (square) and menu dishes (4:3) show a frame of that shape inside it. Phones on an older build never reach this screen (see photo-flow).
@@ -36,19 +36,31 @@ async function normalize(uri: string, width: number, height: number): Promise<Sh
   return { uri: out.uri, width: out.width, height: out.height };
 }
 // The phone's own photo picker (fast, and it asks for no broad photo access). The chosen photo goes to the Move and zoom step.
-async function pickFromLibrary(): Promise<Shot | null> {
-  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, allowsEditing: false });
-  const a = !res.canceled ? res.assets[0] : null;
-  return a ? normalize(a.uri, a.width, a.height) : null;
+// A signature post takes several photos at once (numbered in the order they are tapped, like Instagram); stories and menu dishes take one.
+async function pickFromLibrary(kind: PhotoKind, limit: number): Promise<Shot[]> {
+  const multi = kind === 'post' && limit > 1;
+  const res = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    quality: 1,
+    allowsEditing: false,
+    ...(multi ? { allowsMultipleSelection: true, orderedSelection: true, selectionLimit: limit } : {}),
+  });
+  if (res.canceled) return [];
+  const out: Shot[] = [];
+  for (const a of res.assets.slice(0, multi ? limit : 1)) out.push(await normalize(a.uri, a.width, a.height));
+  return out;
 }
 
 export default function AddPhoto() {
-  const params = useLocalSearchParams<{ kind?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ kind?: string; mode?: string; limit?: string }>();
   const kind: PhotoKind = params.kind === 'story' || params.kind === 'post' ? params.kind : 'menu';
   const startInLibrary = params.mode === 'gallery';
+  const limit = Math.min(MAX_POST_PHOTOS, Math.max(1, Number(params.limit) || MAX_POST_PHOTOS));
   const done = useRef(false);
-  // A photo picked from the grid opens in the adjust step: move and zoom it inside the final frame, then Done.
-  const [adjusting, setAdjusting] = useState<Shot | null>(null);
+  // Photos picked from the grid open one after another in the adjust step: move and zoom each inside the final frame, then Next / Done.
+  const [queue, setQueue] = useState<Shot[] | null>(null);
+  const [step, setStep] = useState(0);
+  const adjusted = useRef<PickedPhoto[]>([]);
 
   // Closing the screen any other way (swipe down, back) tells the form that nothing was chosen.
   useEffect(
@@ -61,11 +73,11 @@ export default function AddPhoto() {
   // Coming from "From gallery": open the phone's photo picker straight away; closing it closes this screen.
   useEffect(() => {
     if (!startInLibrary) return;
-    pickFromLibrary().then(
-      (shot) => (shot ? setAdjusting(shot) : router.back()),
+    pickFromLibrary(kind, limit).then(
+      (shots) => (shots.length ? setQueue(shots) : router.back()),
       () => router.back(),
     );
-  }, [startInLibrary]);
+  }, [startInLibrary, kind, limit]);
 
   const finish = useCallback((photo: PickedPhoto | null) => {
     done.current = true;
@@ -73,11 +85,35 @@ export default function AddPhoto() {
     router.back();
   }, []);
 
-  if (adjusting) {
+  if (queue) {
+    const last = step === queue.length - 1;
     return (
       <>
         <StatusBar style="light" />
-        <Adjust kind={kind} photo={adjusting} onBack={() => setAdjusting(null)} onDone={finish} />
+        <Adjust
+          key={step}
+          kind={kind}
+          photo={queue[step]}
+          title={queue.length > 1 ? `Move and zoom ${step + 1}/${queue.length}` : 'Move and zoom'}
+          doneLabel={last ? 'Done' : 'Next'}
+          onBack={() => {
+            if (step > 0) {
+              adjusted.current.pop();
+              setStep(step - 1);
+            } else if (startInLibrary) finish(null);
+            else {
+              adjusted.current = [];
+              setQueue(null);
+            }
+          }}
+          onDone={(photo) => {
+            if (!photo) return finish(null);
+            adjusted.current.push(photo);
+            if (!last) return setStep(step + 1);
+            const [first, ...rest] = adjusted.current;
+            finish(rest.length ? { ...first, more: rest } : first);
+          }}
+        />
       </>
     );
   }
@@ -85,14 +121,14 @@ export default function AddPhoto() {
   return (
     <>
       <StatusBar style="light" />
-      {startInLibrary ? <View style={styles.screen} /> : <Camera kind={kind} onCaptured={setAdjusting} onDone={finish} />}
+      {startInLibrary ? <View style={styles.screen} /> : <Camera kind={kind} limit={limit} onCaptured={(shots) => { adjusted.current = []; setStep(0); setQueue(shots); }} onDone={finish} />}
     </>
   );
 }
 
 // ---------- Camera ----------
 
-function Camera({ kind, onCaptured, onDone }: { kind: PhotoKind; onCaptured: (p: Shot) => void; onDone: (p: PickedPhoto | null) => void }) {
+function Camera({ kind, limit, onCaptured, onDone }: { kind: PhotoKind; limit: number; onCaptured: (p: Shot[]) => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -118,7 +154,7 @@ function Camera({ kind, onCaptured, onDone }: { kind: PhotoKind; onCaptured: (p:
     try {
       const pic = await camera.current.takePictureAsync({ quality: 0.6, exif: false });
       // The photo opens in the same Move and zoom step as a photo from the grid, so it can be adjusted before it is used.
-      onCaptured(await normalize(pic.uri, pic.width, pic.height));
+      onCaptured([await normalize(pic.uri, pic.width, pic.height)]);
     } catch {
       setBusy(false);
     }
@@ -129,8 +165,8 @@ function Camera({ kind, onCaptured, onDone }: { kind: PhotoKind; onCaptured: (p:
     if (busy) return;
     setBusy(true);
     try {
-      const shot = await pickFromLibrary();
-      if (shot) return onCaptured(shot);
+      const shots = await pickFromLibrary(kind, limit);
+      if (shots.length) return onCaptured(shots);
     } catch {
       // stay on the camera
     }
@@ -212,7 +248,7 @@ function MenuGuide({ top, height, width, screenH, storyTagTop }: { top: number; 
 
 // ---------- Adjust: move and zoom the photo inside the final frame ----------
 
-function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: Shot; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
+function Adjust({ kind, photo, title = 'Move and zoom', doneLabel = 'Done', onBack, onDone }: { kind: PhotoKind; photo: Shot; title?: string; doneLabel?: string; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
@@ -283,9 +319,9 @@ function Adjust({ kind, photo, onBack, onDone }: { kind: PhotoKind; photo: Shot;
     <GestureHandlerRootView style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.gridTop}>
         <IconButton name="arrow-back" onPress={onBack} label="Back" />
-        <Text style={styles.gridTitle}>Move and zoom</Text>
+        <Text style={styles.gridTitle}>{title}</Text>
         <Pressable disabled={busy} onPress={confirm} hitSlop={10} style={styles.next}>
-          <Text style={[styles.nextText, busy && { opacity: 0.4 }]}>Done</Text>
+          <Text style={[styles.nextText, busy && { opacity: 0.4 }]}>{doneLabel}</Text>
         </Pressable>
       </View>
       <View style={styles.adjustArea}>
