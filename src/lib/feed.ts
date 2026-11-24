@@ -29,6 +29,8 @@ export type FeedPost = {
   spot: LatLng | null;
   /** The photos after the first, in order (a carousel post). Empty for a single-photo post. */
   extra_media: string[];
+  /** Width / height of the post's photos (0073_post_photo_shape.sql). Null = square, as every older post. */
+  media_aspect: number | null;
 };
 
 const POST_SELECT =
@@ -36,7 +38,7 @@ const POST_SELECT =
   ' author:profiles!author_id(id, username, display_name, avatar_path),' +
   ' community:communities(name), likes(count), comments(count)';
 
-type Row = Omit<FeedPost, 'likes' | 'comments' | 'liked' | 'saved' | 'rating' | 'cookingDishId' | 'spot' | 'extra_media'> & {
+type Row = Omit<FeedPost, 'likes' | 'comments' | 'liked' | 'saved' | 'rating' | 'cookingDishId' | 'spot' | 'extra_media' | 'media_aspect'> & {
   likes: { count: number }[];
   comments: { count: number }[];
 };
@@ -70,7 +72,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const authors = [...new Set(rows.map((r) => r.author_id))];
-  const [mine, savedMine, reviews, live, spots, media] = await Promise.all([
+  const [mine, savedMine, reviews, live, spots, media, shapes] = await Promise.all([
     me ? supabase.from('likes').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
     me ? supabase.from('saved_posts').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
     supabase.from('reviews').select('cook_id, rating').in('cook_id', authors),
@@ -78,7 +80,11 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
     supabase.from('pickup_points').select('owner_id, area_lat, area_lng').in('owner_id', authors),
     // Carousel photos (0072_post_media.sql). Before the database has it, every post simply shows its first photo.
     supabase.from('post_media').select('post_id, position, path').in('post_id', ids).order('position'),
+    // The photos' shape, read apart so a missing column never hides the feed.
+    supabase.from('posts').select('id, media_aspect').in('id', ids),
   ]);
+  const aspectBy = new Map<string, number>();
+  for (const a of (shapes.error ? [] : shapes.data ?? []) as { id: string; media_aspect: number | null }[]) if (a.media_aspect) aspectBy.set(a.id, a.media_aspect);
   const extraBy = new Map<string, string[]>();
   for (const m of (media.error ? [] : media.data ?? []) as { post_id: string; path: string }[]) extraBy.set(m.post_id, [...(extraBy.get(m.post_id) ?? []), m.path]);
   const likedSet = new Set((mine.data ?? []).map((l) => l.post_id));
@@ -104,6 +110,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
       cookingDishId: liveBy.get(r.author_id) ?? null,
       spot: spotBy.get(r.author_id) ?? null,
       extra_media: extraBy.get(r.id) ?? [],
+      media_aspect: aspectBy.get(r.id) ?? null,
     };
   });
 }
@@ -206,12 +213,13 @@ export async function deleteComment(id: string): Promise<void> {
 }
 
 /** A signature dish: a photo and caption that stay on the cook's profile. */
-export async function postSignature(me: string, caption: string, mediaPath: string, communityId: string | null, morePaths: string[] = []): Promise<string> {
-  const { data, error } = await supabase
-    .from('posts')
-    .insert({ author_id: me, kind: 'signature', caption: caption.trim() || null, media_path: mediaPath, community_id: communityId })
-    .select('id')
-    .single();
+export async function postSignature(me: string, caption: string, mediaPath: string, communityId: string | null, morePaths: string[] = [], aspect: number | null = null): Promise<string> {
+  const row: Record<string, unknown> = { author_id: me, kind: 'signature', caption: caption.trim() || null, media_path: mediaPath, community_id: communityId };
+  const shaped = aspect && Math.abs(aspect - 1) > 0.01;
+  let res = await supabase.from('posts').insert(shaped ? { ...row, media_aspect: aspect } : row).select('id').single();
+  // Before 0073 is run the column does not exist: post anyway (the photo is then shown square).
+  if (res.error && shaped) res = await supabase.from('posts').insert(row).select('id').single();
+  const { data, error } = res;
   if (error) throw error;
   if (morePaths.length) {
     const { error: mediaError } = await supabase.from('post_media').insert(morePaths.map((path, i) => ({ post_id: data.id, position: i + 1, path })));

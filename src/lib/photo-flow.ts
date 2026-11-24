@@ -6,13 +6,18 @@ import { Platform } from 'react-native';
 // Where a photo is going decides the final look: stories are full screen (9:16), posts are square and menu dishes are 4:3 landscape.
 export type PhotoKind = 'story' | 'post' | 'menu';
 /** `more` holds the rest of a multi-photo pick (signature posts only), in the order they were chosen. */
-export type PickedPhoto = { uri: string; mimeType: string; more?: PickedPhoto[] };
+export type PickedPhoto = { uri: string; mimeType: string; more?: PickedPhoto[]; /** Width / height of the frame the photos were cropped to (signature posts). */ aspect?: number };
 
 /** Photos in one signature post: the first plus up to 9 more. */
 export const MAX_POST_PHOTOS = 10;
 export type PhotoStart = 'auto' | 'camera' | 'gallery';
 
 export const FRAME_ASPECT: Record<PhotoKind, number> = { story: 9 / 16, post: 1, menu: 4 / 3 };
+
+/** Instagram's limits for a feed photo: no taller than 4:5, no wider than 1.91:1. */
+export const POST_ASPECT_MIN = 4 / 5;
+export const POST_ASPECT_MAX = 1.91;
+export const clampPostAspect = (ratio: number) => Math.min(POST_ASPECT_MAX, Math.max(POST_ASPECT_MIN, ratio));
 
 // The new camera and photo grid need native code. Phones on an older store build do not have it yet and keep the
 // phone's own picker until they update. Check the native side first: a failed require() cannot be caught.
@@ -45,13 +50,13 @@ export async function systemPick(kind: PhotoKind, camera: boolean, limit = MAX_P
 let waiting: ((photo: PickedPhoto | null) => void) | null = null;
 
 // Opens the add-photo screen (a full-screen camera with a button for the phone's photo picker) and resolves with the photo, or null if they close it.
-export function choosePhoto(kind: PhotoKind, start: PhotoStart = 'auto', limit = MAX_POST_PHOTOS): Promise<PickedPhoto | null> {
+export function choosePhoto(kind: PhotoKind, start: PhotoStart = 'auto', limit = MAX_POST_PHOTOS, aspect?: number): Promise<PickedPhoto | null> {
   if (!addPhotoScreenReady()) return systemPick(kind, start === 'camera', limit);
   const mode = start === 'gallery' ? 'gallery' : 'camera';
   return new Promise((resolve) => {
     waiting?.(null);
     waiting = resolve;
-    router.push({ pathname: '/add-photo', params: { kind, mode, limit: String(limit) } });
+    router.push({ pathname: '/add-photo', params: { kind, mode, limit: String(limit), ...(aspect ? { aspect: String(aspect) } : {}) } });
   });
 }
 
