@@ -271,6 +271,7 @@ export function CookProfileView({ id, onBack, actions, footer, barRight }: { id:
                 return (
                   <Pressable key={p.id} style={[styles.cell, { width: tile, height: tile }]} onPress={() => router.push({ pathname: '/post/[id]', params: { id: p.id, by: id } })} accessibilityRole="button" accessibilityLabel={p.caption ?? 'Signature dish'}>
                     {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Text verbatim style={styles.cellText} numberOfLines={5}>{p.caption}</Text>}
+                    {p.more ? <MaterialIcons name="collections" size={18} color={colors.white} style={styles.stack} /> : null}
                   </Pressable>
                 );
               })}
@@ -358,6 +359,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink, flexShrink: 1 },
   badges: { gap: 5, marginTop: 4 },
+  stack: { position: 'absolute', top: 6, right: 6, textShadowColor: 'rgba(0,0,0,.45)', textShadowRadius: 4 },
   myRanks: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 22, marginTop: 12, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white },
   myRanksText: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.navy },
   area: { fontFamily: fonts.semiBold, fontSize: 13.5, color: colors.muted, marginTop: 2 },
