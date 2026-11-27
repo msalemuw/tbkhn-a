@@ -178,6 +178,12 @@ export default function Home() {
     });
   }, [posts, watching, following, me, here, meters, memberships, criticIds, seenPosts, seed]);
   // Search inside the feed: a dish or any word in the caption, or the cook's name (matches the posts already shown).
+  // A cook with a live story gets a ring on their post avatar (bright until you have seen it), like Instagram.
+  const storyOf = (authorId: string): 'unseen' | 'seen' | null => {
+    const g = stories.find((x) => x.author.id === authorId);
+    if (!g || !g.items.length) return null;
+    return g.items.some((i) => !seen.includes(i.id)) ? 'unseen' : 'seen';
+  };
   const [q, setQ] = useState('');
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -288,6 +294,8 @@ export default function Home() {
         renderItem={({ item }) => (
           <PostCard
             post={item}
+            story={storyOf(item.author_id)}
+            onStory={() => router.push({ pathname: '/story/[id]', params: { id: item.author_id } })}
             badges={badges.get(item.author_id)}
             meters={meters.get(item.author_id) ?? null}
             onLike={() => onLike(item)}
