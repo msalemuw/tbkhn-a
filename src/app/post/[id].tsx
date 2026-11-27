@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,10 +13,11 @@ import { LikesSheet } from '@/components/likes-sheet';
 import { useKeyboardHeight } from '@/components/form';
 import { PostCard } from '@/components/post-card';
 import { colors, fonts, ui } from '@/constants/theme';
-import { deletePost, type FeedPost, fetchPostsBy, fetchSaved, setLiked, setSaved, updateCaption } from '@/lib/feed';
+import { deletePost, type FeedPost, fetchPostsBy, fetchSaved, setLiked, setSaved, updateCaption, updateRecipe } from '@/lib/feed';
 import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
 import { personName } from '@/lib/posts';
+import { peekRecipeDraft, setRecipeDraft } from '@/lib/recipe';
 import { useSession } from '@/lib/session';
 import { shareLink } from '@/lib/share';
 
@@ -34,6 +35,21 @@ export default function PostScreen() {
   const [editing, setEditing] = useState<FeedPost | null>(null);
   const list = useRef<FlatList<FeedPost>>(null);
   const scrolled = useRef(false);
+  // Editing a recipe happens on the recipe screen; coming back, the result is saved to the post.
+  const recipeFor = useRef<string | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      const pid = recipeFor.current;
+      if (!pid) return;
+      recipeFor.current = null;
+      const next = peekRecipeDraft();
+      setRecipeDraft(null);
+      updateRecipe(pid, next).then(
+        () => setPosts((l) => (l ?? []).map((p) => (p.id === pid ? { ...p, recipe: next } : p))),
+        () => Alert.alert('We couldn’t save the recipe', 'Check your connection and try again.'),
+      );
+    }, []),
+  );
 
   const load = useCallback(() => {
     (by === 'saved' && me ? fetchSaved(me) : fetchPostsBy(me, by ?? me ?? '')).then(setPosts, () => setPosts([]));
@@ -103,6 +119,14 @@ export default function PostScreen() {
       p.author_id === me
         ? [
             { label: 'Edit caption', onPress: () => setEditing(p) },
+            {
+              label: p.recipe ? 'Edit recipe' : 'Add recipe',
+              onPress: () => {
+                recipeFor.current = p.id;
+                setRecipeDraft(p.recipe);
+                router.push('/compose/recipe');
+              },
+            },
             { label: 'Delete post', destructive: true, onPress: () => confirmDelete(p) },
           ]
         : [

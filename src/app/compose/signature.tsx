@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -14,6 +14,7 @@ import { colors, fonts } from '@/constants/theme';
 import { postSignature } from '@/lib/feed';
 import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } from '@/lib/posts';
 import { choosePhoto, MAX_POST_PHOTOS, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
+import { peekRecipeDraft, type Recipe, setRecipeDraft } from '@/lib/recipe';
 import { useSession } from '@/lib/session';
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
@@ -31,6 +32,10 @@ export default function ComposeSignature() {
   // The photo was handed over once; later visits start empty.
   useEffect(() => setPendingPhoto(null), []);
   const [caption, setCaption] = useState('');
+  // The optional recipe, written on its own screen and handed back through the draft.
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  useEffect(() => setRecipeDraft(null), []);
+  useFocusEffect(useCallback(() => setRecipe(peekRecipeDraft()), []));
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<SheetItem[] | null>(null);
@@ -68,7 +73,7 @@ export default function ComposeSignature() {
       const path = await uploadPhoto(uid, photo.uri, photo.mimeType ?? 'image/jpeg');
       const morePaths: string[] = [];
       for (const m of photos.slice(1)) morePaths.push(await uploadPhoto(uid, m.uri, m.mimeType ?? 'image/jpeg'));
-      await postSignature(uid, caption, path, communityId, morePaths, aspect);
+      await postSignature(uid, caption, path, communityId, morePaths, aspect, recipe);
       router.dismissTo('/home');
     } catch (e) {
       setError(shareErrorMessage(e));
@@ -118,6 +123,11 @@ export default function ComposeSignature() {
             <Field label="CAPTION">
               <TextInput value={caption} onChangeText={setCaption} placeholder="Tell neighbors about this dish" placeholderTextColor={colors.faint} multiline maxLength={500} style={[formStyles.input, { minHeight: 60 }]} accessibilityLabel="Caption" />
             </Field>
+            <Pressable style={styles.recipeRow} onPress={() => router.push('/compose/recipe')} accessibilityRole="button" accessibilityLabel="Add recipe">
+              <MaterialIcons name="menu-book" size={22} color={colors.teal} />
+              <Text style={styles.recipeText}>{recipe ? `Recipe added · ${recipe.ingredients.length} ${recipe.ingredients.length === 1 ? 'ingredient' : 'ingredients'}, ${recipe.steps.length} ${recipe.steps.length === 1 ? 'step' : 'steps'}` : 'Add recipe (optional)'}</Text>
+              <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+            </Pressable>
             <SelectField label="SHARE WITH" value={community?.name ?? 'Public'} onPress={() => setSheet(items)} />
           </View>
           <Text style={[formStyles.hint, { color: colors.muted }]}>It stays on your profile and shows in the Home feed. People can like and comment, but not order it.</Text>
@@ -215,4 +225,6 @@ const styles = StyleSheet.create({
   addMore: { minWidth: 64, height: 64, borderRadius: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.teal, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, gap: 2 },
   addMoreText: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink },
   group: { gap: 12, marginTop: 14 },
+  recipeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.teal, borderRadius: 12, backgroundColor: colors.white, paddingHorizontal: 14, height: 50 },
+  recipeText: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
 });
