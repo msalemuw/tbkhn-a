@@ -341,6 +341,7 @@ export default function Home() {
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
                 <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : watching?.criticsOnly ? 'Critics' : watching?.recipesOnly ? 'Recipes' : 'Custom'}</Text>
+                {all ? null : <View style={styles.watchDot} />}
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
             </View>
@@ -355,6 +356,7 @@ export default function Home() {
           mine={mine}
           value={watching}
           onChange={setWatching}
+          showCritics={!!criticIds?.size}
           onClose={() => setWatchOpen(false)}
           // "Nearby" needs somewhere to be near: with no saved location, ticking it opens the location picker.
           onNearbyOn={() => {
@@ -386,6 +388,7 @@ const styles = StyleSheet.create({
   // Same row as the Menu tab: search box on the left, navy filter pill on the right.
   searchBox: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: colors.lightBlue, borderRadius: 18, paddingHorizontal: 14 },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
+  watchDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.yellow },
   watchText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   search: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: ui.deep, paddingVertical: 10 },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },

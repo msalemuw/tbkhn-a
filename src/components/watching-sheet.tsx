@@ -1,4 +1,4 @@
-import { type FilterSection, FilterSheet } from '@/components/filter-sheet';
+import { type FilterChip, type FilterSection, FilterSheet } from '@/components/filter-sheet';
 import type { MyCommunity } from '@/lib/posts';
 
 export type Watching = { communities: string[]; nearby: boolean; following: boolean; /** Show only critics' posts, nearest first. */ criticsOnly?: boolean; /** Show only posts that have a recipe, on top of the communities chosen. */ recipesOnly?: boolean };
@@ -12,6 +12,7 @@ export function WatchingSheet({
   onClose,
   onNearbyOn,
   applyLabel,
+  showCritics,
 }: {
   visible: boolean;
   mine: MyCommunity[];
@@ -22,6 +23,8 @@ export function WatchingSheet({
   onNearbyOn?: () => void;
   /** The Apply button's words, for example "Show 12 posts". */
   applyLabel?: string;
+  /** The Critics chip only shows once at least one critic is approved. */
+  showCritics?: boolean;
 }) {
   // Everything starts ticked and each row is a normal tick box. "Clear all" lets you pick just one or two quickly;
   // Apply waits until something is ticked, and closing with nothing ticked goes back to everything.
@@ -39,27 +42,24 @@ export function WatchingSheet({
     if (empty) onChange(everything);
     onClose();
   };
+  // The quick choices: one tap, always in view, exactly one picked.
+  const recipesOnly = !!value.recipesOnly;
+  const chips: FilterChip[] = [
+    { key: 'all', label: 'Everything', icon: 'apps', on: !criticsOnly && !recipesOnly, onPress: () => onChange({ ...value, criticsOnly: false, recipesOnly: false }) },
+    { key: 'recipes', label: 'Recipes', icon: 'menu-book', on: recipesOnly && !criticsOnly, onPress: () => onChange({ ...value, criticsOnly: false, recipesOnly: true }) },
+    ...(showCritics || criticsOnly ? [{ key: 'critics', label: 'Critics near me', icon: 'workspace-premium' as const, on: criticsOnly, onPress: () => onChange({ ...value, criticsOnly: true, recipesOnly: false }) }] : []),
+  ];
+  // Where the posts come from. Critics are shown nearest first whatever is ticked here, so the list steps aside for them.
   const sections: FilterSection[] = [
     {
-      label: 'COMMUNITIES',
+      label: 'WHERE FROM',
+      dim: criticsOnly ? 'Critics are shown nearest first.' : undefined,
       rows: [
         ...mine.map((c) => ({ key: c.id, icon: (c.kind === 'club' ? 'flag' : 'groups') as 'flag' | 'groups', label: c.name, on: value.communities.includes(c.id), onPress: () => toggle(c.id) })),
         { key: 'nearby', icon: 'near-me' as const, label: 'Nearby', on: value.nearby, onPress: toggleNearby },
         { key: 'following', icon: 'person' as const, label: 'Following', on: value.following, onPress: toggleFollowing },
       ],
     },
-    // One choice that stands apart from the communities: only approved critics, nearest first, to find one to taste your food.
-    {
-      label: 'FIND A CRITIC',
-      radio: true,
-      rows: [{ key: 'critics', icon: 'workspace-premium' as const, label: 'Critics near me', on: criticsOnly, onPress: () => onChange({ ...value, criticsOnly: !criticsOnly }) }],
-    },
-    // Layered on top of the choices above: only posts that came with a recipe.
-    {
-      label: 'RECIPES',
-      radio: true,
-      rows: [{ key: 'recipes', icon: 'menu-book' as const, label: 'Only posts with a recipe', on: !!value.recipesOnly, onPress: () => onChange({ ...value, recipesOnly: !value.recipesOnly }) }],
-    },
   ];
-  return <FilterSheet visible={visible} title="Feed filter" sub="" sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} applyLabel={applyLabel} />;
+  return <FilterSheet visible={visible} title="Feed filter" sub="" chips={chips} chipsLabel="WHAT TO SHOW" sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} applyLabel={applyLabel} />;
 }
