@@ -58,6 +58,8 @@ export default function Home() {
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [unreadNotes, setUnreadNotes] = useState(0);
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  // The full-screen pager keeps the posts it opened with (and where it started), so a reload or a re-sort can never move or close it.
+  const [pager, setPager] = useState<{ ids: string[]; start: number } | null>(null);
   const [stories, setStories] = useState<StoryGroup[]>([]);
   const [seen, setSeen] = useState<string[]>([]);
   // Posts already seen on this phone, and a seed that changes on every load: they order the feed (see feed-rank.ts).
@@ -122,6 +124,8 @@ export default function Home() {
   const listRef = useRef<FlatList<FeedPost>>(null);
   // Tapping Home while on Home: back to the top and refresh. The filter and everything else stay as they are.
   useRetap('home', () => {
+    // Tapping Home inside the full-screen view goes back to the feed.
+    setPager(null);
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
     pull.reload();
   });
@@ -255,13 +259,12 @@ export default function Home() {
   }
 
   // One post card; the feed shows it square, the full-screen pager in its own shape.
-  const [pager, setPager] = useState<string | null>(null);
   const card = (item: FeedPost, full: boolean, maxH?: number) => (
     <PostCard
       post={item}
       fullShape={full}
       maxPhotoHeight={maxH}
-      onOpen={full ? undefined : () => setPager(item.id)}
+      onOpen={full ? undefined : () => setPager({ ids: shown.map((p) => p.id), start: Math.max(0, shown.findIndex((p) => p.id === item.id)) })}
       story={storyOf(item.author_id)}
       onStory={() => router.push({ pathname: '/story/[id]', params: { id: item.author_id } })}
       badges={badges.get(item.author_id)}
@@ -274,7 +277,12 @@ export default function Home() {
       onMore={() => onMore(item)}
     />
   );
-  const pagerStart = pager ? Math.max(0, shown.findIndex((p) => p.id === pager)) : 0;
+  // Likes, saves and comments still show live on the pager's posts; a deleted or blocked post drops out.
+  const pagerPosts = useMemo(() => {
+    if (!pager) return [];
+    const byId = new Map(posts.map((p) => [p.id, p]));
+    return pager.ids.map((id) => byId.get(id)).filter((p): p is FeedPost => !!p);
+  }, [pager, posts]);
 
   const empty = !supabaseConfigured
     ? 'The app isn’t connected to the server yet.'
@@ -341,7 +349,7 @@ export default function Home() {
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
         contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
-      {pager ? <PostPager data={shown} start={pagerStart} renderCard={(p, maxH) => card(p, true, maxH)} onClose={() => setPager(null)} /> : null}
+      {pager ? <PostPager data={pagerPosts} start={pager.start} renderCard={(p, maxH) => card(p, true, maxH)} onClose={() => setPager(null)} /> : null}
       {watching ? <WatchingSheet
           visible={watchOpen}
           mine={mine}
