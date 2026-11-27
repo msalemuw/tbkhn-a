@@ -32,6 +32,7 @@ export function PostCard({
   onShare,
   onMore,
   fullShape = false,
+  maxPhotoHeight,
   story = null,
   onStory,
   onOpen,
@@ -39,6 +40,8 @@ export function PostCard({
   post: FeedPost;
   /** The post page shows the photo in its own shape; the feed keeps it square. */
   fullShape?: boolean;
+  /** In the full-screen pager: the photo is shown whole (contain) and never taller than this. */
+  maxPhotoHeight?: number;
   /** The cook has a live story: a ring on the avatar (bright when not seen yet), and a tap opens it. */
   story?: 'unseen' | 'seen' | null;
   onStory?: () => void;
@@ -84,7 +87,15 @@ export function PostCard({
   const photo = mediaUrl(post.media_path);
   // A carousel post: the first photo plus the others, swiped sideways like Instagram.
   const photos = [photo, ...(post.extra_media ?? []).map((m) => mediaUrl(m))].filter((u): u is string => !!u);
-  const shape = { aspectRatio: fullShape ? post.media_aspect ?? 1 : 1 };
+  // The feed shows a square (the part the cook chose, centred for older posts); full screen shows the whole photo, as tall as fits.
+  const [wrapW, setWrapW] = useState(0);
+  const fullH = fullShape && wrapW ? Math.min(wrapW / (post.media_aspect ?? 1), maxPhotoHeight ?? Infinity) : null;
+  const shape = fullShape ? (fullH ? { height: fullH } : { aspectRatio: post.media_aspect ?? 1 }) : { aspectRatio: 1 };
+  const fit = fullShape ? ('contain' as const) : ('cover' as const);
+  const at = (i: number) => {
+    const f = fullShape ? null : post.media_focus?.[i] ?? post.media_focus?.[0];
+    return f ? { left: `${Math.round(f.x * 100)}%` as const, top: `${Math.round(f.y * 100)}%` as const } : undefined;
+  };
   const [slide, setSlide] = useState(0);
   const [slideW, setSlideW] = useState(0);
   const meta = meters != null ? fmtLive(meters) : fmtAgo(Date.parse(post.created_at));
@@ -132,7 +143,7 @@ export function PostCard({
         </Pressable>
       </View>
       {photos.length > 1 ? (
-        <View style={styles.photoWrap} onLayout={(e) => setSlideW(e.nativeEvent.layout.width)}>
+        <View style={styles.photoWrap} onLayout={(e) => { setSlideW(e.nativeEvent.layout.width); setWrapW(e.nativeEvent.layout.width); }}>
           <ScrollView
             horizontal
             pagingEnabled
@@ -142,7 +153,7 @@ export function PostCard({
             scrollEventThrottle={16}>
             {photos.map((uri, i) => (
               <Pressable key={uri} onPress={(e) => onPhotoTap(e.nativeEvent.timestamp, i)} accessible={false}>
-                <Image source={{ uri }} style={[styles.photo, shape, slideW ? { width: slideW } : null]} contentFit="cover" />
+                <Image source={{ uri }} style={[styles.photo, shape, slideW ? { width: slideW } : null]} contentFit={fit} contentPosition={at(i)} />
               </Pressable>
             ))}
           </ScrollView>
@@ -159,8 +170,8 @@ export function PostCard({
           </Animated.View>
         </View>
       ) : photo ? (
-        <Pressable onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false} style={styles.photoWrap}>
-          <Image source={{ uri: photo }} style={[styles.photo, shape]} contentFit="cover" />
+        <Pressable onPress={(e) => onPhotoTap(e.nativeEvent.timestamp)} accessible={false} style={styles.photoWrap} onLayout={(e) => setWrapW(e.nativeEvent.layout.width)}>
+          <Image source={{ uri: photo }} style={[styles.photo, shape]} contentFit={fit} contentPosition={at(0)} />
           <Animated.View pointerEvents="none" style={[styles.burst, { opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1.1] }) }] }]}>
             <Ionicons name="heart" size={96} color={colors.white} style={styles.burstHeart} />
           </Animated.View>
@@ -239,7 +250,7 @@ const styles = StyleSheet.create({
   cooking: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2, alignSelf: 'flex-start' },
   cookingText: { fontFamily: fonts.extraBold, fontSize: 13, color: ui.deep },
   photoWrap: { marginTop: 10 },
-  photo: { width: '100%', aspectRatio: 1, borderRadius: 16, backgroundColor: colors.cream },
+  photo: { width: '100%', borderRadius: 16, backgroundColor: colors.cream },
   carousel: { borderRadius: 16, overflow: 'hidden' },
   counter: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(40,48,58,.7)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   counterText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },

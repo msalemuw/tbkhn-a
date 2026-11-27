@@ -4,15 +4,21 @@ import { BackHandler, FlatList, PanResponder, Pressable, StyleSheet, View } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { setTabBarHidden } from '@/lib/tab-hide';
 import { colors, fonts, ui } from '@/constants/theme';
 
 // Reels-style full screen: one post per page, swipe up for the next post and down for the previous one. Each page is the normal
 // post card (so like, comment, share, save and follow all work), the photo shown in its own shape. Close with the Back pill,
 // a swipe from the left edge, or the phone's back button.
-export function PostPager<T extends { id: string }>({ data, start, renderCard, onClose }: { data: T[]; start: number; renderCard: (item: T) => React.ReactNode; onClose: () => void }) {
+export function PostPager<T extends { id: string }>({ data, start, renderCard, onClose }: { data: T[]; start: number; renderCard: (item: T, maxPhotoHeight: number) => React.ReactNode; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const [h, setH] = useState(0);
   const listRef = useRef<FlatList<T>>(null);
+  // Full screen: the bottom bar steps out of the way while the pager is open.
+  useEffect(() => {
+    setTabBarHidden(true);
+    return () => setTabBarHidden(false);
+  }, []);
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       onClose();
@@ -48,7 +54,7 @@ export function PostPager<T extends { id: string }>({ data, start, renderCard, o
           initialScrollIndex={Math.min(start, Math.max(data.length - 1, 0))}
           getItemLayout={(_d, i) => ({ length: h, offset: h * i, index: i })}
           windowSize={3}
-          renderItem={({ item }) => <View style={{ height: h, justifyContent: 'center', paddingTop: insets.top + 44, paddingBottom: 8 }}>{renderCard(item)}</View>}
+          renderItem={({ item }) => <View style={{ height: h, justifyContent: 'center', paddingTop: insets.top + 44, paddingBottom: insets.bottom + 8 }}>{renderCard(item, Math.max(160, h - (insets.top + 44) - (insets.bottom + 8) - 230))}</View>}
         />
       ) : null}
       <Pressable style={[styles.back, { top: insets.top + 8 }]} onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back to the feed">

@@ -254,10 +254,11 @@ export default function Home() {
 
   // One post card; the feed shows it square, the full-screen pager in its own shape.
   const [pager, setPager] = useState<string | null>(null);
-  const card = (item: FeedPost, full: boolean) => (
+  const card = (item: FeedPost, full: boolean, maxH?: number) => (
     <PostCard
       post={item}
       fullShape={full}
+      maxPhotoHeight={maxH}
       onOpen={full ? undefined : () => setPager(item.id)}
       story={storyOf(item.author_id)}
       onStory={() => router.push({ pathname: '/story/[id]', params: { id: item.author_id } })}
@@ -336,7 +337,7 @@ export default function Home() {
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
         contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
-      {pager ? <PostPager data={shown} start={pagerStart} renderCard={(p) => card(p, true)} onClose={() => setPager(null)} /> : null}
+      {pager ? <PostPager data={shown} start={pagerStart} renderCard={(p, maxH) => card(p, true, maxH)} onClose={() => setPager(null)} /> : null}
       {watching ? <WatchingSheet
           visible={watchOpen}
           mine={mine}
