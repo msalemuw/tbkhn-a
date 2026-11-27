@@ -1,7 +1,7 @@
 import { type FilterSection, FilterSheet } from '@/components/filter-sheet';
 import type { MyCommunity } from '@/lib/posts';
 
-export type Watching = { communities: string[]; nearby: boolean; following: boolean; /** Show only critics' posts, nearest first. */ criticsOnly?: boolean };
+export type Watching = { communities: string[]; nearby: boolean; following: boolean; /** Show only critics' posts, nearest first. */ criticsOnly?: boolean; /** Show only posts that have a recipe, on top of the communities chosen. */ recipesOnly?: boolean };
 
 /** Home "Feed filter" from the design: choose which communities, nearby (public) posts and followed cooks fill the feed. */
 export function WatchingSheet({
@@ -53,6 +53,12 @@ export function WatchingSheet({
       label: 'FIND A CRITIC',
       radio: true,
       rows: [{ key: 'critics', icon: 'workspace-premium' as const, label: 'Critics near me', on: criticsOnly, onPress: () => onChange({ ...value, criticsOnly: !criticsOnly }) }],
+    },
+    // Layered on top of the choices above: only posts that came with a recipe.
+    {
+      label: 'RECIPES',
+      radio: true,
+      rows: [{ key: 'recipes', icon: 'menu-book' as const, label: 'Only posts with a recipe', on: !!value.recipesOnly, onPress: () => onChange({ ...value, recipesOnly: !value.recipesOnly }) }],
     },
   ];
   return <FilterSheet visible={visible} title="Feed filter" sub="" sections={sections} onClose={close} onSelectAll={() => onChange(everything)} onClearAll={() => onChange(nothing)} applyLabel={applyLabel} />;

@@ -147,8 +147,8 @@ export default function Home() {
     }, [me, dataVersion]),
   );
 
-  const all = !watching?.criticsOnly && (!watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id))));
-  const ranked = useMemo(() => {
+  const all = !watching?.criticsOnly && !watching?.recipesOnly && (!watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id))));
+  const rankedAll = useMemo(() => {
     if (!watching) return posts.filter((p) => p.author_id !== me);
     // "Critics near me": only approved critics' posts, closest first (those with no known spot go last).
     if (watching.criticsOnly) {
@@ -178,6 +178,8 @@ export default function Home() {
       seed,
     });
   }, [posts, watching, following, me, here, meters, memberships, criticIds, seenPosts, seed]);
+  // "Only posts with a recipe" is applied on top of whatever else the filter picked.
+  const ranked = useMemo(() => (watching?.recipesOnly ? rankedAll.filter((p) => !!p.recipe) : rankedAll), [rankedAll, watching?.recipesOnly]);
   // Search inside the feed: a dish or any word in the caption, or the cook's name (matches the posts already shown).
   // A cook with a live story gets a ring on their post avatar (bright until you have seen it), like Instagram.
   const storyOf = (authorId: string): 'unseen' | 'seen' | null => {
@@ -280,7 +282,9 @@ export default function Home() {
       ? 'We couldn’t load the feed. Pull down to try again.'
       : loading
         ? ''
-        : watching?.criticsOnly
+        : watching?.recipesOnly
+          ? 'No posts with a recipe yet. Change “Feed filter” to see everything.'
+          : watching?.criticsOnly
           ? 'No critic has posted yet. Critics near you will show here, closest first.'
           : posts.length
           ? q.trim() ? 'No posts match your search.' : 'No posts match your feed filter. Change “Feed filter” to see more.'
@@ -328,7 +332,7 @@ export default function Home() {
               </View>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
-                <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : watching?.criticsOnly ? 'Critics' : 'Custom'}</Text>
+                <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : watching?.criticsOnly ? 'Critics' : watching?.recipesOnly ? 'Recipes' : 'Custom'}</Text>
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
             </View>
