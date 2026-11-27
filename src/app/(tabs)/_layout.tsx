@@ -7,7 +7,6 @@ import { t as tr } from '@/lib/i18n';
 import { colors, fonts, ui } from '@/constants/theme';
 import { useSession } from '@/lib/session';
 import { emitRetap } from '@/lib/tab-retap';
-import { useTabBarHidden } from '@/lib/tab-hide';
 
 type IconName = ComponentProps<typeof MaterialIcons>['name'];
 
@@ -22,7 +21,6 @@ const TABS: { name: string; title: string; icon: IconName }[] = [
 
 export default function TabLayout() {
   const { loading, session } = useSession();
-  const barHidden = useTabBarHidden();
   // Members only: anyone not signed in goes back to the welcome screen.
   if (!loading && !session) return <Redirect href="/" />;
   return (
@@ -32,7 +30,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: ui.deepTeal,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontFamily: fonts.semiBold, fontSize: 11 },
-        tabBarStyle: barHidden ? { display: 'none' } : styles.bar,
+        tabBarStyle: styles.bar,
       }}>
       {TABS.map((t) => (
         <Tabs.Screen
