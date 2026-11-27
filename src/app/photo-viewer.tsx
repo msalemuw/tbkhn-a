@@ -11,7 +11,7 @@ import { Text } from '@/components/text';
 import { colors, fonts, ui } from '@/constants/theme';
 import { mediaUrl } from '@/lib/posts';
 
-// Full-screen photo: the whole picture on the app's cream page. Swipe down anywhere to close (the page fades and the photo
+// Full-screen photo: the whole picture on the app's cream page. Swipe down (only down) anywhere to close (the page fades and the photo
 // shrinks as you drag), or tap it. A handle pill and a short "Swipe down to close" hint show how. Swipe sideways for more photos.
 export default function PhotoViewer() {
   const { paths, index } = useLocalSearchParams<{ paths: string; index?: string }>();
@@ -32,10 +32,10 @@ export default function PhotoViewer() {
     .activeOffsetY([-12, 12])
     .failOffsetX([-24, 24])
     .onUpdate((e) => {
-      ty.value = e.translationY;
+      ty.value = Math.max(0, e.translationY);
     })
     .onEnd((e) => {
-      if (Math.abs(e.translationY) > 110 || Math.abs(e.velocityY) > 900) {
+      if (e.translationY > 110 || e.velocityY > 900) {
         runOnJS(close)();
       } else {
         ty.value = withSpring(0);
