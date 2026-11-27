@@ -31,10 +31,18 @@ export function PostCard({
   onShare,
   onMore,
   fullShape = false,
+  story = null,
+  onStory,
+  onOpen,
 }: {
   post: FeedPost;
   /** The post page shows the photo in its own shape; the feed keeps it square. */
   fullShape?: boolean;
+  /** The cook has a live story: a ring on the avatar (bright when not seen yet), and a tap opens it. */
+  story?: 'unseen' | 'seen' | null;
+  onStory?: () => void;
+  /** One tap on the photo (the feed opens the full-screen pager; inside the pager there is nothing to open). */
+  onOpen?: () => void;
   badges?: Badge[];
   /** Live distance to the cook in metres, when both positions are known. */
   meters: number | null;
@@ -54,11 +62,11 @@ export function PostCard({
   const [pop] = useState(() => new Animated.Value(0));
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (openTimer.current) clearTimeout(openTimer.current); }, []);
-  // One tap opens the photo full screen (the feed shows it square); two quick taps like it, as on Instagram.
+  // One tap opens the full-screen pager (the feed shows the photo square); two quick taps like it, as on Instagram.
   function onPhotoTap(now: number, at = 0) {
     if (now - lastTap.current > 320) {
       lastTap.current = now;
-      openTimer.current = setTimeout(() => router.push({ pathname: '/photo-viewer', params: { paths: [post.media_path, ...(post.extra_media ?? [])].filter(Boolean).join('|'), index: String(at) } }), 330);
+      if (onOpen) openTimer.current = setTimeout(onOpen, 330);
       return;
     }
     lastTap.current = 0;
@@ -82,8 +90,17 @@ export function PostCard({
   return (
     <View style={styles.post}>
       <View style={styles.head}>
-        <Pressable onPress={() => router.push({ pathname: '/cook/[id]', params: { id: post.author_id } })} accessibilityRole="button" accessibilityLabel={`${personName(post.author)}'s profile`}>
-          <Avatar person={post.author} size={42} />
+        <Pressable
+          onPress={() => (story && onStory ? onStory() : router.push({ pathname: '/cook/[id]', params: { id: post.author_id } }))}
+          accessibilityRole="button"
+          accessibilityLabel={story ? `${personName(post.author)}'s story` : `${personName(post.author)}'s profile`}>
+          {story ? (
+            <View style={[styles.storyRing, story === 'unseen' ? styles.storyUnseen : styles.storySeen]}>
+              <Avatar person={post.author} size={42} />
+            </View>
+          ) : (
+            <Avatar person={post.author} size={42} />
+          )}
         </Pressable>
         <View style={styles.nameCol}>
           <Pressable style={styles.nameRow} onPress={() => router.push({ pathname: '/cook/[id]', params: { id: post.author_id } })} accessibilityRole="link" accessibilityLabel={`${personName(post.author)}'s profile`}>
@@ -147,6 +164,26 @@ export function PostCard({
           </Animated.View>
         </Pressable>
       ) : null}
+      <View style={styles.actions}>
+        <View style={styles.act}>
+          <Pressable onPress={onLike} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.liked ? 'Unlike' : 'Like'}>
+            <Ionicons name={post.liked ? 'heart' : 'heart-outline'} size={27} color={post.liked ? ui.deepTeal : ui.deep} />
+          </Pressable>
+          <Pressable onPress={onLikes} disabled={post.likes === 0} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${post.likes} likes. See who liked`}>
+            <Text style={styles.n}>{post.likes}</Text>
+          </Pressable>
+        </View>
+        <Pressable style={styles.act} onPress={onComments} hitSlop={8} accessibilityRole="button" accessibilityLabel="Comments">
+          <Ionicons name="chatbubble-outline" size={25} color={ui.deep} />
+          <Text style={styles.n}>{post.comments}</Text>
+        </Pressable>
+        <Pressable style={styles.act} onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="Share">
+          <Ionicons name="arrow-redo-outline" size={26} color={ui.deep} />
+        </Pressable>
+        <Pressable style={[styles.act, { marginLeft: 'auto' }]} onPress={onSave} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.saved ? 'Unsave post' : 'Save post'}>
+          <Ionicons name={post.saved ? 'bookmark' : 'bookmark-outline'} size={25} color={post.saved ? ui.deepTeal : ui.deep} />
+        </Pressable>
+      </View>
       {post.caption ? (
         <Pressable onPress={() => cut && setOpen((o) => !o)} accessibilityRole="button" accessibilityLabel={open ? 'Show less' : 'Show the full description'}>
           {cut && !open ? (
@@ -175,26 +212,6 @@ export function PostCard({
           {cut && open ? <Text style={styles.more}>less</Text> : null}
         </Pressable>
       ) : null}
-      <View style={styles.actions}>
-        <View style={styles.act}>
-          <Pressable onPress={onLike} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.liked ? 'Unlike' : 'Like'}>
-            <Ionicons name={post.liked ? 'heart' : 'heart-outline'} size={27} color={post.liked ? ui.deepTeal : ui.deep} />
-          </Pressable>
-          <Pressable onPress={onLikes} disabled={post.likes === 0} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${post.likes} likes. See who liked`}>
-            <Text style={styles.n}>{post.likes}</Text>
-          </Pressable>
-        </View>
-        <Pressable style={styles.act} onPress={onComments} hitSlop={8} accessibilityRole="button" accessibilityLabel="Comments">
-          <Ionicons name="chatbubble-outline" size={25} color={ui.deep} />
-          <Text style={styles.n}>{post.comments}</Text>
-        </Pressable>
-        <Pressable style={styles.act} onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="Share">
-          <Ionicons name="arrow-redo-outline" size={26} color={ui.deep} />
-        </Pressable>
-        <Pressable style={[styles.act, { marginLeft: 'auto' }]} onPress={onSave} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.saved ? 'Unsave post' : 'Save post'}>
-          <Ionicons name={post.saved ? 'bookmark' : 'bookmark-outline'} size={25} color={post.saved ? ui.deepTeal : ui.deep} />
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -202,6 +219,9 @@ export function PostCard({
 const styles = StyleSheet.create({
   // A white rounded card on the warm page, with the photo inside it (design s6).
   post: { backgroundColor: ui.card, borderRadius: 22, borderWidth: 1, borderColor: ui.border, marginHorizontal: 14, marginTop: 14, padding: 14 },
+  storyRing: { padding: 2, borderRadius: 27, borderWidth: 2.5 },
+  storyUnseen: { borderColor: colors.yellow },
+  storySeen: { borderColor: 'rgba(1,49,62,.2)' },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 11 },
   nameCol: { flex: 1, minWidth: 0, gap: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -219,7 +239,7 @@ const styles = StyleSheet.create({
   dotOn: { backgroundColor: colors.white },
   burst: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   burstHeart: { textShadowColor: 'rgba(0,0,0,.35)', textShadowRadius: 14 },
-  caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 12 },
+  caption: { fontFamily: fonts.regular, fontSize: 14.5, lineHeight: 20, color: ui.deep, paddingTop: 8 },
   measure: { position: 'absolute', left: 0, right: 0, top: 0, opacity: 0 },
   firstLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   firstText: { flexShrink: 1 },
