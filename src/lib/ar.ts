@@ -926,4 +926,7 @@ export const ar: Record<string, string> = {
   'Finish a pickup and get a review to be ranked.': 'خلّص استلام واحد واحصل على تقييم عشان تتصنف.',
   'We couldn’t load your rankings. Please try again in a moment.': 'مقدرناش نحمّل ترتيبك. جرّب تاني بعد شوية.',
   'Join a community to see where you rank.': 'انضم لمجتمع عشان تشوف ترتيبك.',
+  'Search dishes or cooks': 'ابحث عن أكلة أو طباخ',
+  'Search the feed': 'ابحث في الصفحة',
+  'No posts match your search.': 'مفيش بوستات تناسب بحثك.',
 };
