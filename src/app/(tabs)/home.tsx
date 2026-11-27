@@ -305,25 +305,15 @@ export default function Home() {
             <FadeBg from={[255, 255, 255]} to={PAGE_RGB} />
             <StoriesRow groups={stories} seen={seen} me={me} onOpen={(id) => router.push({ pathname: '/story/[id]', params: { id } })} onAdd={() => startCompose('story', '/compose/story')} />
             <View style={styles.bar}>
+              <View style={styles.searchBox}>
+                <MaterialIcons name="search" size={22} color={SLATE} />
+                <TextInput value={q} onChangeText={setQ} placeholder="Search dishes or cooks" placeholderTextColor={SLATE} style={styles.search} returnKeyType="search" autoCorrect={false} accessibilityLabel="Search the feed" clearButtonMode="while-editing" />
+              </View>
               <Pressable style={styles.watch} onPress={() => setWatchOpen(true)} accessibilityRole="button" accessibilityLabel="Filter the feed">
                 <MaterialIcons name="tune" size={18} color={colors.white} />
                 <Text style={styles.watchText} maxFontSizeMultiplier={1.15}>{all ? 'Everyone' : watching?.criticsOnly ? 'Critics' : 'Custom'}</Text>
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
-            </View>
-            <View style={styles.search}>
-              <MaterialIcons name="search" size={20} color={colors.muted} />
-              <TextInput
-                value={q}
-                onChangeText={setQ}
-                placeholder="Search dishes or cooks"
-                placeholderTextColor={colors.faint}
-                style={styles.searchInput}
-                returnKeyType="search"
-                autoCorrect={false}
-                accessibilityLabel="Search the feed"
-                clearButtonMode="while-editing"
-              />
             </View>
           </View>
         }
@@ -353,6 +343,7 @@ export default function Home() {
 }
 
 const PAGE_RGB: [number, number, number] = [246, 242, 236]; // ui.page (#f6f2ec)
+const SLATE = 'rgba(1,49,62,.5)'; // same grey-blue as the Menu search
 
 const styles = StyleSheet.create({
   // White behind the list so pulling down reveals white (the header's colour), not cream; the cream lives on the list content.
@@ -361,10 +352,11 @@ const styles = StyleSheet.create({
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   dot: { position: 'absolute', top: -1, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.yellow, borderWidth: 1.5, borderColor: ui.card },
   // The feed filter sits above the posts. Location lives on the Menu tab, like Talabat; Home is for social.
-  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
+  bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  // Same row as the Menu tab: search box on the left, navy filter pill on the right.
+  searchBox: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: ui.card, borderWidth: 1, borderColor: colors.lightBlue, borderRadius: 18, paddingHorizontal: 14 },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
   watchText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 18, marginTop: 10, backgroundColor: ui.card, borderRadius: 999, borderWidth: 1, borderColor: ui.border, paddingHorizontal: 14, height: 40 },
-  searchInput: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: ui.deep, paddingVertical: 0 },
+  search: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: ui.deep, paddingVertical: 10 },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
 });
