@@ -8,14 +8,19 @@ import { PrimaryButton } from '@/components/form';
 import { colors, fonts } from '@/constants/theme';
 
 export type FilterRow = { key: string; icon: React.ComponentProps<typeof MaterialIcons>['name']; label: string; on: boolean; onPress: () => void };
-/** A `radio` section lets exactly one row be picked (like a sort order); it takes no part in Select all / Clear all. */
-export type FilterSection = { label: string; rows: FilterRow[]; radio?: boolean };
+/** A `radio` section lets exactly one row be picked (like a sort order); it takes no part in Select all / Clear all.
+ *  A `dim` section is greyed out and left alone (it does not count for Select all or "tick at least one"); `dim` is the note shown under its label. */
+export type FilterSection = { label: string; rows: FilterRow[]; radio?: boolean; dim?: string };
+/** One-tap choices shown as chips at the top, exactly one picked (like Instagram's or Talabat's quick filters). */
+export type FilterChip = { key: string; label: string; icon: React.ComponentProps<typeof MaterialIcons>['name']; on: boolean; onPress: () => void };
 
 /** Checklist sheet used by the Home feed filter and the Menu filter: sections of checkable rows and an Apply button. */
 export function FilterSheet({
   visible,
   title,
   sub,
+  chips,
+  chipsLabel,
   sections,
   onClose,
   onSelectAll,
@@ -25,6 +30,9 @@ export function FilterSheet({
   visible: boolean;
   title: string;
   sub: string;
+  chips?: FilterChip[];
+  /** Small caption above the chips, for example WHAT TO SHOW. */
+  chipsLabel?: string;
   sections: FilterSection[];
   onClose: () => void;
   /** When given, a "Select all" / "Clear all" link sits above the list. */
@@ -34,7 +42,7 @@ export function FilterSheet({
   applyLabel?: string;
 }) {
   const { height } = useWindowDimensions();
-  const rows = sections.filter((s) => !s.radio).flatMap((s) => s.rows);
+  const rows = sections.filter((s) => !s.radio && !s.dim).flatMap((s) => s.rows);
   const allOn = rows.length > 0 && rows.every((r) => r.on);
   const noneOn = rows.length > 0 && rows.every((r) => !r.on);
   const bulk = allOn ? onClearAll : onSelectAll;
@@ -46,17 +54,31 @@ export function FilterSheet({
           <GrabHandle onClose={onClose} />
           <View style={styles.head}>
             <Text style={styles.title}>{title}</Text>
-            {onSelectAll && onClearAll ? (
+            {onSelectAll && onClearAll && rows.length ? (
               <Pressable onPress={bulk} accessibilityRole="button" hitSlop={10}>
                 <Text style={styles.bulkText}>{allOn ? 'Clear all' : 'Select all'}</Text>
               </Pressable>
             ) : null}
           </View>
           {sub ? <Text style={styles.sub}>{sub}</Text> : null}
+          {chips?.length ? (
+            <View>
+              {chipsLabel ? <Text style={styles.label}>{chipsLabel}</Text> : null}
+              <View style={styles.chips}>
+                {chips.map((c) => (
+                  <Pressable key={c.key} style={[styles.chip, c.on && styles.chipOn]} onPress={c.onPress} accessibilityRole="radio" accessibilityState={{ selected: c.on }}>
+                    <MaterialIcons name={c.icon} size={18} color={c.on ? colors.navy : colors.white} />
+                    <Text style={[styles.chipText, c.on && styles.chipTextOn]} maxFontSizeMultiplier={1.15}>{c.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
           <ScrollView style={{ maxHeight: Math.round(height * 0.6) }} showsVerticalScrollIndicator>
             {sections.map((s) => (
-              <View key={s.label}>
+              <View key={s.label} style={s.dim ? styles.dimmed : undefined} pointerEvents={s.dim ? 'none' : 'auto'}>
                 <Text style={styles.label}>{s.label}</Text>
+                {s.dim ? <Text style={styles.dimNote}>{s.dim}</Text> : null}
                 {s.rows.map((r) => (
                   <Row key={r.key} row={r} radio={s.radio} />
                 ))}
@@ -90,6 +112,13 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   bulkText: { fontFamily: fonts.bold, fontSize: 14, color: colors.teal },
   hint: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: 10 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 40, paddingHorizontal: 14, borderRadius: 999, backgroundColor: colors.navy },
+  chipOn: { backgroundColor: colors.yellow },
+  chipText: { fontFamily: fonts.bold, fontSize: 14.5, color: colors.white },
+  chipTextOn: { color: colors.navy },
+  dimmed: { opacity: 0.4 },
+  dimNote: { fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted, marginTop: 4 },
   label: { fontFamily: fonts.extraBold, fontSize: 10.5, letterSpacing: 0.6, color: colors.muted, marginTop: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowText: { flex: 1, fontFamily: fonts.bold, fontSize: 15.5, color: colors.ink },
