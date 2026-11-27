@@ -33,6 +33,7 @@ export function PostCard({
   fullShape = false,
   story = null,
   onStory,
+  onOpen,
 }: {
   post: FeedPost;
   /** The post page shows the photo in its own shape; the feed keeps it square. */
@@ -40,6 +41,8 @@ export function PostCard({
   /** The cook has a live story: a ring on the avatar (bright when not seen yet), and a tap opens it. */
   story?: 'unseen' | 'seen' | null;
   onStory?: () => void;
+  /** One tap on the photo (the feed opens the full-screen pager; inside the pager there is nothing to open). */
+  onOpen?: () => void;
   badges?: Badge[];
   /** Live distance to the cook in metres, when both positions are known. */
   meters: number | null;
@@ -59,11 +62,11 @@ export function PostCard({
   const [pop] = useState(() => new Animated.Value(0));
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (openTimer.current) clearTimeout(openTimer.current); }, []);
-  // One tap opens the photo full screen (the feed shows it square); two quick taps like it, as on Instagram.
+  // One tap opens the full-screen pager (the feed shows the photo square); two quick taps like it, as on Instagram.
   function onPhotoTap(now: number, at = 0) {
     if (now - lastTap.current > 320) {
       lastTap.current = now;
-      openTimer.current = setTimeout(() => router.push({ pathname: '/photo-viewer', params: { paths: [post.media_path, ...(post.extra_media ?? [])].filter(Boolean).join('|'), index: String(at) } }), 330);
+      if (onOpen) openTimer.current = setTimeout(onOpen, 330);
       return;
     }
     lastTap.current = 0;

@@ -15,6 +15,7 @@ import { CommentsSheet } from '@/components/comments-sheet';
 import { LikesSheet } from '@/components/likes-sheet';
 import { Logo } from '@/components/logo';
 import { PostCard } from '@/components/post-card';
+import { PostPager } from '@/components/post-pager';
 import { type Badge, fetchBadges } from '@/lib/rankings';
 import { fetchMemberships } from '@/lib/community';
 import { FadeBg } from '@/components/fade-bg';
@@ -251,6 +252,27 @@ export default function Home() {
     setMenu({ title: name, actions });
   }
 
+  // One post card; the feed shows it square, the full-screen pager in its own shape.
+  const [pager, setPager] = useState<string | null>(null);
+  const card = (item: FeedPost, full: boolean) => (
+    <PostCard
+      post={item}
+      fullShape={full}
+      onOpen={full ? undefined : () => setPager(item.id)}
+      story={storyOf(item.author_id)}
+      onStory={() => router.push({ pathname: '/story/[id]', params: { id: item.author_id } })}
+      badges={badges.get(item.author_id)}
+      meters={meters.get(item.author_id) ?? null}
+      onLike={() => onLike(item)}
+      onLikes={() => setLikesFor(item.id)}
+      onSave={() => onSave(item)}
+      onComments={() => setCommentsFor(item.id)}
+      onShare={() => onShare(item)}
+      onMore={() => onMore(item)}
+    />
+  );
+  const pagerStart = pager ? Math.max(0, shown.findIndex((p) => p.id === pager)) : 0;
+
   const empty = !supabaseConfigured
     ? 'The app isn’t connected to the server yet.'
     : failed
@@ -291,21 +313,7 @@ export default function Home() {
         keyExtractor={(p) => p.id}
         onViewableItemsChanged={onViewable}
         viewabilityConfig={VIEW_CONFIG}
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-            story={storyOf(item.author_id)}
-            onStory={() => router.push({ pathname: '/story/[id]', params: { id: item.author_id } })}
-            badges={badges.get(item.author_id)}
-            meters={meters.get(item.author_id) ?? null}
-            onLike={() => onLike(item)}
-            onLikes={() => setLikesFor(item.id)}
-            onSave={() => onSave(item)}
-            onComments={() => setCommentsFor(item.id)}
-            onShare={() => onShare(item)}
-            onMore={() => onMore(item)}
-          />
-        )}
+        renderItem={({ item }) => card(item, false)}
         refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={colors.teal} />}
         ListHeaderComponent={
           // White at the top (like the header) fading to the cream page by the time the first post starts.
@@ -328,6 +336,7 @@ export default function Home() {
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
         contentContainerStyle={{ flexGrow: 1, backgroundColor: ui.page, paddingBottom: 20 }}
       />
+      {pager ? <PostPager data={shown} start={pagerStart} renderCard={(p) => card(p, true)} onClose={() => setPager(null)} /> : null}
       {watching ? <WatchingSheet
           visible={watchOpen}
           mine={mine}
