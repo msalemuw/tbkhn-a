@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { KeyboardAvoidingView } from '@/components/keyboard-view';
@@ -16,6 +16,7 @@ import { fetchMyCommunities, type MyCommunity, shareErrorMessage, uploadPhoto } 
 import { choosePhoto, MAX_POST_PHOTOS, peekPendingPhoto, setPendingPhoto, type PhotoStart, type PickedPhoto } from '@/lib/photo-flow';
 import { peekRecipeDraft, type Recipe, setRecipeDraft } from '@/lib/recipe';
 import { useSession } from '@/lib/session';
+import { postStory } from '@/lib/stories';
 
 // A signature dish: a photo and a few words that stay on your profile and show in the Home feed. Not for ordering.
 export default function ComposeSignature() {
@@ -37,6 +38,8 @@ export default function ComposeSignature() {
   const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<SheetItem[] | null>(null);
+  // Also put the first photo on my story (off by default).
+  const [alsoStory, setAlsoStory] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +74,8 @@ export default function ComposeSignature() {
       const morePaths: string[] = [];
       for (const m of photos.slice(1)) morePaths.push(await uploadPhoto(uid, m.uri, m.mimeType ?? 'image/jpeg'));
       await postSignature(uid, caption, path, communityId, morePaths, photos[0]?.aspect ?? null, recipe, photos.map((p) => p.focus ?? { x: 0.5, y: 0.5 }));
+      // The post is already up; the story reuses its first photo. If the story fails, the post stays.
+      if (alsoStory) await postStory(uid, caption, path, communityId).catch(() => null);
       router.dismissTo('/home');
     } catch (e) {
       setError(shareErrorMessage(e));
@@ -125,6 +130,10 @@ export default function ComposeSignature() {
               <Text style={styles.recipeText}>{recipe ? `Recipe added · ${recipe.ingredients.length} ${recipe.ingredients.length === 1 ? 'ingredient' : 'ingredients'}, ${recipe.steps.length} ${recipe.steps.length === 1 ? 'step' : 'steps'}` : 'Add recipe (optional)'}</Text>
               <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
             </Pressable>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Also share as story</Text>
+              <Switch value={alsoStory} onValueChange={setAlsoStory} trackColor={{ true: colors.teal, false: colors.line }} thumbColor={colors.white} />
+            </View>
             <SelectField label="SHARE WITH" value={community?.name ?? 'Public'} onPress={() => setSheet(items)} />
           </View>
           <Text style={[formStyles.hint, { color: colors.muted }]}>It stays on your profile and shows in the Home feed. People can like and comment, but not order it.</Text>
@@ -225,6 +234,8 @@ const styles = StyleSheet.create({
   addMore: { minWidth: 64, height: 64, borderRadius: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.teal, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, gap: 2 },
   addMoreText: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink },
   group: { gap: 12, marginTop: 14 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 14, height: 50 },
+  switchLabel: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
   recipeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.teal, borderRadius: 12, backgroundColor: colors.white, paddingHorizontal: 14, height: 50 },
   recipeText: { flex: 1, fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
 });
