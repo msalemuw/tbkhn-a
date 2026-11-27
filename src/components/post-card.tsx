@@ -10,6 +10,7 @@ import { FlipIcon } from '@/components/flip-icon';
 import { Avatar } from '@/components/avatar';
 import { FollowButton } from '@/components/follow-button';
 import { RankBadge } from '@/components/rank-badge';
+import { RecipeSheet } from '@/components/recipe-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
 import { useMenuOff } from '@/lib/app-status';
 import type { FeedPost } from '@/lib/feed';
@@ -56,6 +57,7 @@ export function PostCard({
 }) {
   const [open, setOpen] = useState(false);
   const [cut, setCut] = useState(false);
+  const [recipeOpen, setRecipeOpen] = useState(false);
   const menuOff = useMenuOff();
   // Double-tap the photo to like, like Instagram: a heart pops up on the photo. It only likes; the heart button below is what unlikes.
   const lastTap = useRef(0);
@@ -180,6 +182,12 @@ export function PostCard({
         <Pressable style={styles.act} onPress={onShare} hitSlop={8} accessibilityRole="button" accessibilityLabel="Share">
           <Ionicons name="arrow-redo-outline" size={26} color={ui.deep} />
         </Pressable>
+        {post.recipe ? (
+          <Pressable style={styles.recipePill} onPress={() => setRecipeOpen(true)} hitSlop={6} accessibilityRole="button" accessibilityLabel="Show the recipe">
+            <MaterialIcons name="menu-book" size={15} color={colors.white} />
+            <Text style={styles.recipePillText}>Recipe</Text>
+          </Pressable>
+        ) : null}
         <Pressable style={[styles.act, { marginLeft: 'auto' }]} onPress={onSave} hitSlop={8} accessibilityRole="button" accessibilityLabel={post.saved ? 'Unsave post' : 'Save post'}>
           <Ionicons name={post.saved ? 'bookmark' : 'bookmark-outline'} size={25} color={post.saved ? ui.deepTeal : ui.deep} />
         </Pressable>
@@ -212,6 +220,7 @@ export function PostCard({
           {cut && open ? <Text style={styles.more}>less</Text> : null}
         </Pressable>
       ) : null}
+      {post.recipe ? <RecipeSheet recipe={post.recipe} visible={recipeOpen} onClose={() => setRecipeOpen(false)} /> : null}
     </View>
   );
 }
@@ -247,5 +256,7 @@ const styles = StyleSheet.create({
   more: { fontFamily: fonts.bold, fontSize: 14, color: colors.muted, paddingTop: 4 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 28, paddingTop: 12 },
   act: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  recipePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 11, height: 28 },
+  recipePillText: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.white },
   n: { fontFamily: fonts.semiBold, fontSize: 16, color: ui.deep },
 });
