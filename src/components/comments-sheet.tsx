@@ -239,10 +239,12 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
                 placeholder={me ? (replyTo ? `Reply to ${personName(replyTo.author)}…` : 'Add a comment…') : 'Sign up to comment'}
                 placeholderTextColor={colors.faint}
                 maxLength={500}
+                multiline
+                submitBehavior="newline"
                 style={styles.input}
                 accessibilityLabel="Add a comment"
               />
-              <Pressable onPress={send} disabled={busy || (!draft.trim() && !!me)} hitSlop={8} accessibilityLabel="Send comment">
+              <Pressable style={{ paddingBottom: 9 }} onPress={send} disabled={busy || (!draft.trim() && !!me)} hitSlop={8} accessibilityLabel="Send comment">
                 {busy ? <ActivityIndicator color={colors.teal} /> : <FlipIcon name="send" size={22} color={draft.trim() || !me ? colors.ink : colors.faint} />}
               </Pressable>
             </View>
@@ -278,6 +280,6 @@ const styles = StyleSheet.create({
   when: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted },
   body: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 19, color: colors.ink, marginTop: 1 },
   error: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.navy, backgroundColor: colors.yellow, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, overflow: 'hidden', marginBottom: 6 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: colors.line, paddingVertical: 10 },
-  input: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: colors.ink, borderWidth: 1, borderColor: colors.line, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: colors.line, paddingVertical: 10 },
+  input: { flex: 1, fontFamily: fonts.semiBold, fontSize: 15, color: colors.ink, borderWidth: 1, borderColor: colors.line, borderRadius: 22, paddingHorizontal: 14, paddingTop: 9, paddingBottom: 9, maxHeight: 120, textAlignVertical: 'top' },
 });
