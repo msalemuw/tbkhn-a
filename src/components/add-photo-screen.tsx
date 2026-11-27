@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { colors, fonts } from '@/constants/theme';
-import { clampPostAspect, finishPhoto, MAX_POST_PHOTOS, POST_ASPECT_MIN, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
+import { finishPhoto, MAX_POST_PHOTOS, type PhotoKind, type PickedPhoto } from '@/lib/photo-flow';
 
 // The add-photo screen for stories, posts and menu dishes: a camera that fills the screen, with a button for the phone's own photo picker. The final look is drawn while choosing: stories fill the screen,
 // posts (square) and menu dishes (4:3) show a frame of that shape inside it. Phones on an older build never reach this screen (see photo-flow).
@@ -61,13 +61,10 @@ export default function AddPhoto() {
   const [queue, setQueue] = useState<Shot[] | null>(null);
   const [step, setStep] = useState(0);
   const adjusted = useRef<PickedPhoto[]>([]);
-  // The shape every photo of a post is cropped to: a post keeps the first photo's own shape (4:5 to 1.91:1), or the shape the post already has when more are added.
-  const [frameAspect, setFrameAspect] = useState(FRAME_ASPECT[kind]);
-  const fixedAspect = Number(params.aspect) || 0;
+  // Stories and menu dishes are cropped to their frame here; a post keeps the whole photo and only picks the square part the feed shows.
   function startAdjusting(shots: Shot[]) {
     adjusted.current = [];
     setStep(0);
-    setFrameAspect(kind === 'post' ? fixedAspect || clampPostAspect(shots[0].width / shots[0].height) : FRAME_ASPECT[kind]);
     setQueue(shots);
   }
 
@@ -86,7 +83,6 @@ export default function AddPhoto() {
       (shots) => (shots.length ? startAdjusting(shots) : router.back()),
       () => router.back(),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startInLibrary, kind, limit]);
 
   const finish = useCallback((photo: PickedPhoto | null) => {
@@ -97,35 +93,32 @@ export default function AddPhoto() {
 
   if (queue) {
     const last = step === queue.length - 1;
+    const back = () => {
+      if (step > 0) {
+        adjusted.current.pop();
+        setStep(step - 1);
+      } else if (startInLibrary) finish(null);
+      else {
+        adjusted.current = [];
+        setQueue(null);
+      }
+    };
+    const next = (photo: PickedPhoto | null) => {
+      if (!photo) return finish(null);
+      adjusted.current.push(photo);
+      if (!last) return setStep(step + 1);
+      const [first, ...rest] = adjusted.current;
+      finish(rest.length ? { ...first, more: rest } : first);
+    };
+    const title = queue.length > 1 ? `${kind === 'post' ? 'Choose the feed view' : 'Move and zoom'} ${step + 1}/${queue.length}` : kind === 'post' ? 'Choose the feed view' : 'Move and zoom';
     return (
       <>
         <StatusBar style="light" />
-        <Adjust
-          key={step}
-          kind={kind}
-          aspect={frameAspect}
-          photo={queue[step]}
-          title={queue.length > 1 ? `Move and zoom ${step + 1}/${queue.length}` : 'Move and zoom'}
-          doneLabel={last ? 'Done' : 'Next'}
-          onBack={() => {
-            if (step > 0) {
-              adjusted.current.pop();
-              setStep(step - 1);
-            } else if (startInLibrary) finish(null);
-            else {
-              adjusted.current = [];
-              setQueue(null);
-            }
-          }}
-          onDone={(photo) => {
-            if (!photo) return finish(null);
-            adjusted.current.push(photo);
-            if (!last) return setStep(step + 1);
-            const [first, ...rest] = adjusted.current;
-            const out = rest.length ? { ...first, more: rest } : first;
-            finish(kind === 'post' ? { ...out, aspect: frameAspect } : out);
-          }}
-        />
+        {kind === 'post' ? (
+          <AdjustFeed key={step} photo={queue[step]} title={title} doneLabel={last ? 'Done' : 'Next'} onBack={back} onDone={next} />
+        ) : (
+          <Adjust key={step} kind={kind} aspect={FRAME_ASPECT[kind]} photo={queue[step]} title={title} doneLabel={last ? 'Done' : 'Next'} onBack={back} onDone={next} />
+        )}
       </>
     );
   }
@@ -150,12 +143,6 @@ function Camera({ kind, limit, onCaptured, onDone }: { kind: PhotoKind; limit: n
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Stories and menu dishes fill the whole screen (no frame); posts show a 4:5 frame in the middle.
-  const full = kind !== 'post';
-  const frameH = full ? height : Math.min(width / POST_ASPECT_MIN, height - insets.top - insets.bottom - 200);
-  const frameW = full ? width : Math.min(width, frameH * POST_ASPECT_MIN);
-  const frameTop = Math.round((height - frameH) / 2);
-  const frameLeft = Math.round((width - frameW) / 2);
   // A menu dish also shows the 4:3 part the Menu card will show.
   const cardH = Math.round(width / MENU_CARD_ASPECT);
   const cardTop = Math.round((height - cardH) / 2);
@@ -206,16 +193,6 @@ function Camera({ kind, limit, onCaptured, onDone }: { kind: PhotoKind; limit: n
   return (
     <View style={styles.screen}>
       <CameraView ref={camera} style={StyleSheet.absoluteFill} facing={facing} flash={flash} onCameraReady={() => setReady(true)} />
-      {/* The dimmed area outside the frame, and a thin line around the frame itself. */}
-      {kind === 'post' ? (
-        <>
-          <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: frameTop }]} />
-          <View pointerEvents="none" style={[styles.dim, { top: frameTop + frameH, left: 0, right: 0, bottom: 0 }]} />
-          <View pointerEvents="none" style={[styles.dim, { top: frameTop, left: 0, width: frameLeft, height: frameH }]} />
-          <View pointerEvents="none" style={[styles.dim, { top: frameTop, left: frameLeft + frameW, right: 0, height: frameH }]} />
-          <View pointerEvents="none" style={[styles.frameLine, { top: frameTop, left: frameLeft, width: frameW, height: frameH }]} />
-        </>
-      ) : null}
       {kind === 'menu' ? <MenuGuide top={cardTop} height={cardH} width={width} screenH={height} storyTagTop={insets.top + 70} /> : null}
 
       <View style={[styles.camTop, { top: insets.top + 8 }]}>
@@ -354,6 +331,85 @@ function Adjust({ kind, aspect, photo, title = 'Move and zoom', doneLabel = 'Don
   );
 }
 
+// ---------- Adjust for a post: the whole photo stays; the person drags it to choose the square part the feed shows ----------
+
+function AdjustFeed({ photo, title, doneLabel, onBack, onDone }: { photo: Shot; title: string; doneLabel: string; onBack: () => void; onDone: (p: PickedPhoto | null) => void }) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  // The feed frame is a square as wide as the screen allows, centred in the space under the top bar.
+  const room = height - insets.top - insets.bottom - 70;
+  const S = Math.min(width, room);
+  const frameLeft = Math.round((width - S) / 2);
+  const frameTop = Math.round((room - S) / 2);
+  // The photo covers the frame at the smallest size that fills it; the extra length on one side is what the drag moves through.
+  const base = Math.max(S / photo.width, S / photo.height);
+  const w = photo.width * base;
+  const h = photo.height * base;
+  const overX = Math.max(0, w - S);
+  const overY = Math.max(0, h - S);
+  const ox = useSharedValue(overX / 2);
+  const oy = useSharedValue(overY / 2);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+  const [busy, setBusy] = useState(false);
+
+  const pan = Gesture.Pan()
+    .onStart(() => {
+      startX.value = ox.value;
+      startY.value = oy.value;
+    })
+    .onUpdate((e) => {
+      ox.value = Math.min(overX, Math.max(0, startX.value - e.translationX));
+      oy.value = Math.min(overY, Math.max(0, startY.value - e.translationY));
+    });
+  const imageStyle = useAnimatedStyle(() => ({ transform: [{ translateX: -ox.value }, { translateY: -oy.value }] }));
+
+  function confirm() {
+    setBusy(true);
+    onDone({
+      uri: photo.uri,
+      mimeType: 'image/jpeg',
+      aspect: photo.width / photo.height,
+      focus: { x: overX > 0 ? ox.value / overX : 0.5, y: overY > 0 ? oy.value / overY : 0.5 },
+    });
+  }
+
+  return (
+    <GestureHandlerRootView style={[styles.screen, { paddingTop: insets.top }]}>
+      <View style={styles.gridTop}>
+        <IconButton name="arrow-back" onPress={onBack} label="Back" />
+        <Text style={styles.gridTitle}>{title}</Text>
+        <Pressable disabled={busy} onPress={confirm} hitSlop={10} style={styles.next}>
+          <Text style={[styles.nextText, busy && { opacity: 0.4 }]}>{doneLabel}</Text>
+        </Pressable>
+      </View>
+      <GestureDetector gesture={pan}>
+        <View style={{ width, height: room, overflow: 'hidden' }}>
+          <Animated.View style={[{ position: 'absolute', left: frameLeft, top: frameTop, width: w, height: h }, imageStyle]}>
+            <Image source={{ uri: photo.uri }} style={{ width: w, height: h }} contentFit="fill" />
+          </Animated.View>
+          <View pointerEvents="none" style={[styles.dim, { top: 0, left: 0, right: 0, height: frameTop }]} />
+          <View pointerEvents="none" style={[styles.dim, { top: frameTop + S, left: 0, right: 0, bottom: 0 }]} />
+          <View pointerEvents="none" style={[styles.dim, { top: frameTop, left: 0, width: frameLeft, height: S }]} />
+          <View pointerEvents="none" style={[styles.dim, { top: frameTop, left: frameLeft + S, right: 0, height: S }]} />
+          <View pointerEvents="none" style={[styles.frameLine, { top: frameTop, left: frameLeft, width: S, height: S }]} />
+          <View pointerEvents="none" style={[styles.guideTag, { top: frameTop + 10, left: frameLeft + 10 }]}>
+            <Text style={styles.guideTagText}>Feed</Text>
+          </View>
+          <Text pointerEvents="none" style={styles.feedHint}>
+            {overX > 0 || overY > 0 ? 'Drag to choose what shows in the feed. Opened in full, the whole photo shows.' : 'This photo fits the feed. Opened in full, it shows as it is.'}
+          </Text>
+        </View>
+      </GestureDetector>
+      {busy ? (
+        <View style={styles.busy}>
+          <ActivityIndicator color={colors.white} />
+        </View>
+      ) : null}
+    </GestureHandlerRootView>
+  );
+}
+
 function IconButton({ name, onPress, label, size = 26, style }: { name: React.ComponentProps<typeof MaterialIcons>['name']; onPress: () => void; label: string; size?: number; style?: object }) {
   return (
     <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={label} style={[styles.iconBtn, style]}>
@@ -375,6 +431,7 @@ const styles = StyleSheet.create({
   guideDim: { position: 'absolute', backgroundColor: 'rgba(40,48,58,0.45)' },
   guideTag: { position: 'absolute', backgroundColor: 'rgba(40,48,58,0.7)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   guideTagText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },
+  feedHint: { position: 'absolute', left: 20, right: 20, bottom: 12, textAlign: 'center', fontFamily: fonts.bold, fontSize: 13, color: colors.white },
   adjustArea: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   busy: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(40,48,58,0.55)', alignItems: 'center', justifyContent: 'center' },
   gridTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingBottom: 10 },

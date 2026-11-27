@@ -24,10 +24,8 @@ export default function ComposeSignature() {
   // Up to 10 photos: the first is the cover, the rest follow in order (a carousel post).
   const [photos, setPhotos] = useState<PickedPhoto[]>(() => {
     const first = peekPendingPhoto();
-    return first ? [{ uri: first.uri, mimeType: first.mimeType }, ...(first.more ?? [])] : [];
+    return first ? [{ uri: first.uri, mimeType: first.mimeType, focus: first.focus, aspect: first.aspect }, ...(first.more ?? [])] : [];
   });
-  // The shape the photos were cropped to (width / height): the first photo's own shape, kept for the whole post.
-  const [aspect, setAspect] = useState<number>(() => peekPendingPhoto()?.aspect ?? 1);
   const photo = photos[0] ?? null;
   // The photo was handed over once; later visits start empty.
   useEffect(() => setPendingPhoto(null), []);
@@ -46,13 +44,12 @@ export default function ComposeSignature() {
     if (uid) fetchMyCommunities(uid).then(setCommunities, () => null);
   }, [uid]);
 
-  const flat = (res: PickedPhoto): PickedPhoto[] => [{ uri: res.uri, mimeType: res.mimeType }, ...(res.more ?? [])];
+  const flat = (res: PickedPhoto): PickedPhoto[] => [{ uri: res.uri, mimeType: res.mimeType, focus: res.focus, aspect: res.aspect }, ...(res.more ?? [])];
 
   async function pickPhoto(start: PhotoStart) {
     const res = await choosePhoto('post', start, MAX_POST_PHOTOS);
     if (res) {
       setPhotos(flat(res));
-      setAspect(res.aspect ?? 1);
     }
   }
 
@@ -60,7 +57,7 @@ export default function ComposeSignature() {
   async function addMore() {
     const room = MAX_POST_PHOTOS - photos.length;
     if (room <= 0) return;
-    const res = await choosePhoto('post', 'gallery', room, aspect);
+    const res = await choosePhoto('post', 'gallery', room);
     if (res) setPhotos((l) => [...l, ...flat(res)].slice(0, MAX_POST_PHOTOS));
   }
 
@@ -73,7 +70,7 @@ export default function ComposeSignature() {
       const path = await uploadPhoto(uid, photo.uri, photo.mimeType ?? 'image/jpeg');
       const morePaths: string[] = [];
       for (const m of photos.slice(1)) morePaths.push(await uploadPhoto(uid, m.uri, m.mimeType ?? 'image/jpeg'));
-      await postSignature(uid, caption, path, communityId, morePaths, aspect, recipe);
+      await postSignature(uid, caption, path, communityId, morePaths, photos[0]?.aspect ?? null, recipe, photos.map((p) => p.focus ?? { x: 0.5, y: 0.5 }));
       router.dismissTo('/home');
     } catch (e) {
       setError(shareErrorMessage(e));
@@ -100,7 +97,7 @@ export default function ComposeSignature() {
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
           {photo ? (
             <View>
-              <Image source={{ uri: photo.uri }} style={[styles.photo, { aspectRatio: aspect }]} contentFit="cover" />
+              <Image source={{ uri: photo.uri }} style={styles.photo} contentFit="cover" contentPosition={at(photo)} />
               <Pressable style={styles.retake} onPress={() => pickPhoto('gallery')}>
                 <MaterialIcons name="autorenew" size={16} color={colors.white} />
                 <Text style={styles.retakeText}>Change</Text>
@@ -139,6 +136,9 @@ export default function ComposeSignature() {
     </SafeAreaView>
   );
 }
+
+// The square part of a photo the feed shows (centred when none was chosen).
+const at = (p: PickedPhoto) => ({ left: `${Math.round((p.focus?.x ?? 0.5) * 100)}%` as const, top: `${Math.round((p.focus?.y ?? 0.5) * 100)}%` as const });
 
 const THUMB = 64;
 const GAP = 8;
@@ -190,7 +190,7 @@ function Thumb({ photo, index, cover, onMove, onRemove }: { photo: PickedPhoto; 
   return (
     <GestureDetector gesture={drag}>
       <Animated.View style={[styles.thumbWrap, style]}>
-        <Image source={{ uri: photo.uri }} style={styles.thumb} contentFit="cover" />
+        <Image source={{ uri: photo.uri }} style={styles.thumb} contentFit="cover" contentPosition={at(photo)} />
         {cover ? (
           <View style={styles.coverTag}>
             <Text style={styles.coverTagText}>Cover</Text>

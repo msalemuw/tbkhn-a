@@ -32,6 +32,8 @@ export type FeedPost = {
   extra_media: string[];
   /** Width / height of the post's photos (0073_post_photo_shape.sql). Null = square, as every older post. */
   media_aspect: number | null;
+  /** Which part of each photo the square feed frame shows, in photo order (0075_post_photo_focus.sql). Null = centred. */
+  media_focus: { x: number; y: number }[] | null;
   /** The optional recipe (0074_post_recipe.sql). */
   recipe: Recipe | null;
 };
@@ -41,7 +43,7 @@ const POST_SELECT =
   ' author:profiles!author_id(id, username, display_name, avatar_path),' +
   ' community:communities(name), likes(count), comments(count)';
 
-type Row = Omit<FeedPost, 'likes' | 'comments' | 'liked' | 'saved' | 'rating' | 'cookingDishId' | 'spot' | 'extra_media' | 'media_aspect' | 'recipe'> & {
+type Row = Omit<FeedPost, 'likes' | 'comments' | 'liked' | 'saved' | 'rating' | 'cookingDishId' | 'spot' | 'extra_media' | 'media_aspect' | 'recipe' | 'media_focus'> & {
   likes: { count: number }[];
   comments: { count: number }[];
 };
@@ -75,7 +77,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
   const authors = [...new Set(rows.map((r) => r.author_id))];
-  const [mine, savedMine, reviews, live, spots, media, shapes, recipes] = await Promise.all([
+  const [mine, savedMine, reviews, live, spots, media, shapes, focuses, recipes] = await Promise.all([
     me ? supabase.from('likes').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
     me ? supabase.from('saved_posts').select('post_id').eq('user_id', me).in('post_id', ids) : Promise.resolve({ data: [] as { post_id: string }[] }),
     supabase.from('reviews').select('cook_id, rating').in('cook_id', authors),
@@ -85,9 +87,20 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
     supabase.from('post_media').select('post_id, position, path').in('post_id', ids).order('position'),
     // The photos' shape, read apart so a missing column never hides the feed.
     supabase.from('posts').select('id, media_aspect').in('id', ids),
+    // Where the feed frame sits on each photo (0075), also read apart.
+    supabase.from('posts').select('id, media_focus').in('id', ids),
     // The recipe, also read apart so a missing column never hides the feed.
     supabase.from('posts').select('id, recipe').in('id', ids),
   ]);
+  const focusBy = new Map<string, { x: number; y: number }[]>();
+  for (const a of (focuses.error ? [] : focuses.data ?? []) as { id: string; media_focus: unknown }[]) {
+    if (!Array.isArray(a.media_focus)) continue;
+    const list = a.media_focus.map((f) => {
+      const o = (f ?? {}) as { x?: unknown; y?: unknown };
+      return { x: typeof o.x === 'number' ? Math.min(1, Math.max(0, o.x)) : 0.5, y: typeof o.y === 'number' ? Math.min(1, Math.max(0, o.y)) : 0.5 };
+    });
+    if (list.length) focusBy.set(a.id, list);
+  }
   const recipeBy = new Map<string, Recipe>();
   for (const a of (recipes.error ? [] : recipes.data ?? []) as { id: string; recipe: unknown }[]) {
     const r = parseRecipe(a.recipe);
@@ -121,6 +134,7 @@ async function enrich(rows: Row[], me: string | null): Promise<FeedPost[]> {
       spot: spotBy.get(r.author_id) ?? null,
       extra_media: extraBy.get(r.id) ?? [],
       media_aspect: aspectBy.get(r.id) ?? null,
+      media_focus: focusBy.get(r.id) ?? null,
       recipe: recipeBy.get(r.id) ?? null,
     };
   });
@@ -224,14 +238,15 @@ export async function deleteComment(id: string): Promise<void> {
 }
 
 /** A signature dish: a photo and caption that stay on the cook's profile. */
-export async function postSignature(me: string, caption: string, mediaPath: string, communityId: string | null, morePaths: string[] = [], aspect: number | null = null, recipe: Recipe | null = null): Promise<string> {
+export async function postSignature(me: string, caption: string, mediaPath: string, communityId: string | null, morePaths: string[] = [], aspect: number | null = null, recipe: Recipe | null = null, focus: { x: number; y: number }[] = []): Promise<string> {
   const row: Record<string, unknown> = { author_id: me, kind: 'signature', caption: caption.trim() || null, media_path: mediaPath, community_id: communityId };
   const shaped = aspect && Math.abs(aspect - 1) > 0.01;
   const extra: Record<string, unknown> = {};
-  if (shaped) extra.media_aspect = aspect;
+  if (shaped) extra.media_aspect = Math.min(2, Math.max(0.5, aspect));
+  if (focus.length) extra.media_focus = focus;
   if (recipe) extra.recipe = recipe;
   let res = await supabase.from('posts').insert({ ...row, ...extra }).select('id').single();
-  // Before 0073 / 0074 are run the columns do not exist: post anyway (square photo, no recipe).
+  // Before 0073 / 0074 / 0075 are run the columns do not exist: post anyway (square photo, no recipe).
   if (res.error && Object.keys(extra).length) res = await supabase.from('posts').insert(row).select('id').single();
   const { data, error } = res;
   if (error) throw error;
