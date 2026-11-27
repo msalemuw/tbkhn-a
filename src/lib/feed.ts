@@ -264,6 +264,13 @@ export async function updateCaption(postId: string, caption: string): Promise<vo
   dataChanged();
 }
 
+/** Add, change or remove (null) the recipe on one of my own posts. */
+export async function updateRecipe(postId: string, recipe: Recipe | null): Promise<void> {
+  const { error } = await supabase.from('posts').update({ recipe }).eq('id', postId);
+  if (error) throw error;
+  dataChanged();
+}
+
 /**
  * Take a "Today's menu" dish off the menu and end its story. A dish nobody ordered is deleted outright; one with orders can't be
  * deleted (the orders still point at it), so it is ended now instead: it leaves the menu and stories, the orders stay.
