@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertHealthNotice, WaitingRequestsBar } from '@/components/request-alerts';
 
-import { Text } from '@/components/text';
+import { Text, TextInput } from '@/components/text';
 import { Alert } from '@/lib/alert';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { CommentsSheet } from '@/components/comments-sheet';
@@ -147,7 +147,7 @@ export default function Home() {
   );
 
   const all = !watching?.criticsOnly && (!watching || (watching.nearby && watching.following && mine.every((c) => watching.communities.includes(c.id))));
-  const shown = useMemo(() => {
+  const ranked = useMemo(() => {
     if (!watching) return posts.filter((p) => p.author_id !== me);
     // "Critics near me": only approved critics' posts, closest first (those with no known spot go last).
     if (watching.criticsOnly) {
@@ -177,6 +177,13 @@ export default function Home() {
       seed,
     });
   }, [posts, watching, following, me, here, meters, memberships, criticIds, seenPosts, seed]);
+  // Search inside the feed: a dish or any word in the caption, or the cook's name (matches the posts already shown).
+  const [q, setQ] = useState('');
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return ranked;
+    return ranked.filter((p) => `${p.caption ?? ''} ${personName(p.author)} ${p.author.username ?? ''}`.toLowerCase().includes(needle));
+  }, [ranked, q]);
 
   const patch = (id: string, f: (p: FeedPost) => FeedPost) => setPosts((list) => list.map((p) => (p.id === id ? f(p) : p)));
 
@@ -247,7 +254,7 @@ export default function Home() {
         : watching?.criticsOnly
           ? 'No critic has posted yet. Critics near you will show here, closest first.'
           : posts.length
-          ? 'No posts match your feed filter. Change “Feed filter” to see more.'
+          ? q.trim() ? 'No posts match your search.' : 'No posts match your feed filter. Change “Feed filter” to see more.'
           : 'No posts yet. Share your signature dish from the Post tab, or follow cooks near you.';
 
   return (
@@ -304,6 +311,20 @@ export default function Home() {
                 <MaterialIcons name="expand-more" size={18} color={colors.white} />
               </Pressable>
             </View>
+            <View style={styles.search}>
+              <MaterialIcons name="search" size={20} color={colors.muted} />
+              <TextInput
+                value={q}
+                onChangeText={setQ}
+                placeholder="Search dishes or cooks"
+                placeholderTextColor={colors.faint}
+                style={styles.searchInput}
+                returnKeyType="search"
+                autoCorrect={false}
+                accessibilityLabel="Search the feed"
+                clearButtonMode="while-editing"
+              />
+            </View>
           </View>
         }
         ListEmptyComponent={empty ? <Text style={styles.empty}>{empty}</Text> : null}
@@ -343,5 +364,7 @@ const styles = StyleSheet.create({
   bar: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' },
   watch: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: ui.deep, borderRadius: 999, paddingHorizontal: 12, height: 34, flexShrink: 0 },
   watchText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 18, marginTop: 10, backgroundColor: ui.card, borderRadius: 999, borderWidth: 1, borderColor: ui.border, paddingHorizontal: 14, height: 40 },
+  searchInput: { flex: 1, fontFamily: fonts.medium, fontSize: 14, color: ui.deep, paddingVertical: 0 },
   empty: { fontFamily: fonts.semiBold, fontSize: 14, color: colors.muted, textAlign: 'center', marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
 });
