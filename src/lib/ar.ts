@@ -158,6 +158,8 @@ export const ar: Record<string, string> = {
   INGREDIENTS: 'المكونات',
   STEPS: 'الخطوات',
   'Add ingredient': 'أضف مكوّن',
+  'Add a section (e.g. For the sauce)': 'أضف قسم (مثلاً: للصوص)',
+  'Section title, e.g. For the Alfredo sauce': 'عنوان القسم، مثلاً: لصوص الألفريدو',
   'Add step': 'أضف خطوة',
   'Describe this step': 'اشرح الخطوة دي',
   'Also share as story': 'شاركه كستوري كمان',

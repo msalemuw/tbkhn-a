@@ -1,20 +1,30 @@
 import { supabase } from '@/lib/supabase';
 
 /** An optional recipe on a post (0074_post_recipe.sql). Stored as JSON on the post; empty lines are dropped. */
-export type Recipe = { servings: string; minutes: string; ingredients: string[]; /** The brand the cook uses for each ingredient (same order as `ingredients`; '' = none). Optional, so older recipes have none. */ brands: string[]; steps: string[] };
+export type Recipe = { servings: string; minutes: string; ingredients: string[]; /** The brand the cook uses for each ingredient (same order as `ingredients`; '' = none). Optional, so older recipes have none. */ brands: string[]; /** A section title that starts at this ingredient ("For the sauce") and runs until the next one; '' = none. Same order as `ingredients`; optional, so older recipes have none. */ groups: string[]; steps: string[] };
 
-export const emptyRecipe = (): Recipe => ({ servings: '', minutes: '', ingredients: [''], brands: [''], steps: [''] });
+export const emptyRecipe = (): Recipe => ({ servings: '', minutes: '', ingredients: [''], brands: [''], groups: [''], steps: [''] });
 
 /** Trim everything; a recipe with no ingredients and no steps is no recipe (null). */
 export function cleanRecipe(r: Recipe | null | undefined): Recipe | null {
   if (!r) return null;
   // Keep each brand with its ingredient when blank lines are dropped.
-  const pairs = r.ingredients.map((s, i) => [s.trim(), (r.brands[i] ?? '').trim()] as const).filter(([s]) => s);
+  // A section title belongs to the next ingredient that is kept, so a blank first line never loses it.
+  let carry = '';
+  const pairs: (readonly [string, string, string])[] = [];
+  r.ingredients.forEach((s, i) => {
+    const g = (r.groups[i] ?? '').trim();
+    if (g) carry = g;
+    if (!s.trim()) return;
+    pairs.push([s.trim(), (r.brands[i] ?? '').trim(), carry] as const);
+    carry = '';
+  });
   const ingredients = pairs.map(([s]) => s);
   const brands = pairs.map(([, b]) => b);
+  const groups = pairs.map(([, , g]) => g);
   const steps = r.steps.map((s) => s.trim()).filter(Boolean);
   if (!ingredients.length && !steps.length) return null;
-  return { servings: r.servings.trim(), minutes: r.minutes.trim(), ingredients, brands, steps };
+  return { servings: r.servings.trim(), minutes: r.minutes.trim(), ingredients, brands, groups, steps };
 }
 
 /** Reads what the database returned; anything unexpected is no recipe. */
@@ -24,7 +34,8 @@ export function parseRecipe(v: unknown): Recipe | null {
   const list = (x: unknown) => (Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string') : []);
   // Brands line up with ingredients by position, so a bad entry becomes '' instead of being dropped.
   const brands = Array.isArray(o.brands) ? o.brands.map((b) => (typeof b === 'string' ? b : '')) : [];
-  return cleanRecipe({ servings: typeof o.servings === 'string' ? o.servings : '', minutes: typeof o.minutes === 'string' ? o.minutes : '', ingredients: list(o.ingredients), brands, steps: list(o.steps) });
+  const groups = Array.isArray(o.groups) ? o.groups.map((g) => (typeof g === 'string' ? g : '')) : [];
+  return cleanRecipe({ servings: typeof o.servings === 'string' ? o.servings : '', minutes: typeof o.minutes === 'string' ? o.minutes : '', ingredients: list(o.ingredients), brands, groups, steps: list(o.steps) });
 }
 
 let brandCache: string[] | null = null;

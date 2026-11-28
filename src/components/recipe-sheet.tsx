@@ -21,12 +21,15 @@ export function RecipeSheet({ recipe, visible, onClose }: { recipe: Recipe; visi
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
             {recipe.ingredients.length ? <Text style={styles.label}>INGREDIENTS</Text> : null}
             {recipe.ingredients.map((x, i) => (
-              <View key={i} style={styles.row}>
+              <View key={i}>
+                {recipe.groups[i] ? <Text verbatim style={styles.group}>{recipe.groups[i]}</Text> : null}
+              <View style={styles.row}>
                 <View style={styles.bullet} />
                 <Text verbatim style={styles.body}>
                   {x}
                   {recipe.brands[i] ? <Text verbatim style={styles.brand}>{`  ·  ${recipe.brands[i]}`}</Text> : null}
                 </Text>
+              </View>
               </View>
             ))}
             {recipe.steps.length ? <Text style={styles.label}>STEPS</Text> : null}
@@ -56,6 +59,7 @@ const styles = StyleSheet.create({
   bullet: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal, marginTop: 7 },
   num: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   numText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },
+  group: { fontFamily: fonts.extraBold, fontSize: 15, color: ui.deep, marginTop: 12, marginBottom: 2 },
   brand: { fontFamily: fonts.bold, fontSize: 13.5, color: ui.deepTeal },
   body: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: ui.deep },
 });
