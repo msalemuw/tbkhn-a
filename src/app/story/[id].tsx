@@ -20,6 +20,7 @@ import { distanceMeters, fmtAgo, fmtDist, fmtReady } from '@/lib/format';
 import { useMyLocation } from '@/lib/location';
 import { useOverlayInsets } from '@/lib/insets';
 import { mediaUrl, personName } from '@/lib/posts';
+import { confirmAdminRemove, useCanModerate } from '@/lib/admin';
 import { useSession } from '@/lib/session';
 import { fetchStories, markSeen, type StoryGroup } from '@/lib/stories';
 
@@ -141,6 +142,7 @@ function Viewer({
 }) {
   const item = group.items[index];
   const mine = group.author.id === me;
+  const canModerate = useCanModerate(me);
   const here = useMyLocation();
   const keyboard = useKeyboardHeight();
   const insets = useOverlayInsets();
@@ -237,6 +239,7 @@ function Viewer({
     setMenu({
       title: name,
       actions: [
+        ...(canModerate ? [{ label: order ? 'Remove from menu (admin)' : 'Remove story (admin)', destructive: true, onPress: () => confirmAdminRemove(item.id, () => onDeleted(item.id)) }] : []),
         { label: 'Report story', destructive: true, onPress: () => setTimeout(() => setReport({ me, name, profileId: group.author.id, postId: item.id }), 350) },
         { label: `Block ${name}`, destructive: true, onPress: () => confirmBlock(name, group.author.id, closeStory) },
       ],
