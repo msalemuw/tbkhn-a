@@ -15,6 +15,7 @@ import { colors, fonts } from '@/constants/theme';
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
 import { confirmBlock } from '@/lib/blocks';
+import { confirmAdminRemoveComment, useCanModerate } from '@/lib/admin';
 import { addComment, type Comment, deleteComment, fetchComments, setCommentLiked } from '@/lib/feed';
 import { fmtAgo } from '@/lib/format';
 import { personName } from '@/lib/posts';
@@ -43,6 +44,7 @@ export function CommentsSheet({
 }
 
 function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; me: string | null; onClose: () => void; onAdded: (postId: string) => void; onRemoved?: (postId: string) => void }) {
+  const canModerate = useCanModerate(me);
   const [items, setItems] = useState<Comment[] | null>(null);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -130,6 +132,9 @@ function Thread({ postId, me, onClose, onAdded, onRemoved }: { postId: string; m
     setMenu({
       title: name,
       actions: [
+        ...(canModerate
+          ? [{ label: 'Remove comment (admin)', destructive: true, onPress: () => setTimeout(() => confirmAdminRemoveComment(c.id, () => { setItems((l) => (l ?? []).filter((x) => x.id !== c.id && x.parent_id !== c.id)); onRemoved?.(postId); }), 350) }]
+          : []),
         { label: 'Report comment', destructive: true, onPress: () => setTimeout(() => setReport({ me, name, profileId: who.id, quote: c.body }), 350) },
         { label: `Block ${name}`, destructive: true, onPress: () => confirmBlock(name, who.id, () => setItems((l) => (l ?? []).filter((x) => x.author?.id !== who.id))) },
       ],

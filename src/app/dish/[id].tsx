@@ -19,6 +19,7 @@ import { removeDish } from '@/lib/feed';
 import { usePayThroughApp } from '@/lib/app-status';
 import { placeOrder } from '@/lib/orders';
 import { areaLatLng, type Dish, fetchDish, fetchMyPickupPoints, mediaUrl, personName, type PickupPoint, pickupAreaText } from '@/lib/posts';
+import { confirmAdminRemove, useCanModerate } from '@/lib/admin';
 import { useSession } from '@/lib/session';
 import { pickupSlots } from '@/lib/slots';
 import { VerifiedTick } from '@/lib/verified';
@@ -31,6 +32,7 @@ export default function DishScreen() {
   const payThrough = usePayThroughApp();
   const { id, posted } = useLocalSearchParams<{ id: string; posted?: string }>();
   const { session } = useSession();
+  const canModerate = useCanModerate(session?.user.id ?? null);
   const here = useMyLocation();
   const [dish, setDish] = useState<Dish | null | undefined>(undefined);
   const [badges, setBadges] = useState<Badge[]>([]);
@@ -268,6 +270,12 @@ export default function DishScreen() {
             </>
           ) : (
             <>
+              {canModerate ? (
+                <Pressable style={styles.remove} onPress={() => confirmAdminRemove(dish!.id, () => (router.canGoBack() ? router.back() : router.replace('/menu')))} accessibilityRole="button" accessibilityLabel="Remove from menu (admin)">
+                  <MaterialIcons name="delete-outline" size={19} color={colors.navy} />
+                  <Text style={styles.removeText}>Remove from menu (admin)</Text>
+                </Pressable>
+              ) : null}
               <View style={styles.totalRow}>
                 <Text style={styles.muted}>{plates} {plates === 1 ? 'plate' : 'plates'}</Text>
                 <Text style={styles.total}>EGP {price * plates}</Text>

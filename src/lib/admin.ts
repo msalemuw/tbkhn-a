@@ -122,6 +122,7 @@ export const fetchOpenReports = () => call<ReportGroup[]>('admin_open_reports');
 export const dismissReports = (g: ReportGroup, note?: string) =>
   call<number>('admin_dismiss_reports', { p_post_id: g.post_id, p_profile_id: g.profile_id, p_note: note ?? null });
 export const removePost = (postId: string, reason: string) => call('admin_remove_post', { p_post_id: postId, p_reason: reason });
+export const removeComment = (commentId: string, reason: string) => call('admin_remove_comment', { p_comment_id: commentId, p_reason: reason });
 export type MemberFilter = 'all' | 'new' | 'suspended';
 /** One page of members, newest first. `total` is how many match in all, so the screen can say "Showing 50 of 212". */
 export const listMembers = (filter: MemberFilter, query: string, offset = 0) =>
@@ -171,6 +172,7 @@ export const ACTION_LABEL: Record<string, string> = {
   community_merged: 'Merged communities',
   control_changed: 'Changed a control',
   post_removed: 'Removed post',
+  comment_removed: 'Removed comment',
   reports_dismissed: 'Dismissed reports',
   member_suspended: 'Suspended member',
   member_unsuspended: 'Lifted suspension',
@@ -205,6 +207,19 @@ export function useCanModerate(me: string | null): boolean {
     };
   }, [me]);
   return ok && !!me;
+}
+
+/** Same for a comment: asks first, then removes it for everyone (its text and author are kept in the admin log). */
+export function confirmAdminRemoveComment(commentId: string, onDone: () => void) {
+  Alert.alert('Remove this comment?', 'It disappears for everyone and is recorded in the admin log.', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Remove',
+      style: 'destructive',
+      onPress: () =>
+        removeComment(commentId, 'Removed by an admin from the app').then(onDone, () => Alert.alert('We couldn’t remove the comment', 'Check your connection and try again.')),
+    },
+  ]);
 }
 
 /** Asks first, then removes the post for everyone (soft: it stays in the admin log with who and why). */
