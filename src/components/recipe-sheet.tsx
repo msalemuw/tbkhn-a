@@ -23,7 +23,10 @@ export function RecipeSheet({ recipe, visible, onClose }: { recipe: Recipe; visi
             {recipe.ingredients.map((x, i) => (
               <View key={i} style={styles.row}>
                 <View style={styles.bullet} />
-                <Text verbatim style={styles.body}>{x}</Text>
+                <Text verbatim style={styles.body}>
+                  {x}
+                  {recipe.brands[i] ? <Text verbatim style={styles.brand}>{`  ·  ${recipe.brands[i]}`}</Text> : null}
+                </Text>
               </View>
             ))}
             {recipe.steps.length ? <Text style={styles.label}>STEPS</Text> : null}
@@ -53,5 +56,6 @@ const styles = StyleSheet.create({
   bullet: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal, marginTop: 7 },
   num: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.teal, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   numText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },
+  brand: { fontFamily: fonts.bold, fontSize: 13.5, color: ui.deepTeal },
   body: { flex: 1, fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: ui.deep },
 });
