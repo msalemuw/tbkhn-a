@@ -6,7 +6,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AlertHealthNotice, WaitingRequestsBar } from '@/components/request-alerts';
+import { alertsMuted, useAlertHealth, WaitingRequestsBar } from '@/components/request-alerts';
 
 import { Text, TextInput } from '@/components/text';
 import { Alert } from '@/lib/alert';
@@ -58,6 +58,7 @@ export default function Home() {
   const here = useMyLocation();
   const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [unreadNotes, setUnreadNotes] = useState(0);
+  const alertHealth = useAlertHealth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   // The full-screen pager keeps the posts it opened with (and where it started), so a reload or a re-sort can never move or close it.
   const [pager, setPager] = useState<{ ids: string[]; start: number } | null>(null);
@@ -308,10 +309,10 @@ export default function Home() {
           <Logo on="light" height={28} />
           <View style={styles.headerIcons}>
             <Pressable
-              accessibilityLabel={unreadNotes ? `Notifications, ${unreadNotes} new` : 'Notifications'}
+              accessibilityLabel={`${unreadNotes ? `Notifications, ${unreadNotes} new` : 'Notifications'}${alertsMuted(alertHealth) ? ', turned off on this phone' : ''}`}
               onPress={() => router.push({ pathname: '/inbox', params: { tab: 'notifications' } })}
               hitSlop={8}>
-              <MaterialIcons name="notifications-none" size={27} color={ui.deep} />
+              <MaterialIcons name={alertsMuted(alertHealth) ? 'notifications-off' : 'notifications-none'} size={27} color={ui.deep} />
               {unreadNotes > 0 ? <View style={styles.dot} /> : null}
             </Pressable>
             <Pressable accessibilityLabel={unreadMsgs ? `Messages, ${unreadMsgs} new` : 'Messages'} onPress={() => router.push('/inbox')} hitSlop={8}>
@@ -322,7 +323,6 @@ export default function Home() {
         </View>
       </SafeAreaView>
       <WaitingRequestsBar />
-      <AlertHealthNotice />
       <FlatList
         ref={listRef}
         data={shown}

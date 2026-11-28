@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 import { Avatar } from '@/components/avatar';
 import { BackHeader } from '@/components/form';
+import { AlertHealthNotice } from '@/components/request-alerts';
 import { colors, fonts } from '@/constants/theme';
 import { type Conversation, fetchConversations, fetchPeople } from '@/lib/chat';
 import { fmtAgo } from '@/lib/format';
@@ -115,6 +116,7 @@ export default function Inbox() {
           keyExtractor={(n) => n.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl {...pull} tintColor={colors.teal} />}
+          ListHeaderComponent={<AlertHealthNotice calm />}
           renderItem={({ item }) => {
             const d = describe(item, personName(people.get(item.payload.from ?? '')));
             // A rejected request that duplicates an existing community opens that community.
