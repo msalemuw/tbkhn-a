@@ -170,6 +170,7 @@ export const ar: Record<string, string> = {
   'Remove this post?': 'تمسح البوست ده؟',
   'It disappears for everyone and is recorded in the admin log.': 'هيختفي عند الكل ويتسجّل في سجل الأدمن.',
   'We couldn’t remove the post': 'معرفناش نمسح البوست',
+  'Brand (optional)': 'الماركة (اختياري)',
   RECIPES: 'الوصفات',
   Recipes: 'الوصفات',
   'No posts with a recipe yet. Change “Feed filter” to see everything.': 'مفيش بوستات فيها وصفة لسه. غيّر «فلتر الصفحة الرئيسية» عشان تشوف كل حاجة.',
