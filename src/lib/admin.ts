@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+
+import { Alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 // Admin panel (docs: admin plan, steps 3 to 7). Staff use the same app; every read and change goes
@@ -189,3 +192,30 @@ export const ACTION_LABEL: Record<string, string> = {
   support_note_added: 'Added a note on a support message',
   support_status_set: 'Changed a support message status',
 };
+
+/** True when the signed-in member is an owner or moderator: they get "Remove post (admin)" on any post, from their own account. */
+export function useCanModerate(me: string | null): boolean {
+  const [ok, setOk] = useState(false);
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    fetchStaffRole().then((r) => alive && setOk(canAct(r)), () => alive && setOk(false));
+    return () => {
+      alive = false;
+    };
+  }, [me]);
+  return ok && !!me;
+}
+
+/** Asks first, then removes the post for everyone (soft: it stays in the admin log with who and why). */
+export function confirmAdminRemove(postId: string, onDone: () => void) {
+  Alert.alert('Remove this post?', 'It disappears for everyone and is recorded in the admin log.', [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Remove',
+      style: 'destructive',
+      onPress: () =>
+        removePost(postId, 'Removed by an admin from the feed').then(onDone, () => Alert.alert('We couldn’t remove the post', 'Check your connection and try again.')),
+    },
+  ]);
+}
