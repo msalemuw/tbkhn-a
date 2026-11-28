@@ -15,6 +15,7 @@ import { PostCard } from '@/components/post-card';
 import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchPostsBy, fetchSaved, setLiked, setSaved, updateCaption, updateRecipe } from '@/lib/feed';
 import { ReportSheet, type ReportTarget } from '@/components/report-sheet';
+import { confirmAdminRemove, useCanModerate } from '@/lib/admin';
 import { confirmBlock } from '@/lib/blocks';
 import { personName } from '@/lib/posts';
 import { peekRecipeDraft, setRecipeDraft } from '@/lib/recipe';
@@ -27,6 +28,7 @@ export default function PostScreen() {
   const { id, by } = useLocalSearchParams<{ id: string; by?: string }>();
   const { session } = useSession();
   const me = session?.user.id ?? null;
+  const canModerate = useCanModerate(me);
   const [posts, setPosts] = useState<FeedPost[] | null>(null);
   const [commentsFor, setCommentsFor] = useState<string | null>(null);
   const [likesFor, setLikesFor] = useState<string | null>(null);
@@ -131,6 +133,9 @@ export default function PostScreen() {
           ]
         : [
             { label: 'View profile', onPress: () => router.push({ pathname: '/cook/[id]', params: { id: p.author_id } }) },
+            ...(canModerate
+              ? [{ label: 'Remove post (admin)', destructive: true, onPress: () => confirmAdminRemove(p.id, () => { const rest = (posts ?? []).filter((x) => x.id !== p.id); setPosts(rest); if (!rest.length) back(); }) }]
+              : []),
             {
               label: 'Report post',
               destructive: true,

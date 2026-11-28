@@ -23,6 +23,7 @@ import { StoriesRow } from '@/components/stories-row';
 import { type Watching, WatchingSheet } from '@/components/watching-sheet';
 import { colors, fonts, ui } from '@/constants/theme';
 import { deletePost, type FeedPost, fetchFeed, fetchFollowing, fetchLiveDistances, reportPost, setLiked, setSaved } from '@/lib/feed';
+import { confirmAdminRemove, useCanModerate } from '@/lib/admin';
 import { refreshCritics, useCriticIds } from '@/lib/critics';
 import { refreshVerified } from '@/lib/verified';
 import { distanceMeters } from '@/lib/format';
@@ -69,6 +70,7 @@ export default function Home() {
   const [following, setFollowing] = useState<string[]>([]);
   const [watching, setWatching] = useState<Watching | null>(null);
   const criticIds = useCriticIds();
+  const canModerate = useCanModerate(me);
   // Which communities each cook belongs to: a cook shows under a community they live in even when a post was shared publicly.
   const [memberships, setMemberships] = useState<Map<string, string[]>>(new Map());
   const [watchOpen, setWatchOpen] = useState(false);
@@ -242,6 +244,7 @@ export default function Home() {
           ),
       });
     } else {
+      if (canModerate) actions.push({ label: 'Remove post (admin)', destructive: true, onPress: () => confirmAdminRemove(p.id, () => setPosts((l) => l.filter((x) => x.id !== p.id))) });
       actions.push(
         {
           label: 'Report post',
