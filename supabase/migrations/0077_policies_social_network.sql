@@ -1,5 +1,5 @@
 -- Terms of use and Privacy policy rewritten for the social-network direction (28 Nov 2026):
--- a social network for home cooking, creators and brand collaborations, combined statistics, and the pay-through-app step.
+-- a social network for home cooking, creators and brand collaborations, combined statistics. Ordering is described as a future feature.
 -- Still marked "Draft pending legal review". Run in the Supabase SQL editor; the app and the website both read app_pages.
 
 update public.app_pages set updated_at = now(), body_en = $terms_en$Last updated 28 November 2026. Draft pending legal review.
@@ -7,7 +7,7 @@ update public.app_pages set updated_at = now(), body_en = $terms_en$Last updated
 By creating an account or using tabkheen A you agree to these terms and to our Privacy policy.
 
 ## What tabkheen A is
-tabkheen A is a social network for home cooking in Egypt. Members share what they cook with photos, stories, recipes and comments, follow cooks and communities near them, and take part in rankings and competitions. Where a cook offers a dish for pickup, members can also reserve it and collect it in person. Pickup only: there is no delivery. tabkheen A is a platform; it does not cook, sell or hand over food.
+tabkheen A is a social network for home cooking in Egypt. Members share what they cook with photos, stories, recipes and comments, follow cooks and communities near them, and take part in rankings and competitions. Ordering a dish from a home cook for pickup is a future feature and is not open yet. When it opens we will tell you in the app, and the section Ordering (coming later) below will apply. There will be no delivery, only pickup. tabkheen A is a platform; it does not cook, sell or hand over food.
 
 ## Your account
 - You must be at least 16 years old.
@@ -16,13 +16,13 @@ tabkheen A is a social network for home cooking in Egypt. Members share what the
 
 ## Cooks and creators
 - You are responsible for the food you cook: its ingredients, hygiene, safe storage and how it is described, including allergens.
-- Only offer food you made yourself, and only portions you can really prepare.
-- Say clearly where and when it can be picked up.
+- When ordering opens: only offer food you made yourself, only portions you can really prepare, and say clearly where and when it can be picked up.
 - If you tell us you are a creator, you may post about brands. Tell people clearly when a post is paid or sponsored, or when you received a product or a gift, as the law requires. A brand you choose yourself, such as the brand of an ingredient in your recipe, is your own opinion unless you say it is paid.
 - Do not post other people's photos, recipes or text as your own.
 
-## Buyers
-- Reserve only what you intend to collect, and collect it on time.
+## Ordering (coming later)
+Ordering is not open to everyone yet. Until we announce it, nothing here lets anyone sell or pay for food through tabkheen A. When it opens:
+- Order only what you intend to collect, and collect it on time.
 - Payment: when the app asks you to pay through tabkheen A, you send the amount by InstaPay to the account shown on the payment screen, and the cook starts only after our team confirms it. Otherwise pay the cook directly as agreed at pickup. tabkheen A is not the seller of the food and is not responsible for it.
 - Check the food and its description before you eat it, especially if you have allergies.
 
@@ -58,7 +58,7 @@ body_ar = $terms_ar$آخر تحديث ٢٨ نوفمبر ٢٠٢٦. مسودة ف�
 بإنشاء حساب أو استخدام tabkheen A فإنك توافق على هذه الشروط وعلى سياسة الخصوصية.
 
 ## ما هو tabkheen A
-شبكة اجتماعية للطبخ المنزلي في مصر. يشارك الأعضاء ما يطبخونه بالصور والقصص والوصفات والتعليقات، ويتابعون الطهاة والمجتمعات القريبة منهم، ويشاركون في الترتيب والمسابقات. وعندما يعرض طاهٍ طبقاً للاستلام، يستطيع الأعضاء حجزه واستلامه بأنفسهم. الاستلام فقط: لا يوجد توصيل. tabkheen A منصة، ولا يطبخ ولا يبيع ولا يسلّم الطعام.
+شبكة اجتماعية للطبخ المنزلي في مصر. يشارك الأعضاء ما يطبخونه بالصور والقصص والوصفات والتعليقات، ويتابعون الطهاة والمجتمعات القريبة منهم، ويشاركون في الترتيب والمسابقات. أما طلب طبق من طاهٍ منزلي للاستلام فهو خدمة مستقبلية وغير متاحة بعد. عند إتاحتها سنخبرك داخل التطبيق، وسينطبق عليها قسم الطلب (قريباً) أدناه. سيكون الاستلام فقط بدون توصيل. tabkheen A منصة، ولا يطبخ ولا يبيع ولا يسلّم الطعام.
 
 ## حسابك
 - يجب أن يكون عمرك ١٦ سنة على الأقل.
@@ -67,13 +67,13 @@ body_ar = $terms_ar$آخر تحديث ٢٨ نوفمبر ٢٠٢٦. مسودة ف�
 
 ## الطهاة وصنّاع المحتوى
 - أنت مسؤول عن الطعام الذي تطبخه: مكوّناته ونظافته وحفظه بشكل آمن ووصفه، بما في ذلك مسببات الحساسية.
-- قدّم فقط طعاماً أعددته بنفسك، وكميات تستطيع إعدادها فعلاً.
-- وضّح مكان الاستلام وموعده.
+- عند إتاحة الطلب: قدّم فقط طعاماً أعددته بنفسك، وكميات تستطيع إعدادها فعلاً، ووضّح مكان الاستلام وموعده.
 - إذا أخبرتنا أنك من صنّاع المحتوى، فيمكنك النشر عن العلامات التجارية. وضّح للناس بشكل صريح عندما يكون المنشور مدفوعاً أو برعاية، أو عندما حصلت على منتج أو هدية، كما يقتضي القانون. أما العلامة التجارية التي تختارها بنفسك، مثل ماركة أحد مكوّنات وصفتك، فهي رأيك الشخصي ما لم تذكر أنها مدفوعة.
 - لا تنشر صور الآخرين أو وصفاتهم أو نصوصهم على أنها لك.
 
-## المشترون
-- احجز فقط ما تنوي استلامه، واستلمه في الموعد.
+## الطلب (قريباً)
+الطلب غير متاح للجميع بعد. إلى أن نعلن عنه، لا يسمح شيء هنا لأي شخص ببيع الطعام أو دفع ثمنه عبر tabkheen A. وعند إتاحته:
+- اطلب فقط ما تنوي استلامه، واستلمه في الموعد.
 - الدفع: عندما يطلب منك التطبيق الدفع عبر tabkheen A، تحوّل المبلغ بإنستاباي إلى الحساب الظاهر في شاشة الدفع، ولا يبدأ الطاهي التحضير إلا بعد أن يؤكد فريقنا ذلك. وفي غير ذلك ادفع للطاهي مباشرة كما اتفقتما عند الاستلام. tabkheen A ليس بائع الطعام ولا يتحمل مسؤوليته.
 - تأكد من الطعام ووصفه قبل أن تأكله، خاصة إن كان لديك حساسية.
 
@@ -108,13 +108,13 @@ where slug = 'terms';
 
 update public.app_pages set updated_at = now(), body_en = $priv_en$Last updated 28 November 2026. Draft pending legal review.
 
-tabkheen A is a social network for home cooking in Egypt. Neighbours share what they cook, follow each other and their communities, and, where a cook offers a dish, reserve it and pick it up. This policy explains what we collect, why, and your choices.
+tabkheen A is a social network for home cooking in Egypt. Neighbours share what they cook and follow each other and their communities. Ordering a dish from a home cook for pickup is a future feature that is not open yet. This policy explains what we collect, why, and your choices, including what will apply when ordering opens.
 
 ## What we collect
 - Your name and email from your Google or Apple account, and the username, photo, short bio, area and communities you choose.
 - Your Instagram or other social handle, your InstaPay handle and your phone or WhatsApp number, if you add them.
 - Whether you tell us you are a creator or influencer, if you answer that question.
-- What you post and do in the app: posts, stories, recipes, the brands you name in a recipe, comments, likes, saves, messages, orders and reviews.
+- What you post and do in the app: posts, stories, recipes, the brands you name in a recipe, comments, likes, saves and messages, and, once ordering opens, orders and reviews.
 - How you use the app, such as which posts you view, search for, save or share.
 - Your location while the app is open, to show how far pickup points are and to set your own pickup point. We keep your phone’s last known position privately so we can work out distances. Neighbours only see an approximate distance, rounded up to the next kilometre, never your exact position.
 - Photos you choose or take, only when you add them.
@@ -122,7 +122,7 @@ tabkheen A is a social network for home cooking in Egypt. Neighbours share what 
 - Basic technical information, such as app version and crash reports.
 
 ## Why we use it
-- To run your account, show your profile and posts, and let people follow, compete, order and pick up.
+- To run your account, show your profile and posts, and let people follow and compete, and, once ordering opens, order and pick up.
 - To send the alerts you ask for.
 - To keep the community safe: handle reports, remove harmful content and stop abuse.
 - To understand which areas and communities to open first, and what people cook and enjoy.
@@ -156,13 +156,13 @@ If we change this policy we will update this page and tell you in the app when t
 help@tabkheen-a.com$priv_en$,
 body_ar = $priv_ar$آخر تحديث ٢٨ نوفمبر ٢٠٢٦. مسودة في انتظار المراجعة القانونية.
 
-tabkheen A شبكة اجتماعية للطبخ المنزلي في مصر. الجيران بيشاركوا اللي بيطبخوه، ويتابعوا بعض ومجتمعاتهم، وعندما يعرض طاهٍ طبقاً، يحجزه جيرانه ويستلموه بأنفسهم. توضح هذه السياسة ما نجمعه ولماذا وما هي خياراتك.
+tabkheen A شبكة اجتماعية للطبخ المنزلي في مصر. الجيران بيشاركوا اللي بيطبخوه ويتابعوا بعض ومجتمعاتهم. أما طلب طبق من طاهٍ منزلي للاستلام فهو خدمة مستقبلية وغير متاحة بعد. توضح هذه السياسة ما نجمعه ولماذا وما هي خياراتك، بما في ذلك ما سينطبق عند إتاحة الطلب.
 
 ## ما الذي نجمعه
 - اسمك وبريدك الإلكتروني من حساب جوجل أو أبل، واسم المستخدم والصورة والنبذة والمنطقة والمجتمعات التي تختارها.
 - حساب إنستجرام أو أي حساب اجتماعي آخر، وحساب إنستاباي ورقم الهاتف أو الواتساب، إذا أضفتهم.
 - ما إذا كنت تخبرنا بأنك من صنّاع المحتوى أو المؤثرين، إذا أجبت عن هذا السؤال.
-- ما تنشره وتفعله في التطبيق: المنشورات والقصص والوصفات والعلامات التجارية التي تذكرها في وصفة، والتعليقات والإعجابات وحفظ المنشورات والرسائل والطلبات والتقييمات.
+- ما تنشره وتفعله في التطبيق: المنشورات والقصص والوصفات والعلامات التجارية التي تذكرها في وصفة، والتعليقات والإعجابات وحفظ المنشورات والرسائل، وبعد إتاحة الطلب: الطلبات والتقييمات.
 - طريقة استخدامك للتطبيق، مثل المنشورات التي تشاهدها أو تبحث عنها أو تحفظها أو تشاركها.
 - موقعك أثناء فتح التطبيق، لعرض بُعد نقاط الاستلام وتحديد نقطة الاستلام الخاصة بك. بنحتفظ بآخر موقع معروف لتليفونك بشكل خاص عشان نحسب المسافات. الجيران يرون مسافة تقريبية فقط، مقرّبة لأعلى لأقرب كيلومتر، ولا يرون موقعك بالتحديد أبداً.
 - الصور التي تختارها أو تلتقطها، فقط عندما تضيفها.
@@ -170,7 +170,7 @@ tabkheen A شبكة اجتماعية للطبخ المنزلي في مصر. ال
 - معلومات تقنية بسيطة مثل إصدار التطبيق وتقارير الأعطال.
 
 ## لماذا نستخدمها
-- لتشغيل حسابك وعرض ملفك ومنشوراتك والسماح بالمتابعة والمنافسة والطلب والاستلام.
+- لتشغيل حسابك وعرض ملفك ومنشوراتك والسماح بالمتابعة والمنافسة، وبعد إتاحة الطلب: الطلب والاستلام.
 - لإرسال التنبيهات التي تطلبها.
 - للحفاظ على أمان المجتمع: معالجة البلاغات وحذف المحتوى الضار ومنع الإساءة.
 - لمعرفة المناطق والمجتمعات التي سنفتحها أولاً، وما يطبخه الناس ويستمتعون به.
