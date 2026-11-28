@@ -92,7 +92,7 @@ export function WaitingBadgeSync() {
  * Tells a cook when their phone will not make a sound for new requests: notifications refused, or sounds turned off.
  * (The silent switch and Do Not Disturb cannot be read by an app, so the test alert in Settings is how to check them.)
  */
-export function AlertHealthNotice() {
+export function useAlertHealth(): AlertHealth {
   const [health, setHealth] = useState<AlertHealth>('ok');
   const check = useCallback(() => {
     checkAlerts().then(setHealth, () => {});
@@ -104,11 +104,22 @@ export function AlertHealthNotice() {
     });
     return () => sub.remove();
   }, [check]);
-  if (health !== 'off' && health !== 'silent') return null;
-  const title = health === 'off' ? t('Alerts are off on this phone') : t('Alert sounds are off on this phone');
+  return health;
+}
+
+/** True when this phone will not make a sound (or not show anything) for new alerts. The bell in the header shows a slash then. */
+export function alertsMuted(h: AlertHealth): boolean {
+  return h === 'off' || h === 'silent';
+}
+
+/** `calm` = light blue instead of yellow (used inside Notifications, where the bell takes you). */
+export function AlertHealthNotice({ calm }: { calm?: boolean }) {
+  const health = useAlertHealth();
+  if (!alertsMuted(health)) return null;
+  const title = health === 'off' ? t('Notifications are off on this phone') : t('Notification sounds are off on this phone');
   const sub = health === 'off' ? t('You will not be told about new requests. Tap to turn them on.') : t('New requests will not ring. Tap to turn sounds on.');
   return (
-    <Pressable style={styles.bar} onPress={() => Linking.openSettings()} accessibilityRole="button" accessibilityLabel={`${title}. ${sub}`}>
+    <Pressable style={[styles.bar, calm && styles.calm]} onPress={() => Linking.openSettings()} accessibilityRole="button" accessibilityLabel={`${title}. ${sub}`}>
       <View style={styles.icon}>
         <MaterialIcons name="notifications-off" size={22} color={colors.navy} />
       </View>
@@ -123,6 +134,7 @@ export function AlertHealthNotice() {
 const styles = StyleSheet.create({
   bar: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.yellow, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12, marginHorizontal: 16, marginVertical: 8 },
   flush: { marginHorizontal: 0 },
+  calm: { backgroundColor: colors.lightBlue },
   silence: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.navy, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 10 },
   silenceText: { fontFamily: fonts.extraBold, fontSize: 13, color: colors.white },
   icon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
