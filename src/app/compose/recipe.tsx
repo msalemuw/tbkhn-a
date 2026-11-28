@@ -14,7 +14,7 @@ import { cleanRecipe, emptyRecipe, fetchBrandSuggestions, matchBrands, peekRecip
 export default function ComposeRecipe() {
   const [r, setR] = useState<Recipe>(() => {
     const d = peekRecipeDraft();
-    return d ? { ...d, ingredients: [...d.ingredients, ''], brands: [...d.ingredients.map((_, i) => d.brands[i] ?? ''), ''], steps: [...d.steps, ''] } : emptyRecipe();
+    return d ? { ...d, ingredients: [...d.ingredients, ''], brands: [...d.ingredients.map((_, i) => d.brands[i] ?? ''), ''], groups: [...d.ingredients.map((_, i) => d.groups[i] ?? ''), ''], steps: [...d.steps, ''] } : emptyRecipe();
   });
   // Brands other cooks already typed, offered while you type a brand.
   const [known, setKnown] = useState<string[]>([]);
@@ -25,12 +25,21 @@ export default function ComposeRecipe() {
   const setBrand = (i: number, v: string) => setR((x) => ({ ...x, brands: x.ingredients.map((_, j) => (j === i ? v : x.brands[j] ?? '')) }));
 
   const setLine = (key: 'ingredients' | 'steps', i: number, v: string) => setR((x) => ({ ...x, [key]: x[key].map((s, j) => (j === i ? v : s)) }));
-  const addLine = (key: 'ingredients' | 'steps') => setR((x) => ({ ...x, [key]: [...x[key], ''], ...(key === 'ingredients' ? { brands: [...x.ingredients.map((_, i) => x.brands[i] ?? ''), ''] } : {}) }));
+  const addLine = (key: 'ingredients' | 'steps', section = false) =>
+    setR((x) => ({ ...x, [key]: [...x[key], ''], ...(key === 'ingredients' ? { brands: [...x.ingredients.map((_, i) => x.brands[i] ?? ''), ''], groups: [...x.ingredients.map((_, i) => x.groups[i] ?? ''), section ? ' ' : ''] } : {}) }));
+  // A section title is typed above its first ingredient; ' ' means "title not typed yet" (cleaned away if left empty).
+  const setGroup = (i: number, v: string) => setR((x) => ({ ...x, groups: x.ingredients.map((_, j) => (j === i ? v : x.groups[j] ?? '')) }));
   const removeLine = (key: 'ingredients' | 'steps', i: number) =>
     setR((x) => ({
       ...x,
       [key]: x[key].length > 1 ? x[key].filter((_, j) => j !== i) : [''],
-      ...(key === 'ingredients' ? { brands: x.ingredients.length > 1 ? x.ingredients.map((_, j) => x.brands[j] ?? '').filter((_, j) => j !== i) : [''] } : {}),
+      ...(key === 'ingredients'
+        ? {
+            brands: x.ingredients.length > 1 ? x.ingredients.map((_, j) => x.brands[j] ?? '').filter((_, j) => j !== i) : [''],
+            // Removing the first ingredient of a section hands the section title to the next one.
+            groups: x.ingredients.length > 1 ? x.ingredients.map((_, j) => (j === i + 1 && !(x.groups[j] ?? '').trim() ? x.groups[i] ?? '' : x.groups[j] ?? '')).filter((_, j) => j !== i) : [''],
+          }
+        : {}),
     }));
 
   function done() {
@@ -65,6 +74,14 @@ export default function ComposeRecipe() {
           <Text style={styles.label}>INGREDIENTS</Text>
           {r.ingredients.map((line, i) => (
             <View key={i} style={styles.ingredient}>
+              {(r.groups[i] ?? '') !== '' ? (
+                <View style={styles.line}>
+                  <TextInput value={r.groups[i] === ' ' ? '' : r.groups[i]} onChangeText={(v) => setGroup(i, v === '' ? ' ' : v)} placeholder="Section title, e.g. For the Alfredo sauce" placeholderTextColor={colors.faint} maxLength={50} style={[formStyles.input, styles.lineInput, styles.groupInput]} accessibilityLabel={`Section title for ingredient ${i + 1}`} />
+                  <Pressable hitSlop={8} onPress={() => setGroup(i, '')} accessibilityLabel="Remove section title">
+                    <MaterialIcons name="close" size={20} color={colors.muted} />
+                  </Pressable>
+                </View>
+              ) : null}
               <View style={styles.line}>
                 <TextInput value={line} onChangeText={(v) => setLine('ingredients', i, v)} placeholder="e.g. 500 g chicken" placeholderTextColor={colors.faint} maxLength={120} style={[formStyles.input, styles.lineInput]} accessibilityLabel={`Ingredient ${i + 1}`} />
                 <Pressable hitSlop={8} onPress={() => removeLine('ingredients', i)} accessibilityLabel="Remove ingredient">
@@ -96,6 +113,10 @@ export default function ComposeRecipe() {
           <Pressable style={styles.add} onPress={() => addLine('ingredients')} accessibilityRole="button">
             <MaterialIcons name="add" size={20} color={colors.teal} />
             <Text style={styles.addText}>Add ingredient</Text>
+          </Pressable>
+          <Pressable style={styles.add} onPress={() => addLine('ingredients', true)} accessibilityRole="button">
+            <MaterialIcons name="segment" size={20} color={colors.teal} />
+            <Text style={styles.addText}>Add a section (e.g. For the sauce)</Text>
           </Pressable>
 
           <Text style={styles.label}>STEPS</Text>
@@ -133,6 +154,7 @@ const styles = StyleSheet.create({
   line: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   lineInput: { flex: 1 },
   ingredient: { marginBottom: 8 },
+  groupInput: { fontFamily: fonts.bold },
   brandInput: { marginTop: 0, marginBottom: 2, fontSize: 14, paddingVertical: 8, marginLeft: 0 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   chip: { paddingHorizontal: 12, height: 30, borderRadius: 15, backgroundColor: colors.lightBlue, alignItems: 'center', justifyContent: 'center' },
